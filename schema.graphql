@@ -1,0 +1,5 @@
+type Account @entity {
+  id: ID!
+  balance: BigInt!
+  firstInteractAt: DateTime!
+}
