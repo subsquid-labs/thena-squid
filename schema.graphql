@@ -1,5 +1,30 @@
-type Account @entity {
+type User @entity {
   id: ID!
   balance: BigInt!
   firstInteractAt: DateTime!
+}
+
+type Trade @entity {
+  id: ID!
+  blockNumber: Int!
+  timestamp: DateTime!
+  txHash: String!
+  user: User!
+  tokenIn: String!
+  amountIn: BigInt!
+  tokenOut: String!
+  amountOut: BigInt!
+  routes: [String!]!
+}
+
+type SolidlyPair @entity {
+  id: ID!
+  token0: String!
+  token1: String!
+}
+
+type AlgebraPool @entity {
+  id: ID!
+  token0: String!
+  token1: String!
 }

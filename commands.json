@@ -42,17 +42,17 @@
       },
       "typegen": {
         "description": "Generate data access classes for an ABI file(s) in the ./abi folder",
-        "cmd": ["squid-evm-typegen", "./src/abi", {"glob": "./abi/*.json"}, "--multicall"]
+        "cmd": ["squid-evm-typegen", "./src/abi", {"glob": "./abi/*.json"}, "--multicall", "--clean"]
       },
       "process": {
         "description": "Load .env and start the squid processor",
         "deps": ["build", "migration:apply"],
-        "cmd": ["node", "--require=dotenv/config", "lib/processor.js"]
+        "cmd": ["node", "--require=dotenv/config", "lib/main.js"]
       },
       "process:prod": {
         "description": "Start the squid processor",
         "deps": ["migration:apply"],
-        "cmd": ["node", "lib/processor.js"],
+        "cmd": ["node", "lib/main.js"],
         "hidden": true
       },
       "serve": {

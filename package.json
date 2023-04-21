@@ -4,6 +4,7 @@
   "scripts": {
     "build": "rm -rf lib && tsc"
   },
+  "main": "lib/main.js",
   "dependencies": {
     "@subsquid/archive-registry": "^2.1.12",
     "@subsquid/evm-processor": "^0.4.0",

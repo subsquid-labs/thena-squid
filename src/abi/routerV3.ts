@@ -1,6 +1,6 @@
 import * as ethers from 'ethers'
 import {LogEvent, Func, ContractBase} from './abi.support'
-import {ABI_JSON} from './swap.abi'
+import {ABI_JSON} from './routerV3.abi'
 
 export const abi = new ethers.utils.Interface(ABI_JSON);
 
