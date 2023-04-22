@@ -6,21 +6,25 @@ import * as solidlyPair from './abi/solidlyPair'
 import * as solidlyFactory from './abi/solidlyFactory'
 import * as algebraPool from './abi/algebraPool'
 import * as algebraFactory from './abi/algebraFactory'
-import {THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS, SOLIDLY_FACTORY} from './config'
+import {THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS, SOLIDLY_FACTORY, ALGEBRA_FACTORY} from './config'
 
-const evmLogData = {
-    evmLog: {
-        topics: true,
-        data: true,
-    },
+const transactionData = {
     transaction: {
         from: true,
         hash: true,
     },
 } as const
 
+const evmLogData = {
+    ...transactionData,
+    evmLog: {
+        topics: true,
+        data: true,
+    },
+} as const
+
 export const processor = new EvmBatchProcessor()
-    .setBlockRange({from: 25152397})
+    .setBlockRange({from: 24468802})
     .setDataSource({
         archive: lookupArchive('binance'),
         chain: 'https://rpc.ankr.com/bsc',
@@ -41,17 +45,17 @@ export const processor = new EvmBatchProcessor()
         filter: [[solidlyPair.events.Swap.topic]],
         data: evmLogData,
     })
-    // .addLog([], {
-    //     filter: [[]],
-    // })
+    .addLog(ALGEBRA_FACTORY, {
+        filter: [[algebraFactory.events.Pool.topic]],
+        data: evmLogData,
+    })
+    .addLog([], {
+        filter: [[algebraPool.events.Swap.topic]],
+        data: evmLogData,
+    })
     .addTransaction([THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS], {
         sighash: [],
-        data: {
-            transaction: {
-                from: true,
-                hash: true,
-            },
-        },
+        data: transactionData,
     })
 
 export type ProcessorItem = BatchProcessorItem<typeof processor>

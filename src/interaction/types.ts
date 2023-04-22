@@ -6,7 +6,7 @@ export enum InteractionType {
     Swap,
 }
 
-export interface BaseInteraction {
+interface BaseInteraction {
     id: string
     type: InteractionType
     block: Pick<EvmBlock, 'id' | 'hash' | 'height' | 'timestamp'>
@@ -22,13 +22,28 @@ export interface BalanceInteraction extends BaseInteraction {
     amount: bigint
 }
 
-export interface SwapInteraction extends BaseInteraction {
-    type: InteractionType.Swap
-    tokenIn: string
-    amountIn: bigint
-    tokenOut: string
-    amountOut: bigint
-    route: string
+export enum ProviderType {
+    Solidly,
+    Algebra,
 }
+
+export interface BaseSwapInteraction extends BaseInteraction {
+    type: InteractionType.Swap
+    provider: ProviderType
+    amount0: bigint
+    amount1: bigint
+    pool: string
+}
+
+export interface SolidlySwapInteraction extends BaseSwapInteraction {
+    provider: ProviderType.Solidly
+    // tokenIn: string
+}
+
+export interface AlgebraSwapInteraction extends BaseSwapInteraction {
+    provider: ProviderType.Algebra
+}
+
+export type SwapInteraction = SolidlySwapInteraction | AlgebraSwapInteraction
 
 export type Interaction = UnknownInteraction | BalanceInteraction | SwapInteraction

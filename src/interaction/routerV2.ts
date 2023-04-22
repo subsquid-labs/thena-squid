@@ -2,67 +2,64 @@ import assert from 'assert'
 import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
 import * as pair from '../abi/solidlyPair'
 import * as routerV2 from '../abi/routerV2'
+import * as solidlyPair from '../abi/solidlyPair'
 import {ProcessorItem} from '../processor'
-import {Interaction, InteractionType} from './types'
+import {Interaction, InteractionType, ProviderType} from './types'
 import {ROUTER_V2_ADDRESS} from '../config'
 
 export function isRouterV2Item(item: ProcessorItem) {
-    return item.address === ROUTER_V2_ADDRESS
+    return (
+        item.address === ROUTER_V2_ADDRESS ||
+        (item.kind === 'evmLog' && item.evmLog.topics[0] === solidlyPair.events.Swap.topic)
+    )
 }
 
 export async function getRouterV2Interactions(
     ctx: BatchHandlerContext<unknown, unknown>,
     block: EvmBlock,
-    item: ProcessorItem,
-    prevItem: ProcessorItem | undefined
+    item: ProcessorItem
 ): Promise<Interaction[]> {
     const interactions: Interaction[] = []
 
     switch (item.kind) {
         case 'evmLog': {
             switch (item.evmLog.topics[0]) {
-                case routerV2.events.Swap.topic: {
-                    assert(prevItem != null)
-                    assert(prevItem.kind === 'evmLog')
-                    assert(prevItem.evmLog.topics[0] === pair.events.Swap.topic)
+                case solidlyPair.events.Swap.topic: {
+                    // assert(prevItem != null)
+                    // assert(prevItem.kind === 'evmLog')
+                    // assert(prevItem.evmLog.topics[0] === pair.events.Swap.topic)
 
-                    const pairEvent = pair.events.Swap.decode(prevItem.evmLog)
-                    const routerEvent = routerV2.events.Swap.decode(item.evmLog)
+                    const event = pair.events.Swap.decode(item.evmLog)
+                    // const routerEvent = routerV2.events.Swap.decode(item.evmLog)
 
-                    const route = prevItem.address
-                    const to = routerEvent.to.toLowerCase()
+                    const pool = item.address
+                    const to = event.to.toLowerCase()
 
-                    const contract = new pair.Contract(ctx, block, prevItem.address)
-
-                    const tokenIn = routerEvent._tokenIn.toLowerCase()
-                    let tokenOut: string
-                    let amountIn: bigint
-                    let amountOut: bigint
-                    if (pairEvent.amount0In.toBigInt() === 0n) {
-                        tokenOut = await contract.token0().then((t) => t.toLowerCase())
-                        amountIn = pairEvent.amount1In.toBigInt()
-                        assert(pairEvent.amount1Out.toBigInt() === 0n)
-                        amountOut = pairEvent.amount0Out.toBigInt()
+                    // const tokenIn = routerEvent._tokenIn.toLowerCase()
+                    let amount0: bigint, amount1: bigint
+                    if (event.amount0In.toBigInt() === 0n) {
+                        amount0 = event.amount0Out.toBigInt()
+                        amount1 = -event.amount1In.toBigInt()
                     } else {
-                        tokenOut = await contract.token1().then((t) => t.toLowerCase())
-                        amountIn = pairEvent.amount0In.toBigInt()
-                        assert(pairEvent.amount0Out.toBigInt() === 0n)
-                        amountOut = pairEvent.amount1Out.toBigInt()
+                        amount0 = -event.amount0In.toBigInt()
+                        amount1 = event.amount1Out.toBigInt()
                     }
-                    assert(amountIn === routerEvent.amount0In.toBigInt())
-                    assert(tokenOut !== tokenIn)
 
                     interactions.push({
                         id: to,
                         type: InteractionType.Swap,
                         block,
                         transaction: item.transaction,
-                        tokenIn,
-                        amountIn,
-                        tokenOut,
-                        amountOut,
-                        route,
+                        provider: ProviderType.Solidly,
+                        // tokenIn,
+                        amount0,
+                        amount1,
+                        pool,
                     })
+                    break
+                }
+                default: {
+                    ctx.log.error(`unknown event ${item.evmLog.topics[0]}`)
                 }
             }
             break

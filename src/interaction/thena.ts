@@ -49,24 +49,27 @@ export async function getThenaInteractions(
 
                     break
                 }
-                // case thena.events.Approval.topic: {
-                //     const e = thena.events.Approval.decode(item.evmLog)
+                case thena.events.Approval.topic: {
+                    // const e = thena.events.Approval.decode(item.evmLog)
 
-                //     interaction = {
-                //         id: e.spender.toLowerCase(),
-                //         type: InteractionType.Unknown,
-                //         block,
-                //         transaction: item.transaction,
-                //     }
+                    // interaction = {
+                    //     id: e.spender.toLowerCase(),
+                    //     type: InteractionType.Unknown,
+                    //     block,
+                    //     transaction: item.transaction,
+                    // }
 
-                //     interactions.push({
-                //         id: e.owner.toLowerCase(),
-                //         type: InteractionType.Unknown,
-                //         block,
-                //         transaction: item.transaction,
-                //     })
-                //     break
-                // }
+                    // interactions.push({
+                    //     id: e.owner.toLowerCase(),
+                    //     type: InteractionType.Unknown,
+                    //     block,
+                    //     transaction: item.transaction,
+                    // })
+                    break
+                }
+                default: {
+                    ctx.log.error(`unknown event ${item.evmLog.topics[0]}`)
+                }
             }
             break
         }

@@ -17,14 +17,9 @@ type Trade @entity {
   routes: [String!]!
 }
 
-type SolidlyPair @entity {
+type Pool @entity {
   id: ID!
-  token0: String!
-  token1: String!
-}
-
-type AlgebraPool @entity {
-  id: ID!
+  factory: String!
   token0: String!
   token1: String!
 }

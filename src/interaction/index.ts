@@ -4,6 +4,7 @@ import {ProcessorItem} from '../processor'
 import {getRouterV2Interactions, isRouterV2Item} from './routerV2'
 import {getThenaInteractions, isThenaItem} from './thena'
 import {Interaction} from './types'
+import {getRouterV3Interactions, isRouterV3Item} from './routerV3'
 
 export * from './types'
 
@@ -44,7 +45,10 @@ export async function getItemInteractions(
         return await getThenaInteractions(ctx, block, item)
     } else if (isRouterV2Item(item)) {
         ctx.log.debug(`processing RouterV2 item...`)
-        return await getRouterV2Interactions(ctx, block, item, prevItem)
+        return await getRouterV2Interactions(ctx, block, item)
+    } else if (isRouterV3Item(item)) {
+        ctx.log.debug(`processing RouterV3 item...`)
+        return await getRouterV3Interactions(ctx, block, item)
     } else {
         return []
     }
