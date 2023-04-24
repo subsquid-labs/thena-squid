@@ -12,66 +12,66 @@ const ALGEBRA_FACTORY = '0x306f06c147f064a010530292a1eb6737c3e378e4'
 const earliestPairFactoryDeploymentBlock = 24468802
 
 const processor = new EvmBatchProcessor()
-  .setDataSource({
-    archive: lookupArchive('binance'),
-  })
-  .setBlockRange({
-    from: earliestPairFactoryDeploymentBlock
-  })
-  .addLog(SOLIDLY_FACTORY, {
-    filter: [[
-      solidlyPoolFactoryAbi.events.PairCreated.topic
-    ]],
-    data: {
-      evmLog: {
-        topics: true,
-        data: true
-      }
-    }
-  })
-  .addLog(ALGEBRA_FACTORY, {
-    filter: [[
-      algebraPoolFactoryAbi.events.Pool.topic
-    ]],
-    data: {
-      evmLog: {
-        address: true,
-        topics: true,
-        data: true
-      }
-    }
-  })
+    .setDataSource({
+        archive: lookupArchive('binance'),
+    })
+    .setBlockRange({
+        from: earliestPairFactoryDeploymentBlock
+    })
+    .addLog(SOLIDLY_FACTORY, {
+        filter: [[
+            solidlyPoolFactoryAbi.events.PairCreated.topic
+        ]],
+        data: {
+            evmLog: {
+                topics: true,
+                data: true
+            }
+        }
+    })
+    .addLog(ALGEBRA_FACTORY, {
+        filter: [[
+            algebraPoolFactoryAbi.events.Pool.topic
+        ]],
+        data: {
+            evmLog: {
+                address: true,
+                topics: true,
+                data: true
+            }
+        }
+    })
 
 let solidlyPools: string[] = []
 let algebraPools: string[] = []
 
 processor.run(new TypeormDatabase(), async (ctx) => {
-  for (let c of ctx.blocks) {
-    for (let i of c.items) {
-      if (i.kind !== 'evmLog') continue
+    for (let c of ctx.blocks) {
+        for (let i of c.items) {
+            if (i.kind !== 'evmLog') continue
 
-      if (i.address === SOLIDLY_FACTORY) {
-        let { pair } = solidlyPoolFactoryAbi.events.PairCreated.decode(i.evmLog)
-        solidlyPools.push(pair)
-      }
+            if (i.address === SOLIDLY_FACTORY) {
+                let { pair } = solidlyPoolFactoryAbi.events.PairCreated.decode(i.evmLog)
+                solidlyPools.push(pair)
+            }
 
-      if (i.address === ALGEBRA_FACTORY) {
-        let { pool } = algebraPoolFactoryAbi.events.Pool.decode(i.evmLog)
-        algebraPools.push(pool)
-      }
+            if (i.address === ALGEBRA_FACTORY) {
+                let { pool } = algebraPoolFactoryAbi.events.Pool.decode(i.evmLog)
+                algebraPools.push(pool)
+            }
+        }
     }
-  }
 
-  let block = ctx.blocks[ctx.blocks.length-1].header.height
-  let pools = {
-    block,
-    pools: {
-      [SOLIDLY_FACTORY]: solidlyPools,
-      [ALGEBRA_FACTORY]: algebraPools
+    let block = ctx.blocks[ctx.blocks.length-1].header.height
+    let pools = {
+        block,
+        pools: {
+            [SOLIDLY_FACTORY]: solidlyPools,
+            [ALGEBRA_FACTORY]: algebraPools
+        }
     }
-  }
-  fs.writeFileSync('pools.json', JSON.stringify(pools))
+    fs.writeFileSync('pools.json', JSON.stringify(pools))
 
-  if (ctx.isHead) process.exit()
+    if (ctx.isHead) process.exit()
 });
 
