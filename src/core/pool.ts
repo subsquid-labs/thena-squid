@@ -3,6 +3,7 @@ import {CreationPoolAction, LiquidityPoolAction, PoolAction, PoolActionDataType,
 import {ALGEBRA_FACTORY} from '../config'
 import {Pool, Trade, User} from '../model'
 import {CommonContext, Storage} from './types'
+import {PoolManager} from '../utils/pairManager'
 
 export function processPoolAction(
     ctx: CommonContext<Storage<{users: User; pools: Pool; trades: Trade[]}>>,
@@ -28,14 +29,15 @@ function processPoolCreation(ctx: CommonContext<Storage<{pools: Pool}>>, action:
         id: action.data.id,
         token0: action.data.token0,
         token1: action.data.token1,
-        factory: ALGEBRA_FACTORY,
+        factory: action.data.factory,
         liquidity: 0n,
         reserved0: 0n,
         reserved1: 0n,
     })
     ctx.store.pools.set(pool.id, pool)
 
-    ctx.log.info(`Created pool ${action.data.id}`)
+    ctx.log.info(`Created pool ${pool.id}`)
+    PoolManager.instance.addPool(pool.factory, pool.id)
 }
 
 function processLiquidity(ctx: CommonContext<Storage<{pools: Pool}>>, action: LiquidityPoolAction) {

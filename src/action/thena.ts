@@ -8,11 +8,7 @@ export function isThenaItem(item: ProcessorItem) {
     return item.address === THENA_ADDRESS
 }
 
-export async function getThenaActions(
-    ctx: BatchHandlerContext<unknown, unknown>,
-    block: EvmBlock,
-    item: ProcessorItem
-): Promise<Action[]> {
+export function getThenaActions(ctx: BatchHandlerContext<unknown, unknown>, block: EvmBlock, item: ProcessorItem) {
     const actions: Action[] = []
 
     switch (item.kind) {

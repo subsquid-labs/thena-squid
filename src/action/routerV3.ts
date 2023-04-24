@@ -11,56 +11,10 @@ export function isRouterV3Item(item: ProcessorItem) {
     )
 }
 
-export async function getRouterV3Actions(
-    ctx: BatchHandlerContext<unknown, unknown>,
-    block: EvmBlock,
-    item: ProcessorItem
-): Promise<Action[]> {
+export function getRouterV3Actions(ctx: BatchHandlerContext<unknown, unknown>, block: EvmBlock, item: ProcessorItem) {
     const actions: Action[] = []
 
     switch (item.kind) {
-        case 'evmLog': {
-            switch (item.evmLog.topics[0]) {
-                case algebraPool.events.Swap.topic: {
-                    const event = algebraPool.events.Swap.decode(item.evmLog)
-
-                    const id = event.recipient
-                    const pool = item.address
-
-                    const amount0 = event.amount0.toBigInt()
-                    const amount1 = event.amount1.toBigInt()
-
-                    actions.push({
-                        kind: ActionKind.User,
-                        block,
-                        transaction: item.transaction,
-                        data: {
-                            id,
-                            type: UserActionDataType.Swap,
-                            amount0,
-                            amount1,
-                            pool,
-                        },
-                    })
-
-                    actions.push({
-                        kind: ActionKind.Pool,
-                        block,
-                        transaction: item.transaction,
-                        data: {
-                            id: pool,
-                            type: PoolActionDataType.Unknown,
-                        },
-                    })
-
-                    break
-                }
-                default: {
-                    ctx.log.error({block, item}, `unknown event ${item.evmLog.topics[0]}`)
-                }
-            }
-            break
-        }
         case 'transaction': {
             if (item.transaction.from != null) {
                 actions.push({

@@ -16,6 +16,7 @@ export interface CreationPoolActionData extends BasePoolActionData {
     type: PoolActionDataType.Creation
     token0: string
     token1: string
+    factory: string
 }
 
 export interface SyncPoolActionData extends BasePoolActionData {

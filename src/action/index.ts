@@ -4,8 +4,10 @@ import {getRouterV2Actions, isRouterV2Item} from './routerV2'
 import {getThenaActions, isThenaItem} from './thena'
 import {Action} from './types'
 import {getRouterV3Actions, isRouterV3Item} from './routerV3'
-import {getAlgebraFactoryActions, isAlgebraItem} from './algebra'
-import {getSolidlyFactoryActions, isSolidlyItem} from './solidly'
+import {getAlgebraFactoryActions, isAlgebraFactoryItem} from './algebraFactory'
+import {getSolidlyFactoryActions, isSolidlyFactoryItem} from './solidlyFactory'
+import {getSolidlyPairActions, isSolidlyPairItem} from './solidlyPair'
+import {getAlgebraPoolActions, isAlgebraPoolItem} from './algebraPool'
 
 export * from './types'
 
@@ -30,27 +32,37 @@ export async function getItemActions(
 ): Promise<Action[]> {
     if (isThenaItem(item)) {
         ctx.log.debug(`processing Thena item...`)
-        return await getThenaActions(ctx, block, item)
+        return getThenaActions(ctx, block, item)
     }
 
     if (isRouterV2Item(item)) {
         ctx.log.debug(`processing RouterV2 item...`)
-        return await getRouterV2Actions(ctx, block, item)
+        return getRouterV2Actions(ctx, block, item)
     }
 
     if (isRouterV3Item(item)) {
         ctx.log.debug(`processing RouterV3 item...`)
-        return await getRouterV3Actions(ctx, block, item)
+        return getRouterV3Actions(ctx, block, item)
     }
 
-    if (isAlgebraItem(item)) {
-        ctx.log.debug(`processing AlgebraFactory item...`)
-        return await getAlgebraFactoryActions(ctx, block, item)
-    }
-
-    if (isSolidlyItem(item)) {
+    if (isSolidlyFactoryItem(item)) {
         ctx.log.debug(`processing Solidly Factory item...`)
-        return await getSolidlyFactoryActions(ctx, block, item)
+        return getSolidlyFactoryActions(ctx, block, item)
+    }
+
+    if (isSolidlyPairItem(item)) {
+        ctx.log.debug(`processing Solidly Pair item...`)
+        return getSolidlyPairActions(ctx, block, item)
+    }
+
+    if (isAlgebraFactoryItem(item)) {
+        ctx.log.debug(`processing Algebra Factory item...`)
+        return getAlgebraFactoryActions(ctx, block, item)
+    }
+
+    if (isAlgebraPoolItem(item)) {
+        ctx.log.debug(`processing Algebra Pool item...`)
+        return getAlgebraPoolActions(ctx, block, item)
     }
 
     return []

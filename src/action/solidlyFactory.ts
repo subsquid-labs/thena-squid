@@ -1,14 +1,15 @@
 import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
-import {ALGEBRA_FACTORY} from '../config'
+import {ALGEBRA_FACTORY, SOLIDLY_FACTORY} from '../config'
 import {ProcessorItem} from '../processor'
-import * as algebraFactory from '../abi/algebraFactory'
-import {Action, ActionKind, PoolActionDataType, UserActionDataType} from './types'
+import * as solidlyFactory from '../abi/solidlyFactory'
+import {Action, ActionKind, PoolActionDataType} from './types'
+import {PoolManager} from '../utils/pairManager'
 
-export function isAlgebraItem(item: ProcessorItem) {
-    return item.address === ALGEBRA_FACTORY
+export function isSolidlyFactoryItem(item: ProcessorItem) {
+    return item.address === SOLIDLY_FACTORY
 }
 
-export async function getAlgebraFactoryActions(
+export function getSolidlyFactoryActions(
     ctx: BatchHandlerContext<unknown, unknown>,
     block: EvmBlock,
     item: ProcessorItem
@@ -19,21 +20,26 @@ export async function getAlgebraFactoryActions(
         case 'evmLog': {
             ctx.log.debug(`processing evm log...`)
             switch (item.evmLog.topics[0]) {
-                case algebraFactory.events.Pool.topic: {
-                    ctx.log.debug(`processing Pool creation event...`)
-                    const event = algebraFactory.events.Pool.decode(item.evmLog)
+                case solidlyFactory.events.PairCreated.topic: {
+                    ctx.log.debug(`processing Pair creation event...`)
+                    const event = solidlyFactory.events.PairCreated.decode(item.evmLog)
+
+                    const pool = event.pair.toLowerCase()
 
                     actions.push({
                         kind: ActionKind.Pool,
                         block,
                         transaction: item.transaction,
                         data: {
-                            id: event.pool.toLowerCase(),
+                            id: pool,
                             type: PoolActionDataType.Creation,
                             token0: event.token0.toLowerCase(),
                             token1: event.token1.toLowerCase(),
+                            factory: SOLIDLY_FACTORY,
                         },
                     })
+
+                    PoolManager.instance.addPool(item.address, pool)
 
                     break
                 }
