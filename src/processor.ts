@@ -42,7 +42,14 @@ export const processor = new EvmBatchProcessor()
         data: evmLogData,
     })
     .addLog([], {
-        filter: [[solidlyPair.events.Swap.topic]],
+        filter: [
+            [
+                solidlyPair.events.Swap.topic,
+                solidlyPair.events.Sync.topic,
+                // solidlyPair.events.Mint.topic,
+                // solidlyPair.events.Burn.topic,
+            ],
+        ],
         data: evmLogData,
     })
     .addLog(ALGEBRA_FACTORY, {

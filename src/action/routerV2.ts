@@ -8,7 +8,9 @@ import {ROUTER_V2_ADDRESS} from '../config'
 export function isRouterV2Item(item: ProcessorItem) {
     return (
         item.address === ROUTER_V2_ADDRESS ||
-        (item.kind === 'evmLog' && item.evmLog.topics[0] === solidlyPair.events.Swap.topic)
+        (item.kind === 'evmLog' &&
+            (item.evmLog.topics[0] === solidlyPair.events.Swap.topic ||
+                item.evmLog.topics[0] === solidlyPair.events.Sync.topic))
     )
 }
 
@@ -23,17 +25,11 @@ export async function getRouterV2Actions(
         case 'evmLog': {
             switch (item.evmLog.topics[0]) {
                 case solidlyPair.events.Swap.topic: {
-                    // assert(prevItem != null)
-                    // assert(prevItem.kind === 'evmLog')
-                    // assert(prevItem.evmLog.topics[0] === pair.events.Swap.topic)
-
                     const event = pair.events.Swap.decode(item.evmLog)
-                    // const routerEvent = routerV2.events.Swap.decode(item.evmLog)
 
                     const pool = item.address
                     const to = event.to.toLowerCase()
 
-                    // const tokenIn = routerEvent._tokenIn.toLowerCase()
                     let amount0: bigint, amount1: bigint
                     if (event.amount0In.toBigInt() === 0n) {
                         amount0 = event.amount0Out.toBigInt()
@@ -68,6 +64,74 @@ export async function getRouterV2Actions(
 
                     break
                 }
+                case solidlyPair.events.Sync.topic: {
+                    const event = pair.events.Sync.decode(item.evmLog)
+
+                    actions.push({
+                        block,
+                        kind: ActionKind.Pool,
+                        transaction: item.transaction,
+                        data: {
+                            id: item.address,
+                            type: PoolActionDataType.Sync,
+                            amount0: event.reserve0.toBigInt(),
+                            amount1: event.reserve1.toBigInt(),
+                        },
+                    })
+
+                    break
+                }
+                // case solidlyPair.events.Mint.topic: {
+                //     const event = pair.events.Mint.decode(item.evmLog)
+
+                //     actions.push({
+                //         block,
+                //         kind: ActionKind.Pool,
+                //         transaction: item.transaction,
+                //         data: {
+                //             id: item.address,
+                //             type: PoolActionDataType.Balances,
+                //             amount0: event.amount0.toBigInt(),
+                //             amount1: event.amount1.toBigInt(),
+                //         },
+                //     })
+
+                //     break
+                // }
+                // case solidlyPair.events.Burn.topic: {
+                //     const event = pair.events.Burn.decode(item.evmLog)
+
+                //     actions.push({
+                //         block,
+                //         kind: ActionKind.Pool,
+                //         transaction: item.transaction,
+                //         data: {
+                //             id: item.address,
+                //             type: PoolActionDataType.Balances,
+                //             amount0: -event.amount0.toBigInt(),
+                //             amount1: -event.amount1.toBigInt(),
+                //         },
+                //     })
+
+                //     break
+                // }
+                // case solidlyPair.events.Fees.topic: {
+                //     const event = pair.events.Burn.decode(item.evmLog)
+
+                //     actions.push({
+                //         block,
+                //         kind: ActionKind.Pool,
+                //         transaction: item.transaction,
+                //         data: {
+                //             id: item.address,
+                //             type: PoolActionDataType.Balances,
+                //             amount0: -event.amount0.toBigInt(),
+                //             amount1: -event.amount1.toBigInt(),
+                //         },
+                //     })
+
+                //     break
+                // }
                 default: {
                     ctx.log.error(`unknown event ${item.evmLog.topics[0]}`)
                 }
