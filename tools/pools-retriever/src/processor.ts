@@ -3,12 +3,13 @@ import { EvmBatchProcessor } from '@subsquid/evm-processor'
 import { lookupArchive } from '@subsquid/archive-registry'
 import fs from 'fs'
 
-import * as abi from './abi/pair-factory'
+import * as solidlyPoolFactoryAbi from './abi/solidly-pool-factory'
+import * as algebraPoolFactoryAbi from './abi/algebra-pool-factory'
+
+const SOLIDLY_FACTORY = '0xafd89d21bdb66d00817d4153e055830b1c2b3970'
+const ALGEBRA_FACTORY = '0x306f06c147f064a010530292a1eb6737c3e378e4'
 
 const earliestPairFactoryDeploymentBlock = 24468802
-const pairFactories = [
-  '0xAFD89d21BdB66d00817d4153E055830B1c2B3970'
-]
 
 const processor = new EvmBatchProcessor()
   .setDataSource({
@@ -17,9 +18,9 @@ const processor = new EvmBatchProcessor()
   .setBlockRange({
     from: earliestPairFactoryDeploymentBlock
   })
-  .addLog(pairFactories, {
+  .addLog(SOLIDLY_FACTORY, {
     filter: [[
-      abi.events.PairCreated.topic
+      solidlyPoolFactoryAbi.events.PairCreated.topic
     ]],
     data: {
       evmLog: {
@@ -28,25 +29,57 @@ const processor = new EvmBatchProcessor()
       }
     }
   })
+  .addLog(ALGEBRA_FACTORY, {
+    filter: [[
+      algebraPoolFactoryAbi.events.Pool.topic
+    ]],
+    data: {
+      evmLog: {
+        address: true,
+        topics: true,
+        data: true
+      }
+    }
+  })
 
-let pools: string[] = []
+let solidlyPools: string[] = []
+let algebraPools: string[] = []
 
 processor.run(new TypeormDatabase(), async (ctx) => {
   for (let c of ctx.blocks) {
     for (let i of c.items) {
       if (i.kind !== 'evmLog') continue
-      let {
-        token0,
-        token1,
-        stable,
-        pair
-      } = abi.events.PairCreated.decode(i.evmLog)
-      pools.push(pair)
+
+      if (i.address === SOLIDLY_FACTORY) {
+        let {
+          token0,
+          token1,
+          stable,
+          pair
+        } = solidlyPoolFactoryAbi.events.PairCreated.decode(i.evmLog)
+        solidlyPools.push(pair)
+      }
+
+      if (i.address === ALGEBRA_FACTORY) {
+        let {
+          token0,
+          token1,
+          pool
+        } = algebraPoolFactoryAbi.events.Pool.decode(i.evmLog)
+        algebraPools.push(pool)
+      }
     }
   }
 
   let block = ctx.blocks[ctx.blocks.length-1].header.height
-  fs.writeFileSync('pools.json', JSON.stringify({block, pools}))
+  let pools = {
+    block,
+    pools: {
+      [SOLIDLY_FACTORY]: solidlyPools,
+      [ALGEBRA_FACTORY]: algebraPools
+    }
+  }
+  fs.writeFileSync('pools.json', JSON.stringify(pools))
 
   if (ctx.isHead) process.exit()
 });
