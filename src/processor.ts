@@ -33,10 +33,10 @@ export const processor = new EvmBatchProcessor()
         filter: [[thena.events.Transfer.topic, thena.events.Approval.topic]],
         data: evmLogData,
     })
-    .addLog(ROUTER_V2_ADDRESS, {
-        filter: [[routerV2.events.Swap.topic]],
-        data: evmLogData,
-    })
+    // .addLog(ROUTER_V2_ADDRESS, {
+    //     filter: [[routerV2.events.Swap.topic]],
+    //     data: evmLogData,
+    // })
     .addLog(SOLIDLY_FACTORY, {
         filter: [[solidlyFactory.events.PairCreated.topic]],
         data: evmLogData,

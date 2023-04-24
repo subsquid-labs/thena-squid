@@ -1,20 +1,19 @@
 import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
-import {get} from 'http'
 import {ALGEBRA_FACTORY, SOLIDLY_FACTORY} from '../config'
 import {ProcessorItem} from '../processor'
 import * as solidlyFactory from '../abi/solidlyFactory'
-import {PoolCreation} from './types'
+import {Action, ActionKind, PoolActionDataType} from './types'
 
 export function isSolidlyItem(item: ProcessorItem) {
     return item.address === SOLIDLY_FACTORY
 }
 
-export async function getSolidlyPairCreations(
+export async function getSolidlyFactoryActions(
     ctx: BatchHandlerContext<unknown, unknown>,
     block: EvmBlock,
     item: ProcessorItem
 ) {
-    const creations: PoolCreation[] = []
+    const actions: Action[] = []
 
     switch (item.kind) {
         case 'evmLog': {
@@ -24,12 +23,16 @@ export async function getSolidlyPairCreations(
                     ctx.log.debug(`processing Pair creation event...`)
                     const event = solidlyFactory.events.PairCreated.decode(item.evmLog)
 
-                    creations.push({
-                        id: event.pair.toLowerCase(),
+                    actions.push({
+                        kind: ActionKind.Pool,
                         block,
                         transaction: item.transaction,
-                        token0: event.token0.toLowerCase(),
-                        token1: event.token1.toLowerCase(),
+                        data: {
+                            id: event.pair.toLowerCase(),
+                            type: PoolActionDataType.Creation,
+                            token0: event.token0.toLowerCase(),
+                            token1: event.token1.toLowerCase(),
+                        },
                     })
 
                     break
@@ -42,5 +45,5 @@ export async function getSolidlyPairCreations(
         }
     }
 
-    return creations
+    return actions
 }

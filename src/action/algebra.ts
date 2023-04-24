@@ -1,20 +1,19 @@
 import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
-import {get} from 'http'
 import {ALGEBRA_FACTORY} from '../config'
 import {ProcessorItem} from '../processor'
 import * as algebraFactory from '../abi/algebraFactory'
-import {PoolCreation} from './types'
+import {Action, ActionKind, PoolActionDataType, UserActionDataType} from './types'
 
 export function isAlgebraItem(item: ProcessorItem) {
     return item.address === ALGEBRA_FACTORY
 }
 
-export async function getAlgebraPoolCreations(
+export async function getAlgebraFactoryActions(
     ctx: BatchHandlerContext<unknown, unknown>,
     block: EvmBlock,
     item: ProcessorItem
 ) {
-    const creations: PoolCreation[] = []
+    const actions: Action[] = []
 
     switch (item.kind) {
         case 'evmLog': {
@@ -24,12 +23,16 @@ export async function getAlgebraPoolCreations(
                     ctx.log.debug(`processing Pool creation event...`)
                     const event = algebraFactory.events.Pool.decode(item.evmLog)
 
-                    creations.push({
-                        id: event.pool.toLowerCase(),
+                    actions.push({
+                        kind: ActionKind.Pool,
                         block,
                         transaction: item.transaction,
-                        token0: event.token0.toLowerCase(),
-                        token1: event.token1.toLowerCase(),
+                        data: {
+                            id: event.pool.toLowerCase(),
+                            type: PoolActionDataType.Creation,
+                            token0: event.token0.toLowerCase(),
+                            token1: event.token1.toLowerCase(),
+                        },
                     })
 
                     break
@@ -42,5 +45,5 @@ export async function getAlgebraPoolCreations(
         }
     }
 
-    return creations
+    return actions
 }

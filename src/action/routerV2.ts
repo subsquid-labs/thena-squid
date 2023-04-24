@@ -1,10 +1,8 @@
-import assert from 'assert'
 import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
 import * as pair from '../abi/solidlyPair'
-import * as routerV2 from '../abi/routerV2'
 import * as solidlyPair from '../abi/solidlyPair'
 import {ProcessorItem} from '../processor'
-import {Interaction, InteractionType, ProviderType} from './types'
+import {Action, ActionKind, PoolActionDataType, UserActionDataType} from './types'
 import {ROUTER_V2_ADDRESS} from '../config'
 
 export function isRouterV2Item(item: ProcessorItem) {
@@ -14,12 +12,12 @@ export function isRouterV2Item(item: ProcessorItem) {
     )
 }
 
-export async function getRouterV2Interactions(
+export async function getRouterV2Actions(
     ctx: BatchHandlerContext<unknown, unknown>,
     block: EvmBlock,
     item: ProcessorItem
-): Promise<Interaction[]> {
-    const interactions: Interaction[] = []
+): Promise<Action[]> {
+    const actions: Action[] = []
 
     switch (item.kind) {
         case 'evmLog': {
@@ -45,17 +43,29 @@ export async function getRouterV2Interactions(
                         amount1 = event.amount1Out.toBigInt()
                     }
 
-                    interactions.push({
-                        id: to,
-                        type: InteractionType.Swap,
+                    actions.push({
+                        kind: ActionKind.User,
                         block,
                         transaction: item.transaction,
-                        provider: ProviderType.Solidly,
-                        // tokenIn,
-                        amount0,
-                        amount1,
-                        pool,
+                        data: {
+                            id: to,
+                            type: UserActionDataType.Swap,
+                            amount0,
+                            amount1,
+                            pool,
+                        },
                     })
+
+                    actions.push({
+                        kind: ActionKind.Pool,
+                        block,
+                        transaction: item.transaction,
+                        data: {
+                            id: pool,
+                            type: PoolActionDataType.Unknown,
+                        },
+                    })
+
                     break
                 }
                 default: {
@@ -66,16 +76,19 @@ export async function getRouterV2Interactions(
         }
         case 'transaction': {
             if (item.transaction.from != null) {
-                interactions.push({
-                    id: item.transaction.from,
-                    type: InteractionType.Unknown,
+                actions.push({
+                    kind: ActionKind.User,
                     block,
                     transaction: item.transaction,
+                    data: {
+                        id: item.transaction.from,
+                        type: UserActionDataType.Unknown,
+                    },
                 })
             }
             break
         }
     }
 
-    return interactions
+    return actions
 }

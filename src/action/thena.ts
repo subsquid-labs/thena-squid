@@ -2,18 +2,18 @@ import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
 import * as thena from '../abi/bep20'
 import {THENA_ADDRESS, ZERO_ADDRESS} from '../config'
 import {ProcessorItem} from '../processor'
-import {Interaction, InteractionType} from './types'
+import {Action, ActionKind, UserActionDataType} from './types'
 
 export function isThenaItem(item: ProcessorItem) {
     return item.address === THENA_ADDRESS
 }
 
-export async function getThenaInteractions(
+export async function getThenaActions(
     ctx: BatchHandlerContext<unknown, unknown>,
     block: EvmBlock,
     item: ProcessorItem
-): Promise<Interaction[]> {
-    const interactions: Interaction[] = []
+): Promise<Action[]> {
+    const actions: Action[] = []
 
     switch (item.kind) {
         case 'evmLog': {
@@ -28,43 +28,55 @@ export async function getThenaInteractions(
                     const to = event.to.toLowerCase()
 
                     if (from !== ZERO_ADDRESS) {
-                        interactions.push({
-                            id: from,
-                            type: InteractionType.Balance,
+                        actions.push({
+                            kind: ActionKind.User,
                             block,
                             transaction: item.transaction,
-                            amount: -amount,
+                            data: {
+                                id: from,
+                                type: UserActionDataType.Balance,
+                                amount: -amount,
+                            },
                         })
                     }
 
                     if (to !== ZERO_ADDRESS) {
-                        interactions.push({
-                            id: to,
-                            type: InteractionType.Balance,
+                        actions.push({
+                            kind: ActionKind.User,
                             block,
                             transaction: item.transaction,
-                            amount,
+                            data: {
+                                id: to,
+                                type: UserActionDataType.Balance,
+                                amount,
+                            },
                         })
                     }
 
                     break
                 }
                 case thena.events.Approval.topic: {
-                    // const e = thena.events.Approval.decode(item.evmLog)
+                    const event = thena.events.Approval.decode(item.evmLog)
 
-                    // interaction = {
-                    //     id: e.spender.toLowerCase(),
-                    //     type: InteractionType.Unknown,
-                    //     block,
-                    //     transaction: item.transaction,
-                    // }
+                    actions.push({
+                        kind: ActionKind.User,
+                        block,
+                        transaction: item.transaction,
+                        data: {
+                            id: event.owner,
+                            type: UserActionDataType.Unknown,
+                        },
+                    })
 
-                    // interactions.push({
-                    //     id: e.owner.toLowerCase(),
-                    //     type: InteractionType.Unknown,
-                    //     block,
-                    //     transaction: item.transaction,
-                    // })
+                    actions.push({
+                        kind: ActionKind.User,
+                        block,
+                        transaction: item.transaction,
+                        data: {
+                            id: event.spender,
+                            type: UserActionDataType.Unknown,
+                        },
+                    })
                     break
                 }
                 default: {
@@ -76,16 +88,19 @@ export async function getThenaInteractions(
         case 'transaction': {
             if (item.transaction.from != null) {
                 ctx.log.debug(`processing transaction...`)
-                interactions.push({
-                    id: item.transaction.from,
-                    type: InteractionType.Unknown,
+                actions.push({
+                    kind: ActionKind.User,
                     block,
                     transaction: item.transaction,
+                    data: {
+                        id: item.transaction.from,
+                        type: UserActionDataType.Unknown,
+                    },
                 })
             }
             break
         }
     }
 
-    return interactions
+    return actions
 }
