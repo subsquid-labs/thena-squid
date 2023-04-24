@@ -51,21 +51,12 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       if (i.kind !== 'evmLog') continue
 
       if (i.address === SOLIDLY_FACTORY) {
-        let {
-          token0,
-          token1,
-          stable,
-          pair
-        } = solidlyPoolFactoryAbi.events.PairCreated.decode(i.evmLog)
+        let { pair } = solidlyPoolFactoryAbi.events.PairCreated.decode(i.evmLog)
         solidlyPools.push(pair)
       }
 
       if (i.address === ALGEBRA_FACTORY) {
-        let {
-          token0,
-          token1,
-          pool
-        } = algebraPoolFactoryAbi.events.Pool.decode(i.evmLog)
+        let { pool } = algebraPoolFactoryAbi.events.Pool.decode(i.evmLog)
         algebraPools.push(pool)
       }
     }
