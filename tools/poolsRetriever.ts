@@ -1,13 +1,10 @@
-import {Database, LocalDest} from '@subsquid/file-store'
-import {EvmBatchProcessor} from '@subsquid/evm-processor'
-import {lookupArchive} from '@subsquid/archive-registry'
-
-import * as solidlyPoolFactoryAbi from './abi/solidly-pool-factory'
-import * as algebraPoolFactoryAbi from './abi/algebra-pool-factory'
 import assert from 'assert'
-
-const SOLIDLY_FACTORY = '0xafd89d21bdb66d00817d4153e055830b1c2b3970'
-const ALGEBRA_FACTORY = '0x306f06c147f064a010530292a1eb6737c3e378e4'
+import {lookupArchive} from '@subsquid/archive-registry'
+import {EvmBatchProcessor} from '@subsquid/evm-processor'
+import {Database, LocalDest} from '@subsquid/file-store'
+import * as algebraPoolFactoryAbi from '../src/abi/algebraFactory'
+import * as solidlyPoolFactoryAbi from '../src/abi/solidlyFactory'
+import {ALGEBRA_FACTORY, SOLIDLY_FACTORY} from '../src/config'
 
 const earliestPairFactoryDeploymentBlock = 24468802
 
@@ -48,7 +45,7 @@ type Metadata = {
 
 let db = new Database({
     tables: {},
-    dest: new LocalDest('../../assets'),
+    dest: new LocalDest('../assets'),
     chunkSizeMb: 0,
     syncIntervalBlocks: 10,
     hooks: {
