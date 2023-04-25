@@ -79,6 +79,10 @@
       "open": {
         "description": "Open a local browser window",
         "cmd": ["npx", "--yes", "opener"]
+      },
+      "retrieve": {
+        "description": "Retrieve factories pools",
+        "cmd": ["npx", "--yes", "ts-node", "./tools/poolsRetriever"]
       }
     }
   }
