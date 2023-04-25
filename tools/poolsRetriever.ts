@@ -43,11 +43,13 @@ type Metadata = {
     pools: Record<string, string[]>
 }
 
+let isReady = false
+
 let db = new Database({
     tables: {},
-    dest: new LocalDest('../assets'),
-    chunkSizeMb: 0,
-    syncIntervalBlocks: 10,
+    dest: new LocalDest('./assets'),
+    chunkSizeMb: Infinity,
+    syncIntervalBlocks: 1,
     hooks: {
         async onConnect(dest) {
             if (await dest.exists('pools.json')) {
@@ -71,12 +73,14 @@ let db = new Database({
                 },
             }
             await dest.writeFile('pools.json', JSON.stringify(metadata))
+
+            isReady = true
         },
     },
 })
 
 processor.run(db, async (ctx) => {
-    if (ctx.isHead) process.exit()
+    if (isReady) process.exit()
 
     for (let c of ctx.blocks) {
         for (let i of c.items) {
