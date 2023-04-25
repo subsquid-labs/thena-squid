@@ -7,6 +7,7 @@ import * as solidlyFactory from './abi/solidlyFactory'
 import * as algebraPool from './abi/algebraPool'
 import * as algebraFactory from './abi/algebraFactory'
 import {THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS, SOLIDLY_FACTORY, ALGEBRA_FACTORY} from './config'
+import fs from 'fs'
 
 const transactionData = {
     transaction: {
@@ -22,6 +23,8 @@ const evmLogData = {
         data: true,
     },
 } as const
+
+const poolMetadata = getPreIndexedPools()
 
 export const processor = new EvmBatchProcessor()
     .setBlockRange({from: 24468802})
@@ -41,24 +44,29 @@ export const processor = new EvmBatchProcessor()
         filter: [[solidlyFactory.events.PairCreated.topic]],
         data: evmLogData,
     })
-    .addLog([], {
-        filter: [
-            [
-                solidlyPair.events.Swap.topic,
-                solidlyPair.events.Sync.topic,
-                // solidlyPair.events.Mint.topic,
-                // solidlyPair.events.Burn.topic,
-            ],
-        ],
+    .addLog(poolMetadata.pools[SOLIDLY_FACTORY], {
+        filter: [[solidlyPair.events.Swap.topic, solidlyPair.events.Sync.topic]],
         data: evmLogData,
+        range: {from: 0, to: poolMetadata.block},
+    })
+    .addLog([], {
+        filter: [[solidlyPair.events.Swap.topic, solidlyPair.events.Sync.topic]],
+        data: evmLogData,
+        range: {from: poolMetadata.block + 1},
     })
     .addLog(ALGEBRA_FACTORY, {
         filter: [[algebraFactory.events.Pool.topic]],
         data: evmLogData,
     })
+    .addLog(poolMetadata.pools[ALGEBRA_FACTORY], {
+        filter: [[algebraPool.events.Swap.topic]],
+        data: evmLogData,
+        range: {from: 0, to: poolMetadata.block},
+    })
     .addLog([], {
         filter: [[algebraPool.events.Swap.topic]],
         data: evmLogData,
+        range: {from: poolMetadata.block + 1},
     })
     .addTransaction([THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS], {
         sighash: [],
@@ -66,3 +74,14 @@ export const processor = new EvmBatchProcessor()
     })
 
 export type ProcessorItem = BatchProcessorItem<typeof processor>
+
+type PoolsMetadata = {
+    block: number
+    pools: Record<string, string[]>
+}
+
+function getPreIndexedPools(): PoolsMetadata {
+    const file = fs.readFileSync('./assets/pools.json', 'utf-8')
+    const metadata: PoolsMetadata = JSON.parse(file)
+    return metadata
+}
