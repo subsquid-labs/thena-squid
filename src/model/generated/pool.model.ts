@@ -16,14 +16,14 @@ export class Pool {
     @Column_("text", {nullable: false})
     token0!: string
 
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    reserved0!: bigint
-
     @Column_("text", {nullable: false})
     token1!: string
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    reserved1!: bigint
+    reserve0!: bigint
+
+    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    reserve1!: bigint
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     liquidity!: bigint

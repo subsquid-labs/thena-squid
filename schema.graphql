@@ -2,6 +2,7 @@ type User @entity {
     id: ID!
     balance: BigInt!
     firstInteractAt: DateTime!
+    trades: [Trade!]! @derivedFrom(field: "user")
 }
 
 type Trade @entity {
@@ -21,9 +22,28 @@ type Pool @entity {
     id: ID!
     factory: String!
     token0: String!
-    reserved0: BigInt!
     token1: String!
-    reserved1: BigInt!
+    reserve0: BigInt!
+    reserve1: BigInt!
     liquidity: BigInt!
     # minimumLiquidity: BigInt!
+}
+
+type LiquidityPosition @entity {
+    id: ID!
+    user: User!
+    pool: Pool!
+    value: BigInt!
+    updates: [LiquidityPositionUpdate!]! @derivedFrom(field: "position")
+}
+
+type LiquidityPositionUpdate @entity {
+    id: ID!
+    blockNumber: Int!
+    timestamp: DateTime!
+    txHash: String!
+    position: LiquidityPosition!
+    amount: BigInt!
+    amount0: BigInt!
+    amount1: BigInt!
 }

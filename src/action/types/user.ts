@@ -4,8 +4,7 @@ export enum UserActionDataType {
     Unknown,
     Balance,
     Swap,
-    Mint,
-    Burn,
+    Liquidity,
 }
 
 export interface BaseUserActionData {
@@ -25,11 +24,21 @@ export interface BalanceUserActionData extends BaseUserActionData {
     amount: bigint
 }
 
+export interface LiquidityUserActionData extends BaseUserActionData {
+    type: UserActionDataType.Liquidity
+    amount: bigint
+    pool: string
+}
+
 export interface UnknownUserActionData extends BaseUserActionData {
     type: UserActionDataType.Unknown
 }
 
-export type UserActionData = SwapUserActionData | BalanceUserActionData | UnknownUserActionData
+export type UserActionData =
+    | SwapUserActionData
+    | BalanceUserActionData
+    | LiquidityUserActionData
+    | UnknownUserActionData
 
 export interface UserAction<T extends UserActionData = UserActionData> extends BaseAction<T> {
     kind: ActionKind.User

@@ -1,8 +1,9 @@
 import assert from 'assert'
 import {User, Pool, Trade} from '../model'
-import {getTimestamp, last} from '../utils/misc'
+import {last} from '../utils/misc'
 import {UserAction, UserActionDataType, BalanceUserAction, SwapUserAction} from '../action/types'
 import {CommonContext, Storage} from './types'
+import {createTradeId} from '../utils/ids'
 
 export function processUserAction(
     ctx: CommonContext<Storage<{users: User; pools: Pool; trades: Trade[]}>>,
@@ -17,24 +18,20 @@ export function processUserAction(
             processSwapAction(ctx, action as SwapUserAction)
             break
         }
+        default: {
+            getOrCreateUser(ctx, action)
+            break
+        }
     }
 }
 
 function processBalanceAction(ctx: CommonContext<Storage<{users: User}>>, action: BalanceUserAction) {
-    let user = ctx.store.users.get(action.data.id)
-    if (user == null) {
-        user = new User({
-            id: action.data.id,
-            firstInteractAt: getTimestamp(action.block),
-            balance: 0n,
-        })
-        ctx.store.users.set(user.id, user)
-    }
+    const user = getOrCreateUser(ctx, action)
 
     user.balance += action.data.amount
-    assert(user.balance >= 0)
+    ctx.log.debug(`Balance of user ${user.id} updated to ${user.balance} (${action.data.amount})`)
 
-    ctx.log.info(`Balance of user ${user.id} updated to ${user.balance}`)
+    // assert(user.balance >= 0)
 }
 
 function processSwapAction(
@@ -44,15 +41,7 @@ function processSwapAction(
     const pool = ctx.store.pools.get(action.data.pool)
     if (pool == null) return // not our factory pool
 
-    let user = ctx.store.users.get(action.data.id)
-    if (user == null) {
-        user = new User({
-            id: action.data.id,
-            firstInteractAt: getTimestamp(action.block),
-            balance: 0n,
-        })
-        ctx.store.users.set(user.id, user)
-    }
+    const user = getOrCreateUser(ctx, action)
 
     let txTrades = ctx.store.trades.get(action.transaction.id)
     if (txTrades == null) {
@@ -90,10 +79,6 @@ function processSwapAction(
     }
 }
 
-function createTradeId(txId: string, index: number) {
-    return `${txId}-${index.toString().padStart(5, '0')}`
-}
-
 function convertTokenValues(data: {token0: string; amount0: bigint; token1: string; amount1: bigint}) {
     const {token0, amount0, token1, amount1} = data
 
@@ -114,4 +99,26 @@ function convertTokenValues(data: {token0: string; amount0: bigint; token1: stri
     } else {
         throw new Error(`Unexpected case: amount0: ${amount0}, amount1: ${amount1}`)
     }
+}
+
+function createUser(ctx: CommonContext<Storage<{users: User}>>, action: UserAction) {
+    const user = new User({
+        id: action.data.id,
+        firstInteractAt: new Date(action.block.timestamp),
+        balance: 0n,
+    })
+    ctx.store.users.set(user.id, user)
+
+    ctx.log.debug(`User ${user.id} created`)
+
+    return user
+}
+
+function getOrCreateUser(ctx: CommonContext<Storage<{users: User}>>, action: UserAction) {
+    let user = ctx.store.users.get(action.data.id)
+    if (user == null) {
+        user = createUser(ctx, action)
+    }
+
+    return user
 }
