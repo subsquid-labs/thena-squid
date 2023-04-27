@@ -11,8 +11,8 @@ import {
     SyncPoolAction,
     UnknownPoolAction,
     UnknownUserAction,
-} from './types'
-import {LiquidityPositionActionType, ValueUpdateLiquidityPositionAction} from './types/liquidityPosition'
+} from '../types/action'
+import {LiquidityPositionActionType, ValueUpdateLiquidityPositionAction} from '../types/action/liquidityPosition'
 import {createLiquidityPositionId} from '../utils/ids'
 
 export function isSolidlyPairItem(item: ProcessorItem) {

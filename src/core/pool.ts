@@ -1,7 +1,7 @@
 import assert from 'assert'
-import {CreatePoolAction, LiquidityUpdatePoolAction, PoolAction, PoolActionType, SyncPoolAction} from '../action'
+import {CreatePoolAction, LiquidityUpdatePoolAction, PoolAction, PoolActionType, SyncPoolAction} from '../mapping'
 import {Pool, Trade, User} from '../model'
-import {CommonContext, Storage} from './types'
+import {CommonContext, Storage} from '../types'
 
 export function processPoolAction(ctx: CommonContext<Storage<{pools: Pool}>>, action: PoolAction) {
     switch (action.type) {

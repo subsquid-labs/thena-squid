@@ -1,5 +1,5 @@
 import {TypeormDatabase} from '@subsquid/typeorm-store'
-import {getActions} from './action'
+import {getActions} from './mapping'
 import {processActions} from './core'
 import {processor} from './processor'
 import {PoolManager} from './utils/pairManager'

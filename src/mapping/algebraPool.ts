@@ -3,7 +3,7 @@ import * as algebraPool from '../abi/algebraPool'
 import {ALGEBRA_FACTORY} from '../config'
 import {ProcessorItem} from '../processor'
 import {PoolManager} from '../utils/pairManager'
-import {Action, ActionKind, PoolActionType, SwapUserAction, UnknownPoolAction, UserActionType} from './types'
+import {Action, ActionKind, PoolActionType, SwapUserAction, UnknownPoolAction, UserActionType} from '../types/action'
 
 export function isAlgebraPoolItem(item: ProcessorItem) {
     return PoolManager.instance.isPool(ALGEBRA_FACTORY, item.address)

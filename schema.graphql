@@ -47,3 +47,14 @@ type LiquidityPositionUpdate @entity {
     amount0: BigInt!
     amount1: BigInt!
 }
+
+type Token @entity {
+    id: ID!
+    ethPrice: BigInt!
+    metadata: TokenMetadata!
+}
+
+type TokenMetadata {
+    recalculatedAt: DateTime!
+    largestBnbReserve: BigInt!
+}

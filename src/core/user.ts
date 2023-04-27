@@ -1,8 +1,8 @@
 import assert from 'assert'
 import {User, Pool, Trade} from '../model'
 import {last} from '../utils/misc'
-import {UserAction, UserActionType, BalanceUserAction, SwapUserAction} from '../action/types'
-import {CommonContext, Storage} from './types'
+import {UserAction, UserActionType, BalanceUserAction, SwapUserAction} from '../types/action'
+import {CommonContext, Storage} from '../types'
 import {createTradeId} from '../utils/ids'
 
 export function processUserAction(

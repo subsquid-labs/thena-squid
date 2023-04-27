@@ -2,14 +2,14 @@ import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
 import {ProcessorItem} from '../processor'
 import {getRouterV2Actions, isRouterV2Item} from './routerV2'
 import {getThenaActions, isThenaItem} from './thena'
-import {Action} from './types'
+import {Action} from '../types/action'
 import {getRouterV3Actions, isRouterV3Item} from './routerV3'
 import {getAlgebraFactoryActions, isAlgebraFactoryItem} from './algebraFactory'
 import {getSolidlyFactoryActions, isSolidlyFactoryItem} from './solidlyFactory'
 import {getSolidlyPairActions, isSolidlyPairItem} from './solidlyPair'
 import {getAlgebraPoolActions, isAlgebraPoolItem} from './algebraPool'
 
-export * from './types'
+export * from '../types/action'
 
 export async function getActions(ctx: BatchHandlerContext<unknown, ProcessorItem>): Promise<Action[]> {
     const actions: Action[] = []

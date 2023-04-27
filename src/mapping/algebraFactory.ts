@@ -2,7 +2,7 @@ import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
 import {ALGEBRA_FACTORY} from '../config'
 import {ProcessorItem} from '../processor'
 import * as algebraFactory from '../abi/algebraFactory'
-import {Action, CreatePoolAction} from './types'
+import {Action, CreatePoolAction} from '../types/action'
 import {PoolManager} from '../utils/pairManager'
 
 export function isAlgebraFactoryItem(item: ProcessorItem) {

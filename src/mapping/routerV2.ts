@@ -1,14 +1,13 @@
 import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
-import * as algebraPool from '../abi/algebraPool'
 import {ProcessorItem} from '../processor'
-import {Action, UnknownUserAction} from './types'
-import {ROUTER_V3_ADDRESS} from '../config'
+import {Action, UnknownUserAction} from '../types/action'
+import {ROUTER_V2_ADDRESS} from '../config'
 
-export function isRouterV3Item(item: ProcessorItem) {
-    return item.address === ROUTER_V3_ADDRESS
+export function isRouterV2Item(item: ProcessorItem) {
+    return item.address === ROUTER_V2_ADDRESS
 }
 
-export function getRouterV3Actions(ctx: BatchHandlerContext<unknown, unknown>, block: EvmBlock, item: ProcessorItem) {
+export function getRouterV2Actions(ctx: BatchHandlerContext<unknown, unknown>, block: EvmBlock, item: ProcessorItem) {
     const actions: Action[] = []
 
     switch (item.kind) {

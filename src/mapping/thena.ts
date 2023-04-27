@@ -2,7 +2,7 @@ import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
 import * as thena from '../abi/bep20'
 import {THENA_ADDRESS, ZERO_ADDRESS} from '../config'
 import {ProcessorItem} from '../processor'
-import {Action, ActionKind, BalanceUserAction, UnknownUserAction, UserActionType} from './types'
+import {Action, ActionKind, BalanceUserAction, UnknownUserAction, UserActionType} from '../types/action'
 
 export function isThenaItem(item: ProcessorItem) {
     return item.address === THENA_ADDRESS

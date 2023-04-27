@@ -1,5 +1,7 @@
 import {BatchHandlerContext} from '@subsquid/evm-processor'
 
+export * from './action'
+
 export type CommonContext<Store> = Omit<BatchHandlerContext<Store, unknown>, 'blocks'>
 
 export type Storage<T extends Record<string, any>> = {

@@ -1,8 +1,8 @@
 import assert from 'assert'
 import {User, Pool, LiquidityPosition, LiquidityPositionUpdate} from '../model'
-import {CommonContext, Storage} from './types'
+import {CommonContext, Storage} from '../types'
 import {createLiquidityPositionUpdateId} from '../utils/ids'
-import {LiquidityPositionAction, LiquidityPositionActionType, ValueUpdateLiquidityPositionAction} from '../action'
+import {LiquidityPositionAction, LiquidityPositionActionType, ValueUpdateLiquidityPositionAction} from '../mapping'
 
 export function processLiquidityPositionAction(
     ctx: CommonContext<

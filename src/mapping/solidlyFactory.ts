@@ -2,7 +2,7 @@ import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
 import {SOLIDLY_FACTORY} from '../config'
 import {ProcessorItem} from '../processor'
 import * as solidlyFactory from '../abi/solidlyFactory'
-import {Action, CreatePoolAction} from './types'
+import {Action, CreatePoolAction} from '../types/action'
 import {PoolManager} from '../utils/pairManager'
 
 export function isSolidlyFactoryItem(item: ProcessorItem) {
