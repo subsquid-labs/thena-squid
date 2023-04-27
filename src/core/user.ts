@@ -1,7 +1,7 @@
 import assert from 'assert'
 import {User, Pool, Trade} from '../model'
 import {last} from '../utils/misc'
-import {UserAction, UserActionDataType, BalanceUserAction, SwapUserAction} from '../action/types'
+import {UserAction, UserActionType, BalanceUserAction, SwapUserAction} from '../action/types'
 import {CommonContext, Storage} from './types'
 import {createTradeId} from '../utils/ids'
 
@@ -9,13 +9,13 @@ export function processUserAction(
     ctx: CommonContext<Storage<{users: User; pools: Pool; trades: Trade[]}>>,
     action: UserAction
 ) {
-    switch (action.data.type) {
-        case UserActionDataType.Balance: {
-            processBalanceAction(ctx, action as BalanceUserAction)
+    switch (action.type) {
+        case UserActionType.Balance: {
+            processBalanceAction(ctx, action)
             break
         }
-        case UserActionDataType.Swap: {
-            processSwapAction(ctx, action as SwapUserAction)
+        case UserActionType.Swap: {
+            processSwapAction(ctx, action)
             break
         }
         default: {
@@ -38,7 +38,7 @@ function processSwapAction(
     ctx: CommonContext<Storage<{users: User; pools: Pool; trades: Trade[]}>>,
     action: SwapUserAction
 ) {
-    const pool = ctx.store.pools.get(action.data.pool)
+    const pool = ctx.store.pools.get(action.data.poolId)
     if (pool == null) return // not our factory pool
 
     const user = getOrCreateUser(ctx, action)
@@ -68,14 +68,14 @@ function processSwapAction(
             amountIn,
             tokenOut,
             amountOut,
-            routes: [action.data.pool],
+            routes: [action.data.poolId],
         })
         txTrades.push(trade)
     } else {
         trade.amountOut = amountOut
         trade.tokenOut = tokenOut
         trade.user = user
-        trade.routes.push(action.data.pool)
+        trade.routes.push(action.data.poolId)
     }
 }
 

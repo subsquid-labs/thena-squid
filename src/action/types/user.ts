@@ -1,6 +1,6 @@
 import {ActionKind, BaseAction} from './common'
 
-export enum UserActionDataType {
+export enum UserActionType {
     Unknown,
     Balance,
     Swap,
@@ -8,43 +8,34 @@ export enum UserActionDataType {
 }
 
 export interface BaseUserActionData {
-    type: UserActionDataType
     id: string
 }
 
+export abstract class BaseUserAction<T extends BaseUserActionData = BaseUserActionData> extends BaseAction<T> {
+    abstract readonly type: UserActionType
+
+    readonly kind: ActionKind.User = ActionKind.User
+}
+export interface BalanceUserActionData extends BaseUserActionData {
+    amount: bigint
+}
+
+export class BalanceUserAction extends BaseUserAction<BalanceUserActionData> {
+    readonly type = UserActionType.Balance
+}
+
 export interface SwapUserActionData extends BaseUserActionData {
-    type: UserActionDataType.Swap
     amount0: bigint
     amount1: bigint
-    pool: string
+    poolId: string
 }
 
-export interface BalanceUserActionData extends BaseUserActionData {
-    type: UserActionDataType.Balance
-    amount: bigint
+export class SwapUserAction extends BaseUserAction<SwapUserActionData> {
+    readonly type = UserActionType.Swap
 }
 
-export interface LiquidityUserActionData extends BaseUserActionData {
-    type: UserActionDataType.Liquidity
-    amount: bigint
-    pool: string
+export class UnknownUserAction extends BaseUserAction {
+    readonly type = UserActionType.Unknown
 }
 
-export interface UnknownUserActionData extends BaseUserActionData {
-    type: UserActionDataType.Unknown
-}
-
-export type UserActionData =
-    | SwapUserActionData
-    | BalanceUserActionData
-    | LiquidityUserActionData
-    | UnknownUserActionData
-
-export interface UserAction<T extends UserActionData = UserActionData> extends BaseAction<T> {
-    kind: ActionKind.User
-    data: T
-}
-
-export type BalanceUserAction = UserAction<BalanceUserActionData>
-export type SwapUserAction = UserAction<SwapUserActionData>
-export type UnknownUserAction = UserAction<UnknownUserActionData>
+export type UserAction = BalanceUserAction | SwapUserAction | UnknownUserAction

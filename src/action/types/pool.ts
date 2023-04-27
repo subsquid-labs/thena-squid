@@ -1,49 +1,51 @@
 import {ActionKind, BaseAction} from './common'
 
-export enum PoolActionDataType {
+export enum PoolActionType {
     Unknown,
     Creation,
     Sync,
-    Liquidity,
+    LiquidityUpdate,
 }
 
 export interface BasePoolActionData {
-    type: PoolActionDataType
     id: string
 }
 
-export interface CreationPoolActionData extends BasePoolActionData {
-    type: PoolActionDataType.Creation
+export abstract class BasePoolAction<T extends BasePoolActionData = BasePoolActionData> extends BaseAction<T> {
+    abstract readonly type: PoolActionType
+
+    readonly kind = ActionKind.Pool
+}
+
+export interface CreatePoolActionData extends BasePoolActionData {
     token0: string
     token1: string
     factory: string
 }
 
+export class CreatePoolAction extends BasePoolAction<CreatePoolActionData> {
+    readonly type = PoolActionType.Creation
+}
+
 export interface SyncPoolActionData extends BasePoolActionData {
-    type: PoolActionDataType.Sync
     amount0: bigint
     amount1: bigint
 }
 
-export interface LiquidityPoolActionData extends BasePoolActionData {
-    type: PoolActionDataType.Liquidity
+export class SyncPoolAction extends BasePoolAction<SyncPoolActionData> {
+    readonly type = PoolActionType.Sync
+}
+
+export interface LiquidityUpdatePoolActionData extends BasePoolActionData {
     amount: bigint
 }
 
-export interface UnknownPoolActionData extends BasePoolActionData {
-    type: PoolActionDataType.Unknown
+export class LiquidityUpdatePoolAction extends BasePoolAction<LiquidityUpdatePoolActionData> {
+    readonly type = PoolActionType.LiquidityUpdate
 }
 
-export type PoolActionData =
-    | CreationPoolActionData
-    | SyncPoolActionData
-    | LiquidityPoolActionData
-    | UnknownPoolActionData
-
-export interface PoolAction<T extends PoolActionData = PoolActionData> extends BaseAction<T> {
-    kind: ActionKind.Pool
+export class UnknownPoolAction extends BasePoolAction {
+    readonly type = PoolActionType.Unknown
 }
 
-export type CreationPoolAction = PoolAction<CreationPoolActionData>
-export type SyncPoolAction = PoolAction<SyncPoolActionData>
-export type LiquidityPoolAction = PoolAction<LiquidityPoolActionData>
+export type PoolAction = CreatePoolAction | SyncPoolAction | LiquidityUpdatePoolAction | UnknownPoolAction

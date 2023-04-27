@@ -3,8 +3,16 @@ import * as solidlyPair from '../abi/solidlyPair'
 import {SOLIDLY_FACTORY, ZERO_ADDRESS} from '../config'
 import {ProcessorItem} from '../processor'
 import {PoolManager} from '../utils/pairManager'
-import {Action, ActionKind, PoolActionDataType, UserActionDataType} from './types'
-import {LiquidityPositionActionDataType} from './types/liquidityPosition'
+import {
+    Action,
+    ActionKind,
+    LiquidityUpdatePoolAction,
+    SwapUserAction,
+    SyncPoolAction,
+    UnknownPoolAction,
+    UnknownUserAction,
+} from './types'
+import {LiquidityPositionActionType, ValueUpdateLiquidityPositionAction} from './types/liquidityPosition'
 import {createLiquidityPositionId} from '../utils/ids'
 
 export function isSolidlyPairItem(item: ProcessorItem) {
@@ -24,59 +32,39 @@ export function getSolidlyPairActions(
                 case solidlyPair.events.Swap.topic: {
                     const event = solidlyPair.events.Swap.decode(item.evmLog)
 
-                    const pool = item.address
-                    const to = event.to.toLowerCase()
+                    const poolId = item.address
+                    const id = event.to.toLowerCase()
 
-                    let amount0: bigint, amount1: bigint
-                    if (event.amount0In.toBigInt() === 0n) {
-                        amount0 = event.amount0Out.toBigInt()
-                        amount1 = -event.amount1In.toBigInt()
-                    } else {
-                        amount0 = -event.amount0In.toBigInt()
-                        amount1 = event.amount1Out.toBigInt()
-                    }
-
+                    const [amount0, amount1] =
+                        event.amount0In.toBigInt() === 0n
+                            ? [event.amount0Out.toBigInt(), -event.amount1In.toBigInt()]
+                            : [-event.amount0In.toBigInt(), event.amount1Out.toBigInt()]
                     if (amount0 === 0n || amount1 === 0n) break
 
-                    actions.push({
-                        kind: ActionKind.User,
-                        block,
-                        transaction: item.transaction,
-                        data: {
-                            id: to,
-                            type: UserActionDataType.Swap,
+                    // to make sure it will be prefetched
+                    actions.push(new UnknownPoolAction(block, item.transaction, {id: poolId}))
+
+                    actions.push(
+                        new SwapUserAction(block, item.transaction, {
+                            id,
                             amount0,
                             amount1,
-                            pool,
-                        },
-                    })
-
-                    actions.push({
-                        kind: ActionKind.Pool,
-                        block,
-                        transaction: item.transaction,
-                        data: {
-                            id: pool,
-                            type: PoolActionDataType.Unknown,
-                        },
-                    })
+                            poolId,
+                        })
+                    )
 
                     break
                 }
                 case solidlyPair.events.Sync.topic: {
                     const event = solidlyPair.events.Sync.decode(item.evmLog)
 
-                    actions.push({
-                        block,
-                        kind: ActionKind.Pool,
-                        transaction: item.transaction,
-                        data: {
+                    actions.push(
+                        new SyncPoolAction(block, item.transaction, {
                             id: item.address,
-                            type: PoolActionDataType.Sync,
                             amount0: event.reserve0.toBigInt(),
                             amount1: event.reserve1.toBigInt(),
-                        },
-                    })
+                        })
+                    )
 
                     break
                 }
@@ -87,88 +75,49 @@ export function getSolidlyPairActions(
                     const from = event.from.toLowerCase()
                     const to = event.to.toLowerCase()
 
-                    const pool = item.address
+                    const poolId = item.address
 
                     // to make sure it will be prefetched
-                    actions.push({
-                        kind: ActionKind.Pool,
-                        block,
-                        transaction: item.transaction,
-                        data: {
-                            id: pool,
-                            type: PoolActionDataType.Unknown,
-                        },
-                    })
+                    actions.push(new UnknownPoolAction(block, item.transaction, {id: poolId}))
 
                     if (from === ZERO_ADDRESS) {
-                        actions.push({
-                            kind: ActionKind.Pool,
-                            block,
-                            transaction: item.transaction,
-                            data: {
-                                id: pool,
-                                type: PoolActionDataType.Liquidity,
+                        actions.push(
+                            new LiquidityUpdatePoolAction(block, item.transaction, {
+                                id: item.address,
                                 amount,
-                            },
-                        })
+                            })
+                        )
                     } else {
-                        actions.push({
-                            kind: ActionKind.User,
-                            block,
-                            transaction: item.transaction,
-                            data: {
-                                id: from,
-                                type: UserActionDataType.Unknown,
-                            },
-                        })
+                        actions.push(new UnknownUserAction(block, item.transaction, {id: from}))
 
-                        actions.push({
-                            kind: ActionKind.LiquidityPosition,
-                            block,
-                            transaction: item.transaction,
-                            data: {
+                        actions.push(
+                            new ValueUpdateLiquidityPositionAction(block, item.transaction, {
                                 id: createLiquidityPositionId(item.address, from),
-                                type: LiquidityPositionActionDataType.Update,
                                 amount: -amount,
-                                user: from,
-                                pool,
-                            },
-                        })
+                                userId: from,
+                                poolId,
+                            })
+                        )
                     }
 
                     if (to === ZERO_ADDRESS && from !== ZERO_ADDRESS) {
-                        actions.push({
-                            kind: ActionKind.Pool,
-                            block,
-                            transaction: item.transaction,
-                            data: {
-                                id: pool,
-                                type: PoolActionDataType.Liquidity,
+                        actions.push(
+                            new LiquidityUpdatePoolAction(block, item.transaction, {
+                                id: item.address,
                                 amount: -amount,
-                            },
-                        })
+                            })
+                        )
                     } else {
-                        actions.push({
-                            kind: ActionKind.User,
-                            block,
-                            transaction: item.transaction,
-                            data: {
-                                id: to,
-                                type: UserActionDataType.Unknown,
-                            },
-                        })
-                        actions.push({
-                            kind: ActionKind.LiquidityPosition,
-                            block,
-                            transaction: item.transaction,
-                            data: {
-                                id: createLiquidityPositionId(item.address, to),
-                                type: LiquidityPositionActionDataType.Update,
+                        actions.push(new UnknownUserAction(block, item.transaction, {id: from}))
+
+                        actions.push(
+                            new ValueUpdateLiquidityPositionAction(block, item.transaction, {
+                                id: createLiquidityPositionId(item.address, from),
                                 amount,
-                                user: to,
-                                pool,
-                            },
-                        })
+                                userId: to,
+                                poolId,
+                            })
+                        )
                     }
                     break
                 }
@@ -181,7 +130,7 @@ export function getSolidlyPairActions(
                 //         transaction: item.transaction,
                 //         data: {
                 //             id: item.address,
-                //             type: PoolActionDataType.Balances,
+                //             type: PoolActionType.Balances,
                 //             amount0: event.amount0.toBigInt(),
                 //             amount1: event.amount1.toBigInt(),
                 //         },
@@ -198,7 +147,7 @@ export function getSolidlyPairActions(
                 //         transaction: item.transaction,
                 //         data: {
                 //             id: item.address,
-                //             type: PoolActionDataType.Balances,
+                //             type: PoolActionType.Balances,
                 //             amount0: -event.amount0.toBigInt(),
                 //             amount1: -event.amount1.toBigInt(),
                 //         },
@@ -215,7 +164,7 @@ export function getSolidlyPairActions(
                 //         transaction: item.transaction,
                 //         data: {
                 //             id: item.address,
-                //             type: PoolActionDataType.Balances,
+                //             type: PoolActionType.Balances,
                 //             amount0: -event.amount0.toBigInt(),
                 //             amount1: -event.amount1.toBigInt(),
                 //         },

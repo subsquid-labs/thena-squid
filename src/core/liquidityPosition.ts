@@ -1,12 +1,8 @@
 import assert from 'assert'
-import {
-    LiquidityPositionAction,
-    LiquidityPositionActionDataType,
-    UpdateLiquidityPositionAction,
-} from '../action/types/liquidityPosition'
 import {User, Pool, LiquidityPosition, LiquidityPositionUpdate} from '../model'
 import {CommonContext, Storage} from './types'
 import {createLiquidityPositionUpdateId} from '../utils/ids'
+import {LiquidityPositionAction, LiquidityPositionActionType, ValueUpdateLiquidityPositionAction} from '../action'
 
 export function processLiquidityPositionAction(
     ctx: CommonContext<
@@ -14,23 +10,24 @@ export function processLiquidityPositionAction(
     >,
     action: LiquidityPositionAction
 ) {
-    switch (action.data.type) {
-        case LiquidityPositionActionDataType.Update:
-            processLiquidityPositionUpdate(ctx, action as UpdateLiquidityPositionAction)
+    switch (action.type) {
+        case LiquidityPositionActionType.ValueUpdate:
+            processLiquidityPositionUpdate(ctx, action)
             break
     }
 }
+
 function processLiquidityPositionUpdate(
     ctx: CommonContext<
         Storage<{users: User; pools: Pool; positions: LiquidityPosition; positionUpdates: LiquidityPositionUpdate[]}>
     >,
-    action: UpdateLiquidityPositionAction
+    action: ValueUpdateLiquidityPositionAction
 ) {
-    const pool = ctx.store.pools.get(action.data.pool)
-    assert(pool != null, `Missing pool ${action.data.pool}`)
+    const pool = ctx.store.pools.get(action.data.poolId)
+    assert(pool != null, `Missing pool ${action.data.poolId}`)
 
-    const user = ctx.store.users.get(action.data.user)
-    assert(user != null, `Missing user ${action.data.user}`)
+    const user = ctx.store.users.get(action.data.userId)
+    assert(user != null, `Missing user ${action.data.userId}`)
 
     let position = ctx.store.positions.get(action.data.id)
     if (position == null) {

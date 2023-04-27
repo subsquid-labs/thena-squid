@@ -1,31 +1,34 @@
 import {ActionKind, BaseAction} from './common'
 
-export enum LiquidityPositionActionDataType {
+export enum LiquidityPositionActionType {
     Unknown,
-    Update,
+    ValueUpdate,
 }
 
 export interface BaseLiquidityPositionActionData {
-    type: LiquidityPositionActionDataType
     id: string
-    user: string
-    pool: string
+    userId: string
+    poolId: string
 }
 
-export interface UpdateLiquidityPositionActionData extends BaseLiquidityPositionActionData {
-    type: LiquidityPositionActionDataType.Update
+export abstract class BaseLiquidityPositionAction<
+    T extends BaseLiquidityPositionActionData = BaseLiquidityPositionActionData
+> extends BaseAction<T> {
+    abstract readonly type: LiquidityPositionActionType
+
+    readonly kind = ActionKind.LiquidityPosition
+}
+
+export interface ValueUpdateLiquidityPositionActionData extends BaseLiquidityPositionActionData {
     amount: bigint
 }
 
-export interface UnknownLiquidityPositionActionData extends BaseLiquidityPositionActionData {
-    type: LiquidityPositionActionDataType.Unknown
+export class ValueUpdateLiquidityPositionAction extends BaseLiquidityPositionAction<ValueUpdateLiquidityPositionActionData> {
+    readonly type = LiquidityPositionActionType.ValueUpdate
 }
 
-export type LiquidityPositionActionData = UpdateLiquidityPositionActionData | UnknownLiquidityPositionActionData
-
-export interface LiquidityPositionAction<T extends LiquidityPositionActionData = LiquidityPositionActionData>
-    extends BaseAction<T> {
-    kind: ActionKind.LiquidityPosition
+export class UnknownLiquidityPositionAction extends BaseLiquidityPositionAction {
+    readonly type = LiquidityPositionActionType.Unknown
 }
 
-export type UpdateLiquidityPositionAction = LiquidityPositionAction<UpdateLiquidityPositionActionData>
+export type LiquidityPositionAction = ValueUpdateLiquidityPositionAction | UnknownLiquidityPositionAction

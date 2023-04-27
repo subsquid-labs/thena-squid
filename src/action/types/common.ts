@@ -6,9 +6,19 @@ export enum ActionKind {
     LiquidityPosition,
 }
 
-export interface BaseAction<T = unknown> {
-    kind: ActionKind
-    block: Pick<EvmBlock, 'id' | 'hash' | 'height' | 'timestamp'>
-    transaction: Pick<EvmTransaction, 'id' | 'hash'>
-    data: T
+export interface IAction<T = unknown> {
+    readonly kind: ActionKind
+    readonly block: Pick<EvmBlock, 'id' | 'hash' | 'height' | 'timestamp'>
+    readonly transaction: Pick<EvmTransaction, 'id' | 'hash'>
+    readonly data: T
+}
+
+export abstract class BaseAction<T = unknown> {
+    abstract readonly kind: ActionKind
+
+    constructor(
+        readonly block: Pick<EvmBlock, 'id' | 'hash' | 'height' | 'timestamp'>,
+        readonly transaction: Pick<EvmTransaction, 'id' | 'hash'>,
+        readonly data: T
+    ) {}
 }

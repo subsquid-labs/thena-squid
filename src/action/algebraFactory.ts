@@ -2,7 +2,7 @@ import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
 import {ALGEBRA_FACTORY} from '../config'
 import {ProcessorItem} from '../processor'
 import * as algebraFactory from '../abi/algebraFactory'
-import {Action, ActionKind, PoolActionDataType, UserActionDataType} from './types'
+import {Action, CreatePoolAction} from './types'
 import {PoolManager} from '../utils/pairManager'
 
 export function isAlgebraFactoryItem(item: ProcessorItem) {
@@ -26,18 +26,14 @@ export function getAlgebraFactoryActions(
 
                     const pool = event.pool.toLowerCase()
 
-                    actions.push({
-                        kind: ActionKind.Pool,
-                        block,
-                        transaction: item.transaction,
-                        data: {
+                    actions.push(
+                        new CreatePoolAction(block, item.transaction, {
                             id: pool,
-                            type: PoolActionDataType.Creation,
                             token0: event.token0.toLowerCase(),
                             token1: event.token1.toLowerCase(),
                             factory: ALGEBRA_FACTORY,
-                        },
-                    })
+                        })
+                    )
 
                     PoolManager.instance.addPool(item.address, pool)
 

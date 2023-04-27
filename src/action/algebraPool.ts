@@ -3,7 +3,7 @@ import * as algebraPool from '../abi/algebraPool'
 import {ALGEBRA_FACTORY} from '../config'
 import {ProcessorItem} from '../processor'
 import {PoolManager} from '../utils/pairManager'
-import {Action, ActionKind, PoolActionDataType, UserActionDataType} from './types'
+import {Action, ActionKind, PoolActionType, SwapUserAction, UnknownPoolAction, UserActionType} from './types'
 
 export function isAlgebraPoolItem(item: ProcessorItem) {
     return PoolManager.instance.isPool(ALGEBRA_FACTORY, item.address)
@@ -23,33 +23,22 @@ export function getAlgebraPoolActions(
                     const event = algebraPool.events.Swap.decode(item.evmLog)
 
                     const id = event.recipient
-                    const pool = item.address
+                    const poolId = item.address
 
                     const amount0 = event.amount0.toBigInt()
                     const amount1 = event.amount1.toBigInt()
 
-                    actions.push({
-                        kind: ActionKind.User,
-                        block,
-                        transaction: item.transaction,
-                        data: {
+                    // to make sure it will be prefetched
+                    actions.push(new UnknownPoolAction(block, item.transaction, {id: poolId}))
+
+                    actions.push(
+                        new SwapUserAction(block, item.transaction, {
                             id,
-                            type: UserActionDataType.Swap,
                             amount0,
                             amount1,
-                            pool,
-                        },
-                    })
-
-                    actions.push({
-                        kind: ActionKind.Pool,
-                        block,
-                        transaction: item.transaction,
-                        data: {
-                            id: pool,
-                            type: PoolActionDataType.Unknown,
-                        },
-                    })
+                            poolId,
+                        })
+                    )
 
                     break
                 }

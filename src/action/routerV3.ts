@@ -1,14 +1,11 @@
 import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
 import * as algebraPool from '../abi/algebraPool'
 import {ProcessorItem} from '../processor'
-import {Action, ActionKind, PoolActionDataType, UserActionDataType} from './types'
+import {Action, UnknownUserAction} from './types'
 import {ROUTER_V3_ADDRESS} from '../config'
 
 export function isRouterV3Item(item: ProcessorItem) {
-    return (
-        item.address === ROUTER_V3_ADDRESS ||
-        (item.kind === 'evmLog' && item.evmLog.topics[0] === algebraPool.events.Swap.topic)
-    )
+    return item.address === ROUTER_V3_ADDRESS
 }
 
 export function getRouterV3Actions(ctx: BatchHandlerContext<unknown, unknown>, block: EvmBlock, item: ProcessorItem) {
@@ -17,15 +14,7 @@ export function getRouterV3Actions(ctx: BatchHandlerContext<unknown, unknown>, b
     switch (item.kind) {
         case 'transaction': {
             if (item.transaction.from != null) {
-                actions.push({
-                    kind: ActionKind.User,
-                    block,
-                    transaction: item.transaction,
-                    data: {
-                        id: item.transaction.from,
-                        type: UserActionDataType.Unknown,
-                    },
-                })
+                actions.push(new UnknownUserAction(block, item.transaction, {id: item.transaction.from}))
             }
             break
         }

@@ -1,23 +1,23 @@
 import assert from 'assert'
-import {CreationPoolAction, LiquidityPoolAction, PoolAction, PoolActionDataType, SyncPoolAction} from '../action/types'
+import {CreatePoolAction, LiquidityUpdatePoolAction, PoolAction, PoolActionType, SyncPoolAction} from '../action'
 import {Pool, Trade, User} from '../model'
 import {CommonContext, Storage} from './types'
 
 export function processPoolAction(ctx: CommonContext<Storage<{pools: Pool}>>, action: PoolAction) {
-    switch (action.data.type) {
-        case PoolActionDataType.Creation:
-            processPoolCreation(ctx, action as CreationPoolAction)
+    switch (action.type) {
+        case PoolActionType.Creation:
+            processPoolCreation(ctx, action)
             break
-        case PoolActionDataType.Liquidity:
-            processLiquidity(ctx, action as LiquidityPoolAction)
+        case PoolActionType.LiquidityUpdate:
+            processLiquidity(ctx, action)
             break
-        case PoolActionDataType.Sync:
-            processBalances(ctx, action as SyncPoolAction)
+        case PoolActionType.Sync:
+            processBalances(ctx, action)
             break
     }
 }
 
-function processPoolCreation(ctx: CommonContext<Storage<{pools: Pool}>>, action: CreationPoolAction) {
+function processPoolCreation(ctx: CommonContext<Storage<{pools: Pool}>>, action: CreatePoolAction) {
     assert(!ctx.store.pools.has(action.data.id), `Pool ${action.data.id} already exists 0_o`)
 
     const pool = new Pool({
@@ -34,7 +34,7 @@ function processPoolCreation(ctx: CommonContext<Storage<{pools: Pool}>>, action:
     ctx.log.debug(`Created pool ${pool.id}`)
 }
 
-function processLiquidity(ctx: CommonContext<Storage<{pools: Pool}>>, action: LiquidityPoolAction) {
+function processLiquidity(ctx: CommonContext<Storage<{pools: Pool}>>, action: LiquidityUpdatePoolAction) {
     const pool = ctx.store.pools.get(action.data.id)
     assert(pool != null, `Missing pool ${action.data.id}`)
 

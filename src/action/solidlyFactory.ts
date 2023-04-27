@@ -1,8 +1,8 @@
 import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
-import {ALGEBRA_FACTORY, SOLIDLY_FACTORY} from '../config'
+import {SOLIDLY_FACTORY} from '../config'
 import {ProcessorItem} from '../processor'
 import * as solidlyFactory from '../abi/solidlyFactory'
-import {Action, ActionKind, PoolActionDataType} from './types'
+import {Action, CreatePoolAction} from './types'
 import {PoolManager} from '../utils/pairManager'
 
 export function isSolidlyFactoryItem(item: ProcessorItem) {
@@ -26,18 +26,14 @@ export function getSolidlyFactoryActions(
 
                     const pool = event.pair.toLowerCase()
 
-                    actions.push({
-                        kind: ActionKind.Pool,
-                        block,
-                        transaction: item.transaction,
-                        data: {
+                    actions.push(
+                        new CreatePoolAction(block, item.transaction, {
                             id: pool,
-                            type: PoolActionDataType.Creation,
                             token0: event.token0.toLowerCase(),
                             token1: event.token1.toLowerCase(),
                             factory: SOLIDLY_FACTORY,
-                        },
-                    })
+                        })
+                    )
 
                     PoolManager.instance.addPool(item.address, pool)
 
