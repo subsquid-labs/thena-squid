@@ -25,7 +25,10 @@ type Pool @entity {
     token1: String!
     reserve0: BigInt!
     reserve1: BigInt!
+    price0: BigInt!
+    price1: BigInt!
     liquidity: BigInt!
+    stable: Boolean
     # minimumLiquidity: BigInt!
 }
 
@@ -50,11 +53,12 @@ type LiquidityPositionUpdate @entity {
 
 type Token @entity {
     id: ID!
-    ethPrice: BigInt!
-    metadata: TokenMetadata!
+    decimals: Int!
+    bnbPrice: BigInt!
+    priceMetadata: TokenPriceMetadata!
 }
 
-type TokenMetadata {
+type TokenPriceMetadata {
     recalculatedAt: DateTime!
     largestBnbReserve: BigInt!
 }

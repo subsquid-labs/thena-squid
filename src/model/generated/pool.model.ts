@@ -26,5 +26,14 @@ export class Pool {
     reserve1!: bigint
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    price0!: bigint
+
+    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    price1!: bigint
+
+    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     liquidity!: bigint
+
+    @Column_("bool", {nullable: true})
+    stable!: boolean | undefined | null
 }

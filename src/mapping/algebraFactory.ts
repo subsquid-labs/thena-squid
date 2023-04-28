@@ -24,18 +24,20 @@ export function getAlgebraFactoryActions(
                     ctx.log.debug(`processing Pool creation event...`)
                     const event = algebraFactory.events.Pool.decode(item.evmLog)
 
-                    const pool = event.pool.toLowerCase()
+                    const id = event.pool.toLowerCase()
+                    const token0 = event.token0.toLowerCase()
+                    const token1 = event.token1.toLowerCase()
 
                     actions.push(
                         new CreatePoolAction(block, item.transaction, {
-                            id: pool,
-                            token0: event.token0.toLowerCase(),
-                            token1: event.token1.toLowerCase(),
+                            id,
+                            token0,
+                            token1,
                             factory: ALGEBRA_FACTORY,
                         })
                     )
 
-                    PoolManager.instance.addPool(item.address, pool)
+                    PoolManager.instance.addPool(item.address, id, {token0, token1})
 
                     break
                 }

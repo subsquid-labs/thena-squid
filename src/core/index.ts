@@ -1,14 +1,15 @@
 import {Store} from '@subsquid/typeorm-store'
 import {exit} from 'process'
 import {In} from 'typeorm'
-import {User, Pool, Trade, LiquidityPosition, LiquidityPositionUpdate} from '../model'
+import {User, Pool, Trade, LiquidityPosition, LiquidityPositionUpdate, Token} from '../model'
 import {toEntityMap} from '../utils/misc'
-import {Action, ActionKind, UserAction, PoolAction} from '../types/action'
-import {CommonContext} from '../types'
+import {Action, ActionKind, UserAction, PoolAction, TokenAction} from '../types/action'
+import {CommonContext} from '../types/util'
 import {processPoolAction} from './pool'
 import {processUserAction} from './user'
 import {LiquidityPositionAction} from '../types/action/liquidityPosition'
 import {processLiquidityPositionAction} from './liquidityPosition'
+import {processTokenAction} from './token'
 
 export async function processActions(ctx: CommonContext<Store>, actions: Action[]) {
     const userIds = getUserIds(actions)
@@ -19,6 +20,9 @@ export async function processActions(ctx: CommonContext<Store>, actions: Action[
 
     const positionIds = getLiquidityPositionsIds(actions)
     const positions = await ctx.store.findBy(LiquidityPosition, {id: In(positionIds)}).then(toEntityMap)
+
+    const tokenIds = getTokensIds(actions)
+    const tokens = await ctx.store.findBy(Token, {id: In(tokenIds)}).then(toEntityMap)
 
     const trades = new Map<string, Trade[]>()
     const positionUpdates = new Map<string, LiquidityPositionUpdate[]>()
@@ -36,6 +40,7 @@ export async function processActions(ctx: CommonContext<Store>, actions: Action[
                 trades,
                 positions,
                 positionUpdates,
+                tokens,
             },
         }
 
@@ -50,6 +55,9 @@ export async function processActions(ctx: CommonContext<Store>, actions: Action[
                 case ActionKind.LiquidityPosition:
                     processLiquidityPositionAction(newCtx, action)
                     break
+                case ActionKind.Token:
+                    await processTokenAction(newCtx, action)
+                    break
             }
         } catch (err) {
             ctx.log.fatal({err, block: action.block.height, txHash: action.transaction.hash})
@@ -58,6 +66,7 @@ export async function processActions(ctx: CommonContext<Store>, actions: Action[
     }
 
     await ctx.store.upsert([...users.values()])
+    await ctx.store.upsert([...tokens.values()])
     await ctx.store.upsert([...pools.values()])
     await ctx.store.upsert([...positions.values()])
     await ctx.store.insert([...trades.values()].flat())
@@ -80,4 +89,8 @@ function getLiquidityPositionsIds(actions: Action[]) {
                 .map((i) => i.data.id)
         ),
     ]
+}
+
+function getTokensIds(actions: Action[]) {
+    return [...new Set(actions.filter((i): i is TokenAction => i.kind === ActionKind.Token).map((i) => i.data.id))]
 }

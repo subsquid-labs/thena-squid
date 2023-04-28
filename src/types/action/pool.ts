@@ -20,6 +20,7 @@ export abstract class BasePoolAction<T extends BasePoolActionData = BasePoolActi
 export interface CreatePoolActionData extends BasePoolActionData {
     token0: string
     token1: string
+    stable?: boolean
     factory: string
 }
 

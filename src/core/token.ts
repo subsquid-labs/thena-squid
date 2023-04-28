@@ -1,0 +1,76 @@
+import assert from 'assert'
+import {UserActionType} from '../mapping'
+import {User, Pool, Trade, Token, TokenPriceMetadata} from '../model'
+import {InitTokenAction, PriceUpdateTokenAction, TokenAction, TokenActionType} from '../types/action'
+import {CommonContext, Storage} from '../types/util'
+import {WBNB} from '../config'
+import * as bep20 from '../abi/bep20'
+
+export async function processTokenAction(
+    ctx: CommonContext<Storage<{tokens: Token; pools: Pool}>>,
+    action: TokenAction
+) {
+    switch (action.type) {
+        case TokenActionType.Init: {
+            await processInitAction(ctx, action)
+            break
+        }
+        case TokenActionType.PriceUpdate: {
+            processPriceUpdateAction(ctx, action)
+            break
+        }
+    }
+}
+
+async function processInitAction(ctx: CommonContext<Storage<{tokens: Token}>>, action: InitTokenAction) {
+    if (ctx.store.tokens.has(action.data.id)) return
+
+    const contract = new bep20.Contract(ctx, action.block, action.data.id)
+    const decimals = await contract.decimals()
+
+    const token = new Token({
+        id: action.data.id,
+        decimals,
+        bnbPrice: 0n,
+        priceMetadata: new TokenPriceMetadata({
+            largestBnbReserve: 0n,
+            recalculatedAt: new Date(0),
+        }),
+    })
+
+    ctx.store.tokens.set(token.id, token)
+    ctx.log.debug(`Token ${token.id} created`)
+}
+
+function processPriceUpdateAction(
+    ctx: CommonContext<Storage<{tokens: Token; pools: Pool}>>,
+    action: PriceUpdateTokenAction
+) {
+    const token = ctx.store.tokens.get(action.data.id)
+    assert(token != null, `Missing token ${action.data.id}`)
+
+    const pool = ctx.store.pools.get(action.data.poolId)
+    assert(pool != null, `Missing pool ${action.data.poolId}`)
+
+    const [pairedTokenId, tokenPrice, pairedTokenReserve] =
+        pool.token0 === token.id ? [pool.token1, pool.price0, pool.reserve1] : [pool.token0, pool.price1, pool.reserve0]
+    const pairedToken = ctx.store.tokens.get(pairedTokenId)
+    assert(pairedToken != null, `Missing token ${pairedTokenId}`)
+
+    const timestamp = new Date(action.block.timestamp)
+    const bnbReserve = pairedToken.bnbPrice * pairedTokenReserve
+
+    const priceMetadata = token.priceMetadata
+    if (priceMetadata.recalculatedAt === timestamp && bnbReserve <= priceMetadata.largestBnbReserve) return
+
+    token.priceMetadata.largestBnbReserve = bnbReserve
+    token.priceMetadata.recalculatedAt = timestamp
+
+    if (token.id === WBNB) {
+        token.bnbPrice = 10n ** 18n
+    } else {
+        // const amountIn = 10n ** BigInt(token.decimals)
+        // const amountOut = (pairedTokenReserve * amountIn) / (tokenReserve + amountIn)
+        token.bnbPrice = (pairedToken.bnbPrice * tokenPrice) / 10n ** BigInt(pairedToken.decimals)
+    }
+}

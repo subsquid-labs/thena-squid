@@ -1,15 +1,17 @@
 import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
 import * as solidlyPair from '../abi/solidlyPair'
-import {SOLIDLY_FACTORY, ZERO_ADDRESS} from '../config'
+import {SOLIDLY_FACTORY, WHITELIST_TOKENS, ZERO_ADDRESS} from '../config'
 import {ProcessorItem} from '../processor'
 import {PoolManager} from '../utils/pairManager'
 import {
     Action,
     ActionKind,
     LiquidityUpdatePoolAction,
+    PriceUpdateTokenAction,
     SwapUserAction,
     SyncPoolAction,
     UnknownPoolAction,
+    UnknownTokenAction,
     UnknownUserAction,
 } from '../types/action'
 import {LiquidityPositionActionType, ValueUpdateLiquidityPositionAction} from '../types/action/liquidityPosition'
@@ -58,6 +60,13 @@ export function getSolidlyPairActions(
                 case solidlyPair.events.Sync.topic: {
                     const event = solidlyPair.events.Sync.decode(item.evmLog)
 
+                    const poolTokens = PoolManager.instance.getTokens(item.address)
+
+                    actions.push(
+                        new UnknownTokenAction(block, item.transaction, {id: poolTokens.token0}),
+                        new UnknownTokenAction(block, item.transaction, {id: poolTokens.token1})
+                    )
+
                     actions.push(
                         new SyncPoolAction(block, item.transaction, {
                             id: item.address,
@@ -65,6 +74,24 @@ export function getSolidlyPairActions(
                             amount1: event.reserve1.toBigInt(),
                         })
                     )
+
+                    if (WHITELIST_TOKENS.indexOf(poolTokens.token1) > -1) {
+                        actions.push(
+                            new PriceUpdateTokenAction(block, item.transaction, {
+                                id: poolTokens.token0,
+                                poolId: item.address,
+                            })
+                        )
+                    }
+
+                    if (WHITELIST_TOKENS.indexOf(poolTokens.token0) > -1) {
+                        actions.push(
+                            new PriceUpdateTokenAction(block, item.transaction, {
+                                id: poolTokens.token1,
+                                poolId: item.address,
+                            })
+                        )
+                    }
 
                     break
                 }
@@ -108,11 +135,11 @@ export function getSolidlyPairActions(
                             })
                         )
                     } else {
-                        actions.push(new UnknownUserAction(block, item.transaction, {id: from}))
+                        actions.push(new UnknownUserAction(block, item.transaction, {id: to}))
 
                         actions.push(
                             new ValueUpdateLiquidityPositionAction(block, item.transaction, {
-                                id: createLiquidityPositionId(item.address, from),
+                                id: createLiquidityPositionId(item.address, to),
                                 amount,
                                 userId: to,
                                 poolId,

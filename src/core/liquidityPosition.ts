@@ -1,6 +1,6 @@
 import assert from 'assert'
 import {User, Pool, LiquidityPosition, LiquidityPositionUpdate} from '../model'
-import {CommonContext, Storage} from '../types'
+import {CommonContext, Storage} from '../types/util'
 import {createLiquidityPositionUpdateId} from '../utils/ids'
 import {LiquidityPositionAction, LiquidityPositionActionType, ValueUpdateLiquidityPositionAction} from '../mapping'
 

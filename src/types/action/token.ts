@@ -2,6 +2,7 @@ import {ActionKind, BaseAction} from './common'
 
 export enum TokenActionType {
     Unknown,
+    Init,
     PriceUpdate,
 }
 
@@ -15,16 +16,20 @@ export abstract class BaseTokenAction<T extends BaseTokenActionData = BaseTokenA
     readonly kind = ActionKind.Token
 }
 
+export class InitTokenAction extends BaseTokenAction {
+    readonly type = TokenActionType.Init
+}
+
 export interface PriceUpdateTokenActionData extends BaseTokenActionData {
     poolId: string
 }
 
-export class PriceUpdateTokenActionData extends BaseTokenAction<PriceUpdateTokenActionData> {
+export class PriceUpdateTokenAction extends BaseTokenAction<PriceUpdateTokenActionData> {
     readonly type = TokenActionType.PriceUpdate
 }
 
-export class UnknownUserAction extends BaseTokenAction {
+export class UnknownTokenAction extends BaseTokenAction {
     readonly type = TokenActionType.Unknown
 }
 
-export type TokenAction = PriceUpdateTokenActionData | UnknownUserAction
+export type TokenAction = PriceUpdateTokenAction | InitTokenAction | UnknownTokenAction
