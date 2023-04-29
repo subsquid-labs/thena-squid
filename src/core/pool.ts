@@ -22,8 +22,8 @@ function processPoolCreation(ctx: CommonContext<Storage<{pools: Pool}>>, action:
 
     const pool = new Pool({
         id: action.data.id,
-        token0: action.data.token0,
-        token1: action.data.token1,
+        token0Id: action.data.token0,
+        token1Id: action.data.token1,
         factory: action.data.factory,
         liquidity: 0n,
         reserve0: 0n,
@@ -53,9 +53,9 @@ function processBalances(ctx: CommonContext<Storage<{pools: Pool; tokens: Token}
     pool.reserve0 = action.data.amount0
     pool.reserve1 = action.data.amount1
 
-    const token0 = ctx.store.tokens.get(pool.token0)
+    const token0 = ctx.store.tokens.get(pool.token0Id)
     assert(token0 != null)
-    const token1 = ctx.store.tokens.get(pool.token1)
+    const token1 = ctx.store.tokens.get(pool.token1Id)
     assert(token1 != null)
 
     pool.price0 = _getPrice(pool, token0, token1)
@@ -67,19 +67,19 @@ function processBalances(ctx: CommonContext<Storage<{pools: Pool; tokens: Token}
 function _getPrice(pool: Pool, tokenIn: Token, tokenOut: Token) {
     let amountIn = 10n ** BigInt(tokenIn.decimals)
     if (pool.stable) {
-        let decimals0 = 10n ** BigInt(tokenIn.id == pool.token0 ? tokenIn.decimals : tokenOut.decimals)
-        let decimals1 = 10n ** BigInt(tokenOut.id == pool.token1 ? tokenOut.decimals : tokenIn.decimals)
+        let decimals0 = 10n ** BigInt(tokenIn.id == pool.token0Id ? tokenIn.decimals : tokenOut.decimals)
+        let decimals1 = 10n ** BigInt(tokenOut.id == pool.token1Id ? tokenOut.decimals : tokenIn.decimals)
         let xy = _k(pool.reserve0, pool.reserve1, pool.stable, decimals0, decimals1)
         let _reserve0 = (pool.reserve0 * _1E18) / decimals0
         let _reserve1 = (pool.reserve1 * _1E18) / decimals1
-        let [reserveA, reserveB] = tokenIn.id == pool.token0 ? [_reserve0, _reserve1] : [_reserve1, _reserve0]
-        amountIn = tokenIn.id == pool.token0 ? (amountIn * _1E18) / decimals0 : (amountIn * _1E18) / decimals1
+        let [reserveA, reserveB] = tokenIn.id == pool.token0Id ? [_reserve0, _reserve1] : [_reserve1, _reserve0]
+        amountIn = tokenIn.id == pool.token0Id ? (amountIn * _1E18) / decimals0 : (amountIn * _1E18) / decimals1
         let y = reserveB - _get_y(amountIn + reserveA, xy, reserveB)
         y = y < 0n ? 0n : y
-        return (y * (tokenIn.id == pool.token0 ? decimals1 : decimals0)) / _1E18
+        return (y * (tokenIn.id == pool.token0Id ? decimals1 : decimals0)) / _1E18
     } else {
         let [reserveA, reserveB] =
-            tokenIn.id == pool.token0 ? [pool.reserve0, pool.reserve1] : [pool.reserve1, pool.reserve0]
+            tokenIn.id == pool.token0Id ? [pool.reserve0, pool.reserve1] : [pool.reserve1, pool.reserve0]
         return (amountIn * reserveB) / (reserveA + amountIn)
     }
 }

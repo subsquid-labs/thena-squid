@@ -7,36 +7,72 @@ type User @entity {
 
 type Trade @entity {
     id: ID!
+
+    # meatadata
     blockNumber: Int!
     timestamp: DateTime!
     txHash: String!
-    user: User!
-    tokenIn: String!
+
+    # in
+    tokenInId: ID!
     amountIn: BigInt!
-    tokenOut: String!
+    amountInUSD: Float!
+
+    # out
+    tokenOutId: ID!
     amountOut: BigInt!
+    amountOutUSD: Float!
+
+    userId: ID!
     routes: [String!]!
+
+    # relations
+    "@private Use tokenInId instead"
+    tokenIn: Token!
+    "@private Use tokenOutId instead"
+    tokenOut: Token!
+    "@private Use userId instead"
+    user: User!
 }
 
 type Pool @entity {
     id: ID!
-    factory: String!
-    token0: String!
-    token1: String!
-    reserve0: BigInt!
-    reserve1: BigInt!
+
+    # token0
+    token0Id: ID!
     price0: BigInt!
+    reserve0: BigInt!
+
+    # token1
+    token1Id: ID!
+    reserve1: BigInt!
     price1: BigInt!
+
     liquidity: BigInt!
     stable: Boolean
+    factory: String!
     # minimumLiquidity: BigInt!
+
+    # relations
+    "@private Use token0Id instead"
+    token0: Token!
+    "@private Use token1Id instead"
+    token1: Token!
 }
 
 type LiquidityPosition @entity {
     id: ID!
-    user: User!
-    pool: Pool!
+
+    userId: ID!
+    poolId: ID!
     value: BigInt!
+
+    # relations
+    "@private Use userId instead"
+    user: User!
+    "@private Use poolId instead"
+    pool: Pool!
+    "@private Don't use"
     updates: [LiquidityPositionUpdate!]! @derivedFrom(field: "position")
 }
 
@@ -45,10 +81,13 @@ type LiquidityPositionUpdate @entity {
     blockNumber: Int!
     timestamp: DateTime!
     txHash: String!
-    position: LiquidityPosition!
+    positionId: ID!
     amount: BigInt!
     amount0: BigInt!
     amount1: BigInt!
+    # relations
+    "Use positionId instead"
+    position: LiquidityPosition!
 }
 
 type Token @entity {

@@ -1,5 +1,6 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
+import {Token} from "./token.model"
 
 @Entity_()
 export class Pool {
@@ -11,22 +12,19 @@ export class Pool {
     id!: string
 
     @Column_("text", {nullable: false})
-    factory!: string
+    token0Id!: string
 
-    @Column_("text", {nullable: false})
-    token0!: string
-
-    @Column_("text", {nullable: false})
-    token1!: string
+    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    price0!: bigint
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     reserve0!: bigint
 
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    reserve1!: bigint
+    @Column_("text", {nullable: false})
+    token1Id!: string
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    price0!: bigint
+    reserve1!: bigint
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     price1!: bigint
@@ -36,4 +34,21 @@ export class Pool {
 
     @Column_("bool", {nullable: true})
     stable!: boolean | undefined | null
+
+    @Column_("text", {nullable: false})
+    factory!: string
+
+    /**
+     * @private Use token0Id instead
+     */
+    @Index_()
+    @ManyToOne_(() => Token, {nullable: true})
+    token0!: Token
+
+    /**
+     * @private Use token1Id instead
+     */
+    @Index_()
+    @ManyToOne_(() => Token, {nullable: true})
+    token1!: Token
 }

@@ -39,8 +39,8 @@ export function getSolidlyPairActions(
 
                     const [amount0, amount1] =
                         event.amount0In.toBigInt() === 0n
-                            ? [event.amount0Out.toBigInt(), -event.amount1In.toBigInt()]
-                            : [-event.amount0In.toBigInt(), event.amount1Out.toBigInt()]
+                            ? [-event.amount0Out.toBigInt(), event.amount1In.toBigInt()]
+                            : [event.amount0In.toBigInt(), -event.amount1Out.toBigInt()]
                     if (amount0 === 0n || amount1 === 0n) break
 
                     // to make sure it will be prefetched

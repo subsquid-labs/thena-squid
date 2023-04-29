@@ -1,10 +1,9 @@
 import assert from 'assert'
-import {UserActionType} from '../mapping'
-import {User, Pool, Trade, Token, TokenPriceMetadata} from '../model'
+import {Pool, Token, TokenPriceMetadata} from '../model'
 import {InitTokenAction, PriceUpdateTokenAction, TokenAction, TokenActionType} from '../types/action'
 import {CommonContext, Storage} from '../types/util'
-import {WBNB} from '../config'
 import * as bep20 from '../abi/bep20'
+import {BNB_DECIMALS, WBNB_ADDRESS} from '../config'
 
 export async function processTokenAction(
     ctx: CommonContext<Storage<{tokens: Token; pools: Pool}>>,
@@ -53,7 +52,9 @@ function processPriceUpdateAction(
     assert(pool != null, `Missing pool ${action.data.poolId}`)
 
     const [pairedTokenId, tokenPrice, pairedTokenReserve] =
-        pool.token0 === token.id ? [pool.token1, pool.price0, pool.reserve1] : [pool.token0, pool.price1, pool.reserve0]
+        pool.token0Id === token.id
+            ? [pool.token1Id, pool.price0, pool.reserve1]
+            : [pool.token0Id, pool.price1, pool.reserve0]
     const pairedToken = ctx.store.tokens.get(pairedTokenId)
     assert(pairedToken != null, `Missing token ${pairedTokenId}`)
 
@@ -66,8 +67,8 @@ function processPriceUpdateAction(
     token.priceMetadata.largestBnbReserve = bnbReserve
     token.priceMetadata.recalculatedAt = timestamp
 
-    if (token.id === WBNB) {
-        token.bnbPrice = 10n ** 18n
+    if (token.id === WBNB_ADDRESS) {
+        token.bnbPrice = 10n ** BNB_DECIMALS
     } else {
         // const amountIn = 10n ** BigInt(token.decimals)
         // const amountOut = (pairedTokenReserve * amountIn) / (tokenReserve + amountIn)

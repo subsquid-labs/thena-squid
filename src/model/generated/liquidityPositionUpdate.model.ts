@@ -20,9 +20,8 @@ export class LiquidityPositionUpdate {
     @Column_("text", {nullable: false})
     txHash!: string
 
-    @Index_()
-    @ManyToOne_(() => LiquidityPosition, {nullable: true})
-    position!: LiquidityPosition
+    @Column_("text", {nullable: false})
+    positionId!: string
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     amount!: bigint
@@ -32,4 +31,11 @@ export class LiquidityPositionUpdate {
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     amount1!: bigint
+
+    /**
+     * Use positionId instead
+     */
+    @Index_()
+    @ManyToOne_(() => LiquidityPosition, {nullable: true})
+    position!: LiquidityPosition
 }

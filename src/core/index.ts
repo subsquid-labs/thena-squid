@@ -10,6 +10,7 @@ import {processUserAction} from './user'
 import {LiquidityPositionAction} from '../types/action/liquidityPosition'
 import {processLiquidityPositionAction} from './liquidityPosition'
 import {processTokenAction} from './token'
+import {USD_ADDRESS} from '../config'
 
 export async function processActions(ctx: CommonContext<Store>, actions: Action[]) {
     const userIds = getUserIds(actions)
@@ -22,6 +23,7 @@ export async function processActions(ctx: CommonContext<Store>, actions: Action[
     const positions = await ctx.store.findBy(LiquidityPosition, {id: In(positionIds)}).then(toEntityMap)
 
     const tokenIds = getTokensIds(actions)
+    tokenIds.push(USD_ADDRESS)
     const tokens = await ctx.store.findBy(Token, {id: In(tokenIds)}).then(toEntityMap)
 
     const trades = new Map<string, Trade[]>()

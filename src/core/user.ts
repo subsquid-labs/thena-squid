@@ -1,12 +1,14 @@
 import assert from 'assert'
-import {User, Pool, Trade} from '../model'
+import {User, Pool, Trade, Token} from '../model'
 import {last} from '../utils/misc'
 import {UserAction, UserActionType, BalanceUserAction, SwapUserAction} from '../types/action'
 import {CommonContext, Storage} from '../types/util'
 import {createTradeId} from '../utils/ids'
+import {BNB_DECIMALS, USD_ADDRESS} from '../config'
+import {BigDecimal} from '@subsquid/big-decimal'
 
 export function processUserAction(
-    ctx: CommonContext<Storage<{users: User; pools: Pool; trades: Trade[]}>>,
+    ctx: CommonContext<Storage<{users: User; pools: Pool; trades: Trade[]; tokens: Token}>>,
     action: UserAction
 ) {
     switch (action.type) {
@@ -35,7 +37,7 @@ function processBalanceAction(ctx: CommonContext<Storage<{users: User}>>, action
 }
 
 function processSwapAction(
-    ctx: CommonContext<Storage<{users: User; pools: Pool; trades: Trade[]}>>,
+    ctx: CommonContext<Storage<{users: User; pools: Pool; trades: Trade[]; tokens: Token}>>,
     action: SwapUserAction
 ) {
     const pool = ctx.store.pools.get(action.data.poolId)
@@ -49,12 +51,27 @@ function processSwapAction(
         ctx.store.trades.set(action.transaction.id, txTrades)
     }
 
-    const {tokenIn, tokenOut, amountIn, amountOut} = convertTokenValues({
-        token0: pool.token0,
-        token1: pool.token1,
+    const {tokenInId, tokenOutId, amountIn, amountOut} = convertTokenValues({
+        token0Id: pool.token0Id,
         amount0: action.data.amount0,
+        token1Id: pool.token1Id,
         amount1: action.data.amount1,
     })
+
+    const tokenIn = ctx.store.tokens.get(tokenInId)
+    assert(tokenIn != null)
+    const tokenOut = ctx.store.tokens.get(tokenOutId)
+    assert(tokenOut != null)
+    const usdToken = ctx.store.tokens.get(USD_ADDRESS)
+    assert(usdToken != null)
+
+    const usdBnbPrice = BigDecimal(usdToken.bnbPrice, BNB_DECIMALS)
+    const amountInUSD = usdBnbPrice.gt(0)
+        ? BigDecimal(tokenIn.bnbPrice, BNB_DECIMALS).div(usdBnbPrice).mul(BigDecimal(amountIn, tokenIn.decimals)).toNumber()
+        : 0
+    const amountOutUSD = usdBnbPrice.gt(0)
+        ? BigDecimal(tokenOut.bnbPrice, BNB_DECIMALS).div(usdBnbPrice).mul(BigDecimal(amountOut, tokenOut.decimals)).toNumber()
+        : 0
 
     let trade = txTrades.length > 0 ? last(txTrades) : undefined
     if (trade == null || trade.tokenOut !== tokenIn || trade.amountOut !== amountIn) {
@@ -64,10 +81,12 @@ function processSwapAction(
             timestamp: new Date(action.block.timestamp),
             txHash: action.transaction.hash,
             user,
-            tokenIn,
+            tokenInId,
             amountIn,
-            tokenOut,
+            amountInUSD,
+            tokenOutId,
             amountOut,
+            amountOutUSD,
             routes: [action.data.poolId],
         })
         txTrades.push(trade)
@@ -79,22 +98,22 @@ function processSwapAction(
     }
 }
 
-function convertTokenValues(data: {token0: string; amount0: bigint; token1: string; amount1: bigint}) {
-    const {token0, amount0, token1, amount1} = data
+function convertTokenValues(data: {token0Id: string; amount0: bigint; token1Id: string; amount1: bigint}) {
+    const {token0Id, amount0, token1Id, amount1} = data
 
     if (amount0 > 0 && amount1 < 0) {
         return {
-            tokenIn: token1,
-            amountIn: -amount1,
-            tokenOut: token0,
-            amountOut: amount0,
+            tokenInId: token0Id,
+            amountIn: amount0,
+            tokenOutId: token1Id,
+            amountOut: -amount1,
         }
     } else if (amount0 < 0 && amount1 > 0) {
         return {
-            tokenIn: token0,
-            amountIn: -amount0,
-            tokenOut: token1,
-            amountOut: amount1,
+            tokenInId: token1Id,
+            amountIn: amount1,
+            tokenOutId: token0Id,
+            amountOut: -amount0,
         }
     } else {
         throw new Error(`Unexpected case: amount0: ${amount0}, amount1: ${amount1}`)

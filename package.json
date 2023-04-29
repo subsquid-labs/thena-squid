@@ -7,6 +7,7 @@
   "main": "lib/main.js",
   "dependencies": {
     "@subsquid/archive-registry": "^2.1.13",
+    "@subsquid/big-decimal": "^0.0.0",
     "@subsquid/evm-processor": "^0.4.0",
     "@subsquid/graphql-server": "3.3.2",
     "@subsquid/typeorm-migration": "0.1.6",
@@ -17,8 +18,8 @@
   },
   "devDependencies": {
     "@subsquid/evm-typegen": "2.1.1",
-    "@subsquid/typeorm-codegen": "0.3.3",
     "@subsquid/file-store": "^0.3.2",
+    "@subsquid/typeorm-codegen": "0.3.3",
     "@types/node": "^18.15.5",
     "typescript": "~5.0.2"
   }

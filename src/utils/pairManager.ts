@@ -24,7 +24,7 @@ export class PoolManager {
     async init(store: Store) {
         const pools = await store.find(Pool, {})
         for (const pool of pools) {
-            this.addPool(pool.factory, pool.id, {token0: pool.token0, token1: pool.token1})
+            this.addPool(pool.factory, pool.id, {token0: pool.token0Id, token1: pool.token1Id})
         }
         this._initialized = true
     }
