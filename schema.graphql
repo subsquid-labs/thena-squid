@@ -85,6 +85,7 @@ type LiquidityPositionUpdate @entity {
     amount: BigInt!
     amount0: BigInt!
     amount1: BigInt!
+
     # relations
     "Use positionId instead"
     position: LiquidityPosition!
@@ -100,4 +101,16 @@ type Token @entity {
 type TokenPriceMetadata {
     recalculatedAt: DateTime!
     largestBnbReserve: BigInt!
+}
+
+type Hypervisor @entity {
+    id: ID!
+
+    poolId: ID!
+
+    # relations
+    basePosition: LiquidityPosition!
+    limitPosition: LiquidityPosition!
+    "Use poolId instead"
+    pool: Pool!
 }

@@ -3,7 +3,15 @@ import * as algebraPool from '../abi/algebraPool'
 import {ALGEBRA_FACTORY} from '../config'
 import {ProcessorItem} from '../processor'
 import {PoolManager} from '../utils/pairManager'
-import {Action, ActionKind, PoolActionType, SwapUserAction, UnknownPoolAction, UserActionType} from '../types/action'
+import {
+    Action,
+    LiquidityUpdatePoolAction,
+    SwapUserAction,
+    UnknownPoolAction,
+    UnknownUserAction,
+    ValueUpdateLiquidityPositionAction,
+} from '../types/action'
+import {createLiquidityPositionId} from '../utils/ids'
 
 export function isAlgebraPoolItem(item: ProcessorItem) {
     return PoolManager.instance.isPool(ALGEBRA_FACTORY, item.address)
@@ -41,6 +49,60 @@ export function getAlgebraPoolActions(
                     )
 
                     break
+                }
+                case algebraPool.events.Mint.topic: {
+                    const event = algebraPool.events.Mint.decode(item.evmLog)
+
+                    const userId = event.owner.toLowerCase()
+                    const poolId = item.address
+
+                    const amount = event.liquidityAmount.toBigInt()
+                    if (amount === 0n) break
+
+                    actions.push(
+                        new LiquidityUpdatePoolAction(block, item.transaction, {
+                            id: poolId,
+                            amount,
+                        })
+                    )
+
+                    actions.push(new UnknownUserAction(block, item.transaction, {id: userId}))
+
+                    actions.push(
+                        new ValueUpdateLiquidityPositionAction(block, item.transaction, {
+                            id: createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick),
+                            amount,
+                            userId,
+                            poolId,
+                        })
+                    )
+                }
+                case algebraPool.events.Burn.topic: {
+                    const event = algebraPool.events.Burn.decode(item.evmLog)
+
+                    const userId = event.owner.toLowerCase()
+                    const poolId = item.address
+
+                    const amount = -event.liquidityAmount.toBigInt()
+                    if (amount === 0n) break
+
+                    actions.push(
+                        new LiquidityUpdatePoolAction(block, item.transaction, {
+                            id: poolId,
+                            amount,
+                        })
+                    )
+
+                    actions.push(new UnknownUserAction(block, item.transaction, {id: userId}))
+
+                    actions.push(
+                        new ValueUpdateLiquidityPositionAction(block, item.transaction, {
+                            id: createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick),
+                            amount,
+                            userId,
+                            poolId,
+                        })
+                    )
                 }
                 default: {
                     ctx.log.error(`unknown event ${item.evmLog.topics[0]}`)

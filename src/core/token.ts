@@ -62,16 +62,15 @@ function processPriceUpdateAction(
     const bnbReserve = pairedToken.bnbPrice * pairedTokenReserve
 
     const priceMetadata = token.priceMetadata
+
     if (priceMetadata.recalculatedAt === timestamp && bnbReserve <= priceMetadata.largestBnbReserve) return
 
-    token.priceMetadata.largestBnbReserve = bnbReserve
-    token.priceMetadata.recalculatedAt = timestamp
+    priceMetadata.largestBnbReserve = bnbReserve
+    priceMetadata.recalculatedAt = timestamp
 
     if (token.id === WBNB_ADDRESS) {
         token.bnbPrice = 10n ** BNB_DECIMALS
     } else {
-        // const amountIn = 10n ** BigInt(token.decimals)
-        // const amountOut = (pairedTokenReserve * amountIn) / (tokenReserve + amountIn)
         token.bnbPrice = (pairedToken.bnbPrice * tokenPrice) / 10n ** BigInt(pairedToken.decimals)
     }
 }
