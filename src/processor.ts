@@ -45,12 +45,28 @@ export const processor = new EvmBatchProcessor()
         data: evmLogData,
     })
     .addLog(poolMetadata.pools[SOLIDLY_FACTORY], {
-        filter: [[solidlyPair.events.Swap.topic, solidlyPair.events.Sync.topic, solidlyPair.events.Transfer.topic]],
+        filter: [
+            [
+                solidlyPair.events.Swap.topic,
+                solidlyPair.events.Sync.topic,
+                solidlyPair.events.Transfer.topic,
+                solidlyPair.events.Mint.topic,
+                solidlyPair.events.Burn.topic,
+            ],
+        ],
         data: evmLogData,
         range: {from: 0, to: poolMetadata.block},
     })
     .addLog([], {
-        filter: [[solidlyPair.events.Swap.topic, solidlyPair.events.Sync.topic, solidlyPair.events.Transfer.topic]],
+        filter: [
+            [
+                solidlyPair.events.Swap.topic,
+                solidlyPair.events.Sync.topic,
+                solidlyPair.events.Transfer.topic,
+                solidlyPair.events.Mint.topic,
+                solidlyPair.events.Burn.topic,
+            ],
+        ],
         data: evmLogData,
         range: {from: poolMetadata.block + 1},
     })

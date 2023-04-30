@@ -14,8 +14,11 @@ import {
     UnknownTokenAction,
     UnknownUserAction,
 } from '../types/action'
-import {LiquidityPositionActionType, ValueUpdateLiquidityPositionAction} from '../types/action/liquidityPosition'
-import {createLiquidityPositionId} from '../utils/ids'
+import {
+    AdjustValueUpdateLiquidityPositionAction,
+    ValueUpdateLiquidityPositionAction,
+} from '../types/action/liquidityPosition'
+import {createLiquidityPositionId, createLiquidityPositionUpdateId} from '../utils/ids'
 
 export function isSolidlyPairItem(item: ProcessorItem) {
     return PoolManager.instance.isPool(SOLIDLY_FACTORY, item.address)
@@ -146,42 +149,51 @@ export function getSolidlyPairActions(
                             })
                         )
                     }
+
                     break
                 }
-                // case solidlyPair.events.Mint.topic: {
-                //     const event = pair.events.Mint.decode(item.evmLog)
+                case solidlyPair.events.Mint.topic: {
+                    const event = solidlyPair.events.Mint.decode(item.evmLog)
 
-                //     actions.push({
-                //         block,
-                //         kind: ActionKind.Pool,
-                //         transaction: item.transaction,
-                //         data: {
-                //             id: item.address,
-                //             type: PoolActionType.Balances,
-                //             amount0: event.amount0.toBigInt(),
-                //             amount1: event.amount1.toBigInt(),
-                //         },
-                //     })
+                    const poolId = item.address
+                    const userId = event.sender.toLowerCase()
 
-                //     break
-                // }
-                // case solidlyPair.events.Burn.topic: {
-                //     const event = pair.events.Burn.decode(item.evmLog)
+                    const amount0 = event.amount0.toBigInt()
+                    const amount1 = event.amount1.toBigInt()
 
-                //     actions.push({
-                //         block,
-                //         kind: ActionKind.Pool,
-                //         transaction: item.transaction,
-                //         data: {
-                //             id: item.address,
-                //             type: PoolActionType.Balances,
-                //             amount0: -event.amount0.toBigInt(),
-                //             amount1: -event.amount1.toBigInt(),
-                //         },
-                //     })
+                    actions.push(
+                        new AdjustValueUpdateLiquidityPositionAction(block, item.transaction, {
+                            id: createLiquidityPositionId(poolId, userId),
+                            poolId,
+                            userId,
+                            amount0,
+                            amount1,
+                        })
+                    )
 
-                //     break
-                // }
+                    break
+                }
+                case solidlyPair.events.Burn.topic: {
+                    const event = solidlyPair.events.Burn.decode(item.evmLog)
+
+                    const poolId = item.address
+                    const userId = event.sender.toLowerCase()
+
+                    const amount0 = -event.amount0.toBigInt()
+                    const amount1 = -event.amount1.toBigInt()
+
+                    actions.push(
+                        new AdjustValueUpdateLiquidityPositionAction(block, item.transaction, {
+                            id: createLiquidityPositionId(poolId, userId),
+                            poolId,
+                            userId,
+                            amount0,
+                            amount1,
+                        })
+                    )
+
+                    break
+                }
                 // case solidlyPair.events.Fees.topic: {
                 //     const event = pair.events.Burn.decode(item.evmLog)
 

@@ -2,7 +2,13 @@ import assert from 'assert'
 import {User, Pool, LiquidityPosition, LiquidityPositionUpdate} from '../model'
 import {CommonContext, Storage} from '../types/util'
 import {createLiquidityPositionUpdateId} from '../utils/ids'
-import {LiquidityPositionAction, LiquidityPositionActionType, ValueUpdateLiquidityPositionAction} from '../mapping'
+import {
+    AdjustValueUpdateLiquidityPositionAction,
+    LiquidityPositionAction,
+    LiquidityPositionActionType,
+    ValueUpdateLiquidityPositionAction,
+} from '../mapping'
+import {last} from '../utils/misc'
 
 export function processLiquidityPositionAction(
     ctx: CommonContext<
@@ -13,6 +19,9 @@ export function processLiquidityPositionAction(
     switch (action.type) {
         case LiquidityPositionActionType.ValueUpdate:
             processLiquidityPositionUpdate(ctx, action)
+            break
+        case LiquidityPositionActionType.AdjustValueUpdate:
+            processLiquidityPositionAdjustUpdate(ctx, action)
             break
     }
 }
@@ -52,8 +61,10 @@ function processLiquidityPositionUpdate(
         ctx.store.positionUpdates.set(action.transaction.id, txPosotionUpdates)
     }
 
-    const amount0 = (action.data.amount * pool.reserve0) / pool.liquidity
-    const amount1 = (action.data.amount * pool.reserve1) / pool.liquidity
+    const amount0 =
+        action.data.amount0 != null ? action.data.amount0 : (action.data.amount * pool.reserve0) / pool.liquidity
+    const amount1 =
+        action.data.amount1 != null ? action.data.amount1 : (action.data.amount * pool.reserve1) / pool.liquidity
 
     const positionUpdate = new LiquidityPositionUpdate({
         id: createLiquidityPositionUpdateId(action.transaction.id, txPosotionUpdates.length),
@@ -66,4 +77,16 @@ function processLiquidityPositionUpdate(
         amount1,
     })
     txPosotionUpdates.push(positionUpdate)
+}
+
+function processLiquidityPositionAdjustUpdate(
+    ctx: CommonContext<Storage<{positionUpdates: LiquidityPositionUpdate[]}>>,
+    action: AdjustValueUpdateLiquidityPositionAction
+) {
+    const txPositionUpdates = ctx.store.positionUpdates.get(action.transaction.id)
+    assert(txPositionUpdates != null && txPositionUpdates.length > 0)
+
+    const positionUpdate = last(txPositionUpdates)
+    positionUpdate.amount0 = action.data.amount0
+    positionUpdate.amount1 = action.data.amount1
 }
