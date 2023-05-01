@@ -2,10 +2,18 @@ import assert from 'assert'
 import {Block, Func, ChainContext} from '../abi/abi.support'
 import {Multicall, MulticallResult} from '../abi/multicall'
 import {MULTICALL_ADDRESS} from '../config'
+import {functions} from '../abi/algebraPool'
 
-export class DeferredCall<F extends Func<any, {}, any>> {
-    private static cache = new WeakMap<Block, DeferredCall<any>[]>()
-    private static results = new WeakMap<DeferredCall<any>, MulticallResult<any>>()
+type AnyFunction = Func<any, {}, any>
+type GetReturnValue<T> = T extends Func<any, {}, infer R>
+    ? {
+          [K in keyof R]: R[K]
+      } & {}
+    : never
+
+export class DeferredCall<T, F extends AnyFunction> implements DeferredValue<T> {
+    private static cache = new WeakMap<Block, DeferredCall<any, AnyFunction>[]>()
+    private static results = new WeakMap<DeferredCall<any, AnyFunction>, MulticallResult<any>>()
 
     private static getCache(block: Block) {
         let blockCache = this.cache.get(block)
@@ -32,24 +40,38 @@ export class DeferredCall<F extends Func<any, {}, any>> {
         this.cache.set(block, [])
     }
 
-    private data: [func: F, address: string, args: any[]]
+    protected data: [func: F, address: string, args: any[]]
+    private transform: (value: GetReturnValue<F>) => T
 
-    constructor(private block: Block, address: string, func: F, ...args: F extends Func<infer R, {}, any> ? R : never) {
-        this.data = [func, address, args]
+    constructor(
+        private block: Block,
+        options: {
+            address: string
+            func: F
+            args: F extends Func<infer R, {}, any> ? R : never
+            transform?: (value: GetReturnValue<F>) => T
+        }
+    ) {
+        this.data = [options.func, options.address, options.args]
+        this.transform = options.transform || ((value) => value)
 
         const blockCache = DeferredCall.getCache(block)
         blockCache.push(this)
     }
 
-    async result(ctx: ChainContext): Promise<F extends Func<any, {}, infer R> ? R : never> {
+    async get(ctx: ChainContext): Promise<T> {
         await DeferredCall.execute(ctx, this.block)
         const result = DeferredCall.results.get(this)
         assert(result != null)
 
         if (result.success) {
-            return result.value
+            return this.transform(result.value)
         } else {
             throw new Error(result.returnData)
         }
     }
+}
+
+export interface DeferredValue<T> {
+    get(ctx: ChainContext): Promise<T>
 }

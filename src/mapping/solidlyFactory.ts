@@ -33,15 +33,31 @@ export function getSolidlyFactoryActions(
                     actions.push(
                         new InitTokenAction(block, item.transaction, {
                             id: token0,
-                            decimals: new DeferredCall(block, token0, bep20.functions.decimals),
-                            symbol: new DeferredCall(block, token0, bep20.functions.symbol),
+                            decimals: new DeferredCall(block, {
+                                address: token0,
+                                func: bep20.functions.decimals,
+                                args: [],
+                            }),
+                            symbol: new DeferredCall(block, {
+                                address: token0,
+                                func: bep20.functions.decimals,
+                                args: [],
+                            }),
                         })
                     )
                     actions.push(
                         new InitTokenAction(block, item.transaction, {
                             id: token1,
-                            decimals: new DeferredCall(block, token1, bep20.functions.decimals),
-                            symbol: new DeferredCall(block, token1, bep20.functions.symbol),
+                            decimals: new DeferredCall(block, {
+                                address: token1,
+                                func: bep20.functions.decimals,
+                                args: [],
+                            }),
+                            symbol: new DeferredCall(block, {
+                                address: token1,
+                                func: bep20.functions.decimals,
+                                args: [],
+                            }),
                         })
                     )
 

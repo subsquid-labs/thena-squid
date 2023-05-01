@@ -1,6 +1,5 @@
-import {DeferredCall} from '../../utils/deferred'
+import {DeferredValue} from '../../utils/deferred'
 import {ActionKind, BaseAction} from './common'
-import {functions} from '../../abi/bep20'
 
 export enum TokenActionType {
     Unknown,
@@ -19,8 +18,8 @@ export abstract class BaseTokenAction<T extends BaseTokenActionData = BaseTokenA
 }
 
 export interface InitTokenActionData extends BaseTokenActionData {
-    decimals: DeferredCall<typeof functions.decimals>
-    symbol: DeferredCall<typeof functions.symbol>
+    decimals: DeferredValue<number>
+    symbol: DeferredValue<string>
 }
 
 export class InitTokenAction extends BaseTokenAction<InitTokenActionData> {
