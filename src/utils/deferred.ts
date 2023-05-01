@@ -29,6 +29,7 @@ export class DeferredCall<F extends Func<any, {}, any>> {
             const result = results[i]
             blockResults.set(call, result)
         }
+        this.cache.set(block, [])
     }
 
     private data: [func: F, address: string, args: any[]]
