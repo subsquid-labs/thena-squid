@@ -2,8 +2,10 @@ import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
 import {SOLIDLY_FACTORY} from '../config'
 import {ProcessorItem} from '../processor'
 import * as solidlyFactory from '../abi/solidlyFactory'
+import * as bep20 from '../abi/bep20'
 import {Action, CreatePoolAction, InitTokenAction} from '../types/action'
 import {PoolManager} from '../utils/pairManager'
+import {DeferredCall} from '../utils/deferred'
 
 export function isSolidlyFactoryItem(item: ProcessorItem) {
     return item.address === SOLIDLY_FACTORY
@@ -28,8 +30,20 @@ export function getSolidlyFactoryActions(
                     const token0 = event.token0.toLowerCase()
                     const token1 = event.token1.toLowerCase()
 
-                    actions.push(new InitTokenAction(block, item.transaction, {id: token0}))
-                    actions.push(new InitTokenAction(block, item.transaction, {id: token1}))
+                    actions.push(
+                        new InitTokenAction(block, item.transaction, {
+                            id: token0,
+                            decimals: new DeferredCall(block, token0, bep20.functions.decimals),
+                            symbol: new DeferredCall(block, token0, bep20.functions.symbol),
+                        })
+                    )
+                    actions.push(
+                        new InitTokenAction(block, item.transaction, {
+                            id: token1,
+                            decimals: new DeferredCall(block, token1, bep20.functions.decimals),
+                            symbol: new DeferredCall(block, token1, bep20.functions.symbol),
+                        })
+                    )
 
                     actions.push(
                         new CreatePoolAction(block, item.transaction, {

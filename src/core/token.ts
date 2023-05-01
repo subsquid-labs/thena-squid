@@ -24,8 +24,7 @@ export async function processTokenAction(
 async function processInitAction(ctx: CommonContext<Storage<{tokens: Token}>>, action: InitTokenAction) {
     if (ctx.store.tokens.has(action.data.id)) return
 
-    const contract = new bep20.Contract(ctx, action.block, action.data.id)
-    const decimals = await contract.decimals()
+    const decimals = await action.data.decimals.result(ctx)
 
     const token = new Token({
         id: action.data.id,
