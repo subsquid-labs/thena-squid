@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {CreatePoolAction, LiquidityUpdatePoolAction, PoolAction, PoolActionType, SyncPoolAction} from '../mapping'
+import {ChangeLiquidityPoolAction, CreatePoolAction, PoolAction, PoolActionType, SetBalancesPoolAction} from '../mapping'
 import {Pool, Token, Trade, User} from '../model'
 import {CommonContext, Storage} from '../types/util'
 
@@ -8,10 +8,10 @@ export function processPoolAction(ctx: CommonContext<Storage<{pools: Pool; token
         case PoolActionType.Creation:
             processPoolCreation(ctx, action)
             break
-        case PoolActionType.LiquidityUpdate:
+        case PoolActionType.ChangeLiquidity:
             processLiquidity(ctx, action)
             break
-        case PoolActionType.Sync:
+        case PoolActionType.SetBalances:
             processBalances(ctx, action)
             break
     }
@@ -37,7 +37,7 @@ function processPoolCreation(ctx: CommonContext<Storage<{pools: Pool}>>, action:
     ctx.log.debug(`Created pool ${pool.id}`)
 }
 
-function processLiquidity(ctx: CommonContext<Storage<{pools: Pool}>>, action: LiquidityUpdatePoolAction) {
+function processLiquidity(ctx: CommonContext<Storage<{pools: Pool}>>, action: ChangeLiquidityPoolAction) {
     const pool = ctx.store.pools.get(action.data.id)
     assert(pool != null, `Missing pool ${action.data.id}`)
 
@@ -46,12 +46,12 @@ function processLiquidity(ctx: CommonContext<Storage<{pools: Pool}>>, action: Li
     ctx.log.debug(`Liquidity of pool ${pool.id} changed by ${action.data.amount}`)
 }
 
-function processBalances(ctx: CommonContext<Storage<{pools: Pool; tokens: Token}>>, action: SyncPoolAction) {
+function processBalances(ctx: CommonContext<Storage<{pools: Pool; tokens: Token}>>, action: SetBalancesPoolAction) {
     const pool = ctx.store.pools.get(action.data.id)
     assert(pool != null, `Missing pool ${action.data.id}`)
 
-    pool.reserve0 = action.data.amount0
-    pool.reserve1 = action.data.amount1
+    pool.reserve0 = action.data.value0
+    pool.reserve1 = action.data.value1
 
     const token0 = ctx.store.tokens.get(pool.token0Id)
     assert(token0 != null)
@@ -61,7 +61,7 @@ function processBalances(ctx: CommonContext<Storage<{pools: Pool; tokens: Token}
     pool.price0 = _getPrice(pool, token0, token1)
     pool.price1 = _getPrice(pool, token1, token0)
 
-    ctx.log.debug(`Balances of pool ${pool.id} updated to ${action.data.amount0}, ${action.data.amount1}`)
+    ctx.log.debug(`Balances of pool ${pool.id} updated to ${action.data.value0}, ${action.data.value1}`)
 }
 
 function _getPrice(pool: Pool, tokenIn: Token, tokenOut: Token) {

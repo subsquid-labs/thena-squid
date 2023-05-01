@@ -6,10 +6,10 @@ import {PoolManager} from '../utils/pairManager'
 import {
     Action,
     ActionKind,
-    LiquidityUpdatePoolAction,
+    ChangeLiquidityPoolAction,
     PriceUpdateTokenAction,
+    SetBalancesPoolAction,
     SwapUserAction,
-    SyncPoolAction,
     UnknownPoolAction,
     UnknownTokenAction,
     UnknownUserAction,
@@ -71,10 +71,10 @@ export function getSolidlyPairActions(
                     )
 
                     actions.push(
-                        new SyncPoolAction(block, item.transaction, {
+                        new SetBalancesPoolAction(block, item.transaction, {
                             id: item.address,
-                            amount0: event.reserve0.toBigInt(),
-                            amount1: event.reserve1.toBigInt(),
+                            value0: event.reserve0.toBigInt(),
+                            value1: event.reserve1.toBigInt(),
                         })
                     )
 
@@ -112,7 +112,7 @@ export function getSolidlyPairActions(
 
                     if (from === ZERO_ADDRESS) {
                         actions.push(
-                            new LiquidityUpdatePoolAction(block, item.transaction, {
+                            new ChangeLiquidityPoolAction(block, item.transaction, {
                                 id: item.address,
                                 amount,
                             })
@@ -132,7 +132,7 @@ export function getSolidlyPairActions(
 
                     if (to === ZERO_ADDRESS && from !== ZERO_ADDRESS) {
                         actions.push(
-                            new LiquidityUpdatePoolAction(block, item.transaction, {
+                            new ChangeLiquidityPoolAction(block, item.transaction, {
                                 id: item.address,
                                 amount: -amount,
                             })

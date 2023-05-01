@@ -5,7 +5,7 @@ import {ProcessorItem} from '../processor'
 import {PoolManager} from '../utils/pairManager'
 import {
     Action,
-    LiquidityUpdatePoolAction,
+    ChangeLiquidityPoolAction,
     SwapUserAction,
     UnknownPoolAction,
     UnknownUserAction,
@@ -60,7 +60,7 @@ export function getAlgebraPoolActions(
                     if (amount === 0n) break
 
                     actions.push(
-                        new LiquidityUpdatePoolAction(block, item.transaction, {
+                        new ChangeLiquidityPoolAction(block, item.transaction, {
                             id: poolId,
                             amount,
                         })
@@ -87,7 +87,7 @@ export function getAlgebraPoolActions(
                     if (amount === 0n) break
 
                     actions.push(
-                        new LiquidityUpdatePoolAction(block, item.transaction, {
+                        new ChangeLiquidityPoolAction(block, item.transaction, {
                             id: poolId,
                             amount,
                         })
