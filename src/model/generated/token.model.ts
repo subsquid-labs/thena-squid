@@ -14,6 +14,9 @@ export class Token {
     @Column_("int4", {nullable: false})
     decimals!: number
 
+    @Column_("text", {nullable: false})
+    symbol!: string
+
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     bnbPrice!: bigint
 

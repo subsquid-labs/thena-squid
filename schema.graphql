@@ -94,6 +94,7 @@ type LiquidityPositionUpdate @entity {
 type Token @entity {
     id: ID!
     decimals: Int!
+    symbol: String!
     bnbPrice: BigInt!
     priceMetadata: TokenPriceMetadata!
 }

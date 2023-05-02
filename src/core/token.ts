@@ -25,9 +25,11 @@ async function processInitAction(ctx: CommonContext<Storage<{tokens: Token}>>, a
     if (ctx.store.tokens.has(action.data.id)) return
 
     const decimals = await action.data.decimals.get(ctx)
+    const symbol = await action.data.symbol.get(ctx)
     const token = new Token({
         id: action.data.id,
         decimals,
+        symbol,
         bnbPrice: 0n,
         priceMetadata: new TokenPriceMetadata({
             largestBnbReserve: 0n,

@@ -40,7 +40,7 @@ export function getSolidlyFactoryActions(
                             }),
                             symbol: new DeferredCall(block, {
                                 address: token0,
-                                func: bep20.functions.decimals,
+                                func: bep20.functions.symbol,
                                 args: [],
                             }),
                         })
@@ -55,7 +55,7 @@ export function getSolidlyFactoryActions(
                             }),
                             symbol: new DeferredCall(block, {
                                 address: token1,
-                                func: bep20.functions.decimals,
+                                func: bep20.functions.symbol,
                                 args: [],
                             }),
                         })
