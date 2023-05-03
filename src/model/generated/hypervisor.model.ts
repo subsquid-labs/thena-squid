@@ -14,13 +14,19 @@ export class Hypervisor {
     @Column_("text", {nullable: false})
     poolId!: string
 
-    @Index_()
-    @ManyToOne_(() => LiquidityPosition, {nullable: true})
-    basePosition!: LiquidityPosition
+    @Column_("text", {nullable: true})
+    basePositionId!: string | undefined | null
+
+    @Column_("text", {nullable: true})
+    limitPositionId!: string | undefined | null
 
     @Index_()
     @ManyToOne_(() => LiquidityPosition, {nullable: true})
-    limitPosition!: LiquidityPosition
+    basePosition!: LiquidityPosition | undefined | null
+
+    @Index_()
+    @ManyToOne_(() => LiquidityPosition, {nullable: true})
+    limitPosition!: LiquidityPosition | undefined | null
 
     /**
      * Use poolId instead

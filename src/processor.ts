@@ -1,11 +1,11 @@
 import {lookupArchive} from '@subsquid/archive-registry'
 import {BatchProcessorItem, EvmBatchProcessor} from '@subsquid/evm-processor'
 import * as thena from './abi/bep20'
-import * as routerV2 from './abi/routerV2'
 import * as solidlyPair from './abi/solidlyPair'
 import * as solidlyFactory from './abi/solidlyFactory'
 import * as algebraPool from './abi/algebraPool'
 import * as algebraFactory from './abi/algebraFactory'
+import * as hypervisor from './abi/hypervisor'
 import {THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS, SOLIDLY_FACTORY, ALGEBRA_FACTORY} from './config'
 import fs from 'fs'
 
@@ -25,6 +25,7 @@ const evmLogData = {
 } as const
 
 const poolMetadata = getPreIndexedPools()
+const hypervisors = getHypervisors()
 
 export const processor = new EvmBatchProcessor()
     .setBlockRange({from: 24468802})
@@ -36,10 +37,6 @@ export const processor = new EvmBatchProcessor()
         filter: [[thena.events.Transfer.topic, thena.events.Approval.topic]],
         data: evmLogData,
     })
-    // .addLog(ROUTER_V2_ADDRESS, {
-    //     filter: [[routerV2.events.Swap.topic]],
-    //     data: evmLogData,
-    // })
     .addLog(SOLIDLY_FACTORY, {
         filter: [[solidlyFactory.events.PairCreated.topic]],
         data: evmLogData,
@@ -84,6 +81,21 @@ export const processor = new EvmBatchProcessor()
         data: evmLogData,
         range: {from: poolMetadata.block + 1},
     })
+    .addLog(hypervisors.addresses, {
+        filter: [
+            [
+                hypervisor.events.Deposit.topic,
+                hypervisor.events.Withdraw.topic,
+                hypervisor.events.Transfer.topic,
+                hypervisor.events.Rebalance.topic,
+            ],
+        ],
+        data: evmLogData,
+    })
+    .addTransaction(hypervisors.addresses, {
+        sighash: [hypervisor.functions.setWhitelist.sighash],
+        data: transactionData,
+    })
     .addTransaction([THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS], {
         sighash: [],
         data: transactionData,
@@ -99,5 +111,11 @@ type PoolsMetadata = {
 function getPreIndexedPools(): PoolsMetadata {
     const file = fs.readFileSync('./assets/pools.json', 'utf-8')
     const metadata: PoolsMetadata = JSON.parse(file)
+    return metadata
+}
+
+function getHypervisors(): {addresses: string[]} {
+    const file = fs.readFileSync('./assets/hypervisors.json', 'utf-8')
+    const metadata = JSON.parse(file)
     return metadata
 }

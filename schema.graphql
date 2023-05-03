@@ -35,23 +35,62 @@ type Trade @entity {
     user: User!
 }
 
+type Swap @entity {
+    id: ID!
+
+    # meatadata
+    blockNumber: Int!
+    timestamp: DateTime!
+    txHash: String!
+
+    # in
+    tokenInId: ID!
+    amountIn: BigInt!
+    amountInUSD: Float!
+
+    # out
+    tokenOutId: ID!
+    amountOut: BigInt!
+    amountOutUSD: Float!
+
+    tradeId: ID!
+    poolId: ID!
+
+    # relations
+    "@private Use tokenInId instead"
+    tokenIn: Token!
+    "@private Use tokenOutId instead"
+    tokenOut: Token!
+    "@private Use tradeId instead"
+    trade: Trade!
+    "@private Use poolId instead"
+    pool: Pool!
+}
+
+enum PoolType {
+    Solidly
+    Algebra
+    Hypervisor
+}
+
 type Pool @entity {
     id: ID!
 
     # token0
     token0Id: ID!
-    price0: BigInt!
     reserve0: BigInt!
+    price0: BigInt
 
     # token1
     token1Id: ID!
     reserve1: BigInt!
-    price1: BigInt!
+    price1: BigInt
 
+    type: PoolType!
+    factory: String
     liquidity: BigInt!
     stable: Boolean
-    factory: String!
-    # minimumLiquidity: BigInt!
+    sqrtPriceX96: BigInt
 
     # relations
     "@private Use token0Id instead"
@@ -109,9 +148,12 @@ type Hypervisor @entity {
 
     poolId: ID!
 
+    basePositionId: ID
+    limitPositionId: ID
+
     # relations
-    basePosition: LiquidityPosition!
-    limitPosition: LiquidityPosition!
+    basePosition: LiquidityPosition
+    limitPosition: LiquidityPosition
     "Use poolId instead"
     pool: Pool!
 }

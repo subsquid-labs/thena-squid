@@ -1,3 +1,5 @@
+import {PoolType} from '../../model'
+import {DeferredValue} from '../../utils/deferred'
 import {ActionKind, BaseAction} from './common'
 
 export enum PoolActionType {
@@ -7,7 +9,7 @@ export enum PoolActionType {
     ChangeBalances,
     SetLiquidity,
     ChangeLiquidity,
-    CalculatePrices,
+    SetSqrtPrice,
 }
 
 export interface BasePoolActionData {
@@ -21,10 +23,11 @@ export abstract class BasePoolAction<T extends BasePoolActionData = BasePoolActi
 }
 
 export interface CreatePoolActionData extends BasePoolActionData {
-    token0: string
-    token1: string
+    token0: DeferredValue<string>
+    token1: DeferredValue<string>
     stable?: boolean
     factory: string
+    type: PoolType
 }
 
 export class CreatePoolAction extends BasePoolAction<CreatePoolActionData> {
@@ -32,8 +35,8 @@ export class CreatePoolAction extends BasePoolAction<CreatePoolActionData> {
 }
 
 export interface SetBalancesPoolActionData extends BasePoolActionData {
-    value0: bigint
-    value1: bigint
+    value0: DeferredValue<bigint>
+    value1: DeferredValue<bigint>
 }
 
 export class SetBalancesPoolAction extends BasePoolAction<SetBalancesPoolActionData> {
@@ -58,23 +61,19 @@ export class ChangeLiquidityPoolAction extends BasePoolAction<ChangeLiquidityPoo
 }
 
 export interface SetLiquidityPoolActionData extends BasePoolActionData {
-    value: bigint
+    value: DeferredValue<bigint>
 }
 
 export class SetLiquidityPoolAction extends BasePoolAction<SetLiquidityPoolActionData> {
     readonly type = PoolActionType.SetLiquidity
 }
 
-export class CalculateSolidlyPricesPoolAction extends BasePoolAction {
-    readonly type = PoolActionType.CalculatePrices
+export interface SetSqrtPricePoolActionData extends BasePoolActionData {
+    value: bigint
 }
 
-export interface CalculateAlgebraPricesPoolActionData extends BasePoolActionData {
-    sqrtPriceX96: bigint
-}
-
-export class CalculateAlgebraPricesPoolAction extends BasePoolAction {
-    readonly type = PoolActionType.CalculatePrices
+export class SetSqrtPricePoolAction extends BasePoolAction<SetSqrtPricePoolActionData> {
+    readonly type = PoolActionType.SetSqrtPrice
 }
 
 export class UnknownPoolAction extends BasePoolAction {
@@ -87,4 +86,5 @@ export type PoolAction =
     | ChangeBalancesPoolAction
     | SetLiquidityPoolAction
     | ChangeLiquidityPoolAction
+    | SetSqrtPricePoolAction
     | UnknownPoolAction

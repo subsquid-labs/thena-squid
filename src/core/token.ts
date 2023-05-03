@@ -71,6 +71,7 @@ function processPriceUpdateAction(
     if (token.id === WBNB_ADDRESS) {
         token.bnbPrice = 10n ** BNB_DECIMALS
     } else {
-        token.bnbPrice = (pairedToken.bnbPrice * tokenPrice) / 10n ** BigInt(pairedToken.decimals)
+        token.bnbPrice =
+            tokenPrice != null ? (pairedToken.bnbPrice * tokenPrice) / 10n ** BigInt(pairedToken.decimals) : 0n
     }
 }

@@ -5,6 +5,7 @@ export enum ActionKind {
     Pool,
     LiquidityPosition,
     Token,
+    Hypervisor,
 }
 
 export interface IAction<T = unknown> {

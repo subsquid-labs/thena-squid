@@ -6,12 +6,19 @@ import {PoolManager} from '../utils/pairManager'
 import {
     Action,
     ChangeLiquidityPoolAction,
+    RemovePositionHypervisorAction,
+    SetLiquidityPoolAction,
+    SetPositionHypervisorAction,
+    SetSqrtPricePoolAction,
     SwapUserAction,
     UnknownPoolAction,
+    UnknownTokenAction,
     UnknownUserAction,
     ValueUpdateLiquidityPositionAction,
 } from '../types/action'
 import {createLiquidityPositionId} from '../utils/ids'
+import {WrappedValue} from '../utils/deferred'
+import {HypervisorManager} from '../utils/hypervisorManager'
 
 export function isAlgebraPoolItem(item: ProcessorItem) {
     return PoolManager.instance.isPool(ALGEBRA_FACTORY, item.address)
@@ -36,8 +43,18 @@ export function getAlgebraPoolActions(
                     const amount0 = event.amount0.toBigInt()
                     const amount1 = event.amount1.toBigInt()
 
-                    // to make sure it will be prefetched
-                    actions.push(new UnknownPoolAction(block, item.transaction, {id: poolId}))
+                    const liquidity = event.liquidity.toBigInt()
+
+                    actions.push(
+                        new UnknownTokenAction(block, item.transaction, {
+                            id: PoolManager.instance.getTokens(poolId).token0,
+                        })
+                    )
+                    actions.push(
+                        new UnknownTokenAction(block, item.transaction, {
+                            id: PoolManager.instance.getTokens(poolId).token1,
+                        })
+                    )
 
                     actions.push(
                         new SwapUserAction(block, item.transaction, {
@@ -45,6 +62,20 @@ export function getAlgebraPoolActions(
                             amount0,
                             amount1,
                             poolId,
+                        })
+                    )
+
+                    actions.push(
+                        new SetLiquidityPoolAction(block, item.transaction, {
+                            id: poolId,
+                            value: new WrappedValue(liquidity),
+                        })
+                    )
+
+                    actions.push(
+                        new SetSqrtPricePoolAction(block, item.transaction, {
+                            id: poolId,
+                            value: event.price.toBigInt(),
                         })
                     )
 
@@ -76,6 +107,24 @@ export function getAlgebraPoolActions(
                             poolId,
                         })
                     )
+
+                    actions.push(
+                        new ChangeLiquidityPoolAction(block, item.transaction, {
+                            id: poolId,
+                            amount,
+                        })
+                    )
+
+                    if (HypervisorManager.instance.isTracked(userId)) {
+                        actions.push(
+                            new SetPositionHypervisorAction(block, item.transaction, {
+                                id: userId,
+                                positionId: createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick),
+                            })
+                        )
+                    }
+
+                    break
                 }
                 case algebraPool.events.Burn.topic: {
                     const event = algebraPool.events.Burn.decode(item.evmLog)
@@ -103,6 +152,24 @@ export function getAlgebraPoolActions(
                             poolId,
                         })
                     )
+
+                    actions.push(
+                        new ChangeLiquidityPoolAction(block, item.transaction, {
+                            id: poolId,
+                            amount,
+                        })
+                    )
+
+                    if (HypervisorManager.instance.isTracked(userId)) {
+                        actions.push(
+                            new RemovePositionHypervisorAction(block, item.transaction, {
+                                id: userId,
+                                positionId: createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick),
+                            })
+                        )
+                    }
+
+                    break
                 }
                 default: {
                     ctx.log.error(`unknown event ${item.evmLog.topics[0]}`)

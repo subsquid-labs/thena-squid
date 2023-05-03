@@ -5,7 +5,8 @@ import * as solidlyFactory from '../abi/solidlyFactory'
 import * as bep20 from '../abi/bep20'
 import {Action, CreatePoolAction, InitTokenAction} from '../types/action'
 import {PoolManager} from '../utils/pairManager'
-import {DeferredCall} from '../utils/deferred'
+import {DeferredCall, WrappedValue} from '../utils/deferred'
+import {PoolType} from '../model'
 
 export function isSolidlyFactoryItem(item: ProcessorItem) {
     return item.address === SOLIDLY_FACTORY
@@ -64,10 +65,11 @@ export function getSolidlyFactoryActions(
                     actions.push(
                         new CreatePoolAction(block, item.transaction, {
                             id,
-                            token0,
-                            token1,
+                            token0: new WrappedValue(token0),
+                            token1: new WrappedValue(token1),
                             stable: event.stable,
                             factory: SOLIDLY_FACTORY,
+                            type: PoolType.Solidly,
                         })
                     )
 

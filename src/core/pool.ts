@@ -1,29 +1,47 @@
 import assert from 'assert'
-import {ChangeLiquidityPoolAction, CreatePoolAction, PoolAction, PoolActionType, SetBalancesPoolAction} from '../mapping'
-import {Pool, Token, Trade, User} from '../model'
+import {
+    ChangeBalancesPoolAction,
+    ChangeLiquidityPoolAction,
+    CreatePoolAction,
+    PoolAction,
+    PoolActionType,
+    SetBalancesPoolAction,
+    SetLiquidityPoolAction,
+    SetSqrtPricePoolAction,
+} from '../mapping'
+import {Pool, Token} from '../model'
 import {CommonContext, Storage} from '../types/util'
 
-export function processPoolAction(ctx: CommonContext<Storage<{pools: Pool; tokens: Token}>>, action: PoolAction) {
+export async function processPoolAction(ctx: CommonContext<Storage<{pools: Pool; tokens: Token}>>, action: PoolAction) {
     switch (action.type) {
         case PoolActionType.Creation:
-            processPoolCreation(ctx, action)
+            await processPoolCreation(ctx, action)
             break
         case PoolActionType.ChangeLiquidity:
-            processLiquidity(ctx, action)
+            await processLiquidity(ctx, action)
             break
         case PoolActionType.SetBalances:
-            processBalances(ctx, action)
+            await processBalances(ctx, action)
+            break
+        case PoolActionType.SetSqrtPrice:
+            await processSetSqrtPrice(ctx, action)
+            break
+        case PoolActionType.SetLiquidity:
+            await processSetLiquidity(ctx, action)
+            break
+        case PoolActionType.ChangeBalances:
+            await processChangeBalances(ctx, action)
             break
     }
 }
 
-function processPoolCreation(ctx: CommonContext<Storage<{pools: Pool}>>, action: CreatePoolAction) {
+async function processPoolCreation(ctx: CommonContext<Storage<{pools: Pool}>>, action: CreatePoolAction) {
     assert(!ctx.store.pools.has(action.data.id), `Pool ${action.data.id} already exists 0_o`)
 
     const pool = new Pool({
         id: action.data.id,
-        token0Id: action.data.token0,
-        token1Id: action.data.token1,
+        token0Id: await action.data.token0.get(ctx),
+        token1Id: await action.data.token1.get(ctx),
         factory: action.data.factory,
         liquidity: 0n,
         reserve0: 0n,
@@ -31,13 +49,14 @@ function processPoolCreation(ctx: CommonContext<Storage<{pools: Pool}>>, action:
         price0: 0n,
         price1: 0n,
         stable: action.data.stable,
+        type: action.data.type,
     })
     ctx.store.pools.set(pool.id, pool)
 
     ctx.log.debug(`Created pool ${pool.id}`)
 }
 
-function processLiquidity(ctx: CommonContext<Storage<{pools: Pool}>>, action: ChangeLiquidityPoolAction) {
+async function processLiquidity(ctx: CommonContext<Storage<{pools: Pool}>>, action: ChangeLiquidityPoolAction) {
     const pool = ctx.store.pools.get(action.data.id)
     assert(pool != null, `Missing pool ${action.data.id}`)
 
@@ -46,22 +65,60 @@ function processLiquidity(ctx: CommonContext<Storage<{pools: Pool}>>, action: Ch
     ctx.log.debug(`Liquidity of pool ${pool.id} changed by ${action.data.amount}`)
 }
 
-function processBalances(ctx: CommonContext<Storage<{pools: Pool; tokens: Token}>>, action: SetBalancesPoolAction) {
+async function processSetLiquidity(ctx: CommonContext<Storage<{pools: Pool}>>, action: SetLiquidityPoolAction) {
     const pool = ctx.store.pools.get(action.data.id)
     assert(pool != null, `Missing pool ${action.data.id}`)
 
-    pool.reserve0 = action.data.value0
-    pool.reserve1 = action.data.value1
+    pool.liquidity = await action.data.value.get(ctx)
+
+    ctx.log.debug(`Liquidity of pool ${pool.id} set to ${pool.liquidity}`)
+}
+
+async function processBalances(
+    ctx: CommonContext<Storage<{pools: Pool; tokens: Token}>>,
+    action: SetBalancesPoolAction
+) {
+    const pool = ctx.store.pools.get(action.data.id)
+    assert(pool != null, `Missing pool ${action.data.id}`)
+
+    pool.reserve0 = await action.data.value0.get(ctx)
+    pool.reserve1 = await action.data.value1.get(ctx)
 
     const token0 = ctx.store.tokens.get(pool.token0Id)
-    assert(token0 != null)
     const token1 = ctx.store.tokens.get(pool.token1Id)
+    // if (token0 == null || token1 == null) return // FIXME: remove when archive will be fixed
+    assert(token0 != null)
     assert(token1 != null)
 
     pool.price0 = _getPrice(pool, token0, token1)
     pool.price1 = _getPrice(pool, token1, token0)
 
     ctx.log.debug(`Balances of pool ${pool.id} updated to ${action.data.value0}, ${action.data.value1}`)
+}
+
+async function processChangeBalances(
+    ctx: CommonContext<Storage<{pools: Pool; tokens: Token}>>,
+    action: ChangeBalancesPoolAction
+) {
+    const pool = ctx.store.pools.get(action.data.id)
+    assert(pool != null, `Missing pool ${action.data.id}`)
+
+    pool.reserve0 += action.data.value0
+    pool.reserve1 += action.data.value1
+
+    ctx.log.debug(
+        `Balances of pool ${pool.id} updated to ${pool.reserve0} (${action.data.value0}), ${pool.reserve1} (${action.data.value1})`
+    )
+}
+
+async function processSetSqrtPrice(
+    ctx: CommonContext<Storage<{pools: Pool; tokens: Token}>>,
+    action: SetSqrtPricePoolAction
+) {
+    const pool = ctx.store.pools.get(action.data.id)
+    assert(pool != null, `Missing pool ${action.data.id}`)
+
+    pool.sqrtPriceX96 = action.data.value
 }
 
 function _getPrice(pool: Pool, tokenIn: Token, tokenOut: Token) {

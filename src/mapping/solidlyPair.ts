@@ -19,6 +19,7 @@ import {
     ValueUpdateLiquidityPositionAction,
 } from '../types/action/liquidityPosition'
 import {createLiquidityPositionId, createLiquidityPositionUpdateId} from '../utils/ids'
+import {WrappedValue} from '../utils/deferred'
 
 export function isSolidlyPairItem(item: ProcessorItem) {
     return PoolManager.instance.isPool(SOLIDLY_FACTORY, item.address)
@@ -48,6 +49,16 @@ export function getSolidlyPairActions(
 
                     // to make sure it will be prefetched
                     actions.push(new UnknownPoolAction(block, item.transaction, {id: poolId}))
+                    actions.push(
+                        new UnknownTokenAction(block, item.transaction, {
+                            id: PoolManager.instance.getTokens(poolId).token0,
+                        })
+                    )
+                    actions.push(
+                        new UnknownTokenAction(block, item.transaction, {
+                            id: PoolManager.instance.getTokens(poolId).token1,
+                        })
+                    )
 
                     actions.push(
                         new SwapUserAction(block, item.transaction, {
@@ -73,8 +84,8 @@ export function getSolidlyPairActions(
                     actions.push(
                         new SetBalancesPoolAction(block, item.transaction, {
                             id: item.address,
-                            value0: event.reserve0.toBigInt(),
-                            value1: event.reserve1.toBigInt(),
+                            value0: new WrappedValue(event.reserve0.toBigInt()),
+                            value1: new WrappedValue(event.reserve1.toBigInt()),
                         })
                     )
 

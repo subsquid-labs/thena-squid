@@ -1,9 +1,9 @@
 import {Store} from '@subsquid/typeorm-store'
 import {exit} from 'process'
 import {In} from 'typeorm'
-import {User, Pool, Trade, LiquidityPosition, LiquidityPositionUpdate, Token} from '../model'
+import {User, Pool, Trade, LiquidityPosition, LiquidityPositionUpdate, Token, Hypervisor} from '../model'
 import {toEntityMap} from '../utils/misc'
-import {Action, ActionKind, UserAction, PoolAction, TokenAction} from '../types/action'
+import {Action, ActionKind, UserAction, PoolAction, TokenAction, HypervisorAction} from '../types/action'
 import {CommonContext} from '../types/util'
 import {processPoolAction} from './pool'
 import {processUserAction} from './user'
@@ -11,6 +11,7 @@ import {LiquidityPositionAction} from '../types/action/liquidityPosition'
 import {processLiquidityPositionAction} from './liquidityPosition'
 import {processTokenAction} from './token'
 import {USD_ADDRESS} from '../config'
+import {processHypervisorAction} from './hypervisor'
 
 export async function processActions(ctx: CommonContext<Store>, actions: Action[]) {
     const userIds = getUserIds(actions)
@@ -21,6 +22,9 @@ export async function processActions(ctx: CommonContext<Store>, actions: Action[
 
     const positionIds = getLiquidityPositionsIds(actions)
     const positions = await ctx.store.findBy(LiquidityPosition, {id: In(positionIds)}).then(toEntityMap)
+
+    const hypervisorIds = getHypervisorIds(actions)
+    const hypervisors = await ctx.store.findBy(Hypervisor, {id: In(hypervisorIds)}).then(toEntityMap)
 
     const tokenIds = getTokensIds(actions)
     tokenIds.push(USD_ADDRESS)
@@ -43,13 +47,14 @@ export async function processActions(ctx: CommonContext<Store>, actions: Action[
                 positions,
                 positionUpdates,
                 tokens,
+                hypervisors,
             },
         }
 
         try {
             switch (action.kind) {
                 case ActionKind.Pool:
-                    processPoolAction(newCtx, action)
+                    await processPoolAction(newCtx, action)
                     break
                 case ActionKind.User:
                     processUserAction(newCtx, action)
@@ -59,6 +64,9 @@ export async function processActions(ctx: CommonContext<Store>, actions: Action[
                     break
                 case ActionKind.Token:
                     await processTokenAction(newCtx, action)
+                    break
+                case ActionKind.Hypervisor:
+                    await processHypervisorAction(newCtx, action)
                     break
             }
         } catch (err) {
@@ -71,6 +79,7 @@ export async function processActions(ctx: CommonContext<Store>, actions: Action[
     await ctx.store.upsert([...tokens.values()])
     await ctx.store.upsert([...pools.values()])
     await ctx.store.upsert([...positions.values()])
+    await ctx.store.upsert([...hypervisors.values()])
     await ctx.store.insert([...trades.values()].flat())
     await ctx.store.insert([...positionUpdates.values()].flat())
 }
@@ -95,4 +104,12 @@ function getLiquidityPositionsIds(actions: Action[]) {
 
 function getTokensIds(actions: Action[]) {
     return [...new Set(actions.filter((i): i is TokenAction => i.kind === ActionKind.Token).map((i) => i.data.id))]
+}
+
+function getHypervisorIds(actions: Action[]) {
+    return [
+        ...new Set(
+            actions.filter((i): i is HypervisorAction => i.kind === ActionKind.Hypervisor).map((i) => i.data.id)
+        ),
+    ]
 }

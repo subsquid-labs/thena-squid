@@ -8,6 +8,7 @@ import {getAlgebraFactoryActions, isAlgebraFactoryItem} from './algebraFactory'
 import {getSolidlyFactoryActions, isSolidlyFactoryItem} from './solidlyFactory'
 import {getSolidlyPairActions, isSolidlyPairItem} from './solidlyPair'
 import {getAlgebraPoolActions, isAlgebraPoolItem} from './algebraPool'
+import {getHypervisorActions, isHypervisorItem} from './hypervisor'
 
 export * from '../types/action'
 
@@ -63,6 +64,11 @@ export async function getItemActions(
     if (isAlgebraPoolItem(item)) {
         ctx.log.debug(`processing Algebra Pool item...`)
         return getAlgebraPoolActions(ctx, block, item)
+    }
+
+    if (isHypervisorItem(item)) {
+        ctx.log.debug(`processing Hypervisor item...`)
+        return await getHypervisorActions(ctx, block, item)
     }
 
     return []
