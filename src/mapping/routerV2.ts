@@ -1,23 +1,23 @@
-import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
-import {ProcessorItem} from '../processor'
+import {DataHandlerContext} from '@subsquid/evm-processor'
+import {Log} from '../processor'
 import {Action, UnknownUserAction} from '../types/action'
 import {ROUTER_V2_ADDRESS} from '../config'
 
-export function isRouterV2Item(item: ProcessorItem) {
+export function isRouterV2Item(item: Log) {
     return item.address === ROUTER_V2_ADDRESS
 }
 
-export function getRouterV2Actions(ctx: BatchHandlerContext<unknown, unknown>, block: EvmBlock, item: ProcessorItem) {
+export function getRouterV2Actions(ctx: DataHandlerContext<unknown>, item: Log) {
     const actions: Action[] = []
 
-    switch (item.kind) {
-        case 'transaction': {
-            if (item.transaction.from != null) {
-                actions.push(new UnknownUserAction(block, item.transaction, {id: item.transaction.from}))
-            }
-            break
-        }
-    }
+    // switch (item.kind) {
+    //     case 'transaction': {
+    //         if (item.transaction.from != null) {
+    //             actions.push(new UnknownUserAction(item.block, item.transaction, {id: item.transaction.from}))
+    //         }
+    //         break
+    //     }
+    // }
 
     return actions
 }

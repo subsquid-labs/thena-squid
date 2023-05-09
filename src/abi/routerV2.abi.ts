@@ -1,6 +1,7 @@
 export const ABI_JSON = [
     {
         "type": "constructor",
+        "stateMutability": "undefined",
         "payable": false,
         "inputs": [
             {
@@ -57,21 +58,7 @@ export const ABI_JSON = [
             },
             {
                 "type": "tuple[]",
-                "name": "routes",
-                "components": [
-                    {
-                        "type": "address",
-                        "name": "from"
-                    },
-                    {
-                        "type": "address",
-                        "name": "to"
-                    },
-                    {
-                        "type": "bool",
-                        "name": "stable"
-                    }
-                ]
+                "name": "routes"
             },
             {
                 "type": "address",
@@ -254,21 +241,7 @@ export const ABI_JSON = [
             },
             {
                 "type": "tuple[]",
-                "name": "routes",
-                "components": [
-                    {
-                        "type": "address",
-                        "name": "from"
-                    },
-                    {
-                        "type": "address",
-                        "name": "to"
-                    },
-                    {
-                        "type": "bool",
-                        "name": "stable"
-                    }
-                ]
+                "name": "routes"
             }
         ],
         "outputs": [
@@ -804,21 +777,7 @@ export const ABI_JSON = [
             },
             {
                 "type": "tuple[]",
-                "name": "routes",
-                "components": [
-                    {
-                        "type": "address",
-                        "name": "from"
-                    },
-                    {
-                        "type": "address",
-                        "name": "to"
-                    },
-                    {
-                        "type": "bool",
-                        "name": "stable"
-                    }
-                ]
+                "name": "routes"
             },
             {
                 "type": "address",
@@ -849,21 +808,7 @@ export const ABI_JSON = [
             },
             {
                 "type": "tuple[]",
-                "name": "routes",
-                "components": [
-                    {
-                        "type": "address",
-                        "name": "from"
-                    },
-                    {
-                        "type": "address",
-                        "name": "to"
-                    },
-                    {
-                        "type": "bool",
-                        "name": "stable"
-                    }
-                ]
+                "name": "routes"
             },
             {
                 "type": "address",
@@ -892,21 +837,7 @@ export const ABI_JSON = [
             },
             {
                 "type": "tuple[]",
-                "name": "routes",
-                "components": [
-                    {
-                        "type": "address",
-                        "name": "from"
-                    },
-                    {
-                        "type": "address",
-                        "name": "to"
-                    },
-                    {
-                        "type": "bool",
-                        "name": "stable"
-                    }
-                ]
+                "name": "routes"
             },
             {
                 "type": "address",
@@ -940,21 +871,7 @@ export const ABI_JSON = [
             },
             {
                 "type": "tuple[]",
-                "name": "routes",
-                "components": [
-                    {
-                        "type": "address",
-                        "name": "from"
-                    },
-                    {
-                        "type": "address",
-                        "name": "to"
-                    },
-                    {
-                        "type": "bool",
-                        "name": "stable"
-                    }
-                ]
+                "name": "routes"
             },
             {
                 "type": "address",
@@ -983,21 +900,7 @@ export const ABI_JSON = [
             },
             {
                 "type": "tuple[]",
-                "name": "routes",
-                "components": [
-                    {
-                        "type": "address",
-                        "name": "from"
-                    },
-                    {
-                        "type": "address",
-                        "name": "to"
-                    },
-                    {
-                        "type": "bool",
-                        "name": "stable"
-                    }
-                ]
+                "name": "routes"
             },
             {
                 "type": "address",
@@ -1073,21 +976,7 @@ export const ABI_JSON = [
             },
             {
                 "type": "tuple[]",
-                "name": "routes",
-                "components": [
-                    {
-                        "type": "address",
-                        "name": "from"
-                    },
-                    {
-                        "type": "address",
-                        "name": "to"
-                    },
-                    {
-                        "type": "bool",
-                        "name": "stable"
-                    }
-                ]
+                "name": "routes"
             },
             {
                 "type": "address",
@@ -1112,5 +1001,9 @@ export const ABI_JSON = [
                 "type": "address"
             }
         ]
+    },
+    {
+        "type": "receive",
+        "stateMutability": "payable"
     }
 ]

@@ -63,9 +63,9 @@ function processSwapAction(
     const tokenOut = ctx.store.tokens.get(tokenOutId)
     assert(tokenOut != null)
     const usdToken = ctx.store.tokens.get(USD_ADDRESS)
-    assert(usdToken != null)
+    // assert(usdToken != null)
 
-    const usdBnbPrice = BigDecimal(usdToken.bnbPrice, BNB_DECIMALS)
+    const usdBnbPrice = BigDecimal(usdToken ? usdToken.bnbPrice : 0n, BNB_DECIMALS)
     const amountInUSD = usdBnbPrice.gt(0)
         ? BigDecimal(tokenIn.bnbPrice, BNB_DECIMALS).div(usdBnbPrice).mul(BigDecimal(amountIn, tokenIn.decimals)).toNumber()
         : 0
