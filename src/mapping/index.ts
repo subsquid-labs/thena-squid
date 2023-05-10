@@ -10,8 +10,6 @@ import {getHypervisorActions, isHypervisorItem} from './hypervisor'
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Fields, Log} from '../processor'
 
-export * from '../types/action'
-
 export async function getActions(ctx: DataHandlerContext<unknown, Fields>): Promise<Action[]> {
     const actions: Action[] = []
     for (let {header: block, logs, transactions} of ctx.blocks) {

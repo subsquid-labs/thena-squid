@@ -8,11 +8,9 @@ import {
 } from '../mapping'
 import {Hypervisor} from '../model'
 import {CommonContext, Storage} from '../types/util'
+import {Store} from '@subsquid/typeorm-store'
 
-export async function processHypervisorAction(
-    ctx: CommonContext<Storage<{hypervisors: Hypervisor}>>,
-    action: HypervisorAction
-) {
+export async function processHypervisorAction(ctx: CommonContext<Store>, action: HypervisorAction) {
     switch (action.type) {
         case HypervisorActionType.Init: {
             await processInitAction(ctx, action)
@@ -29,21 +27,18 @@ export async function processHypervisorAction(
     }
 }
 
-async function processInitAction(ctx: CommonContext<Storage<{hypervisors: Hypervisor}>>, action: InitHypervisorAction) {
+async function processInitAction(ctx: CommonContext<Store>, action: InitHypervisorAction) {
     const hypervisor = new Hypervisor({
         id: action.data.id,
         poolId: await action.data.poolId.get(ctx),
     })
 
-    ctx.store.hypervisors.set(hypervisor.id, hypervisor)
+    await ctx.store.insert(hypervisor)
     ctx.log.debug(`Hypervisor ${hypervisor.id} created`)
 }
 
-function processSetPositionAction(
-    ctx: CommonContext<Storage<{hypervisors: Hypervisor}>>,
-    action: SetPositionHypervisorAction
-) {
-    const hypervisor = ctx.store.hypervisors.get(action.data.id)
+async function processSetPositionAction(ctx: CommonContext<Store>, action: SetPositionHypervisorAction) {
+    const hypervisor = await ctx.store.get(Hypervisor, action.data.id)
     assert(hypervisor != null)
 
     if (hypervisor.basePositionId == null) {
@@ -53,13 +48,12 @@ function processSetPositionAction(
     } else {
         throw new Error()
     }
+
+    await ctx.store.upsert(hypervisor)
 }
 
-function processRemovePositionAction(
-    ctx: CommonContext<Storage<{hypervisors: Hypervisor}>>,
-    action: RemovePositionHypervisorAction
-) {
-    const hypervisor = ctx.store.hypervisors.get(action.data.id)
+async function processRemovePositionAction(ctx: CommonContext<Store>, action: RemovePositionHypervisorAction) {
+    const hypervisor = await ctx.store.get(Hypervisor, action.data.id)
     assert(hypervisor != null)
 
     if (hypervisor.basePositionId === action.data.positionId) {
@@ -69,4 +63,6 @@ function processRemovePositionAction(
     } else {
         throw new Error()
     }
+
+    await ctx.store.upsert(hypervisor)
 }

@@ -6,6 +6,7 @@ import {PoolManager} from '../utils/pairManager'
 import {
     Action,
     ChangeLiquidityPoolAction,
+    RecalculatePricesPoolAction,
     RemovePositionHypervisorAction,
     SetLiquidityPoolAction,
     SetPositionHypervisorAction,
@@ -72,6 +73,12 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<unknown>, item: Lo
                 new SetSqrtPricePoolAction(item.block, item.transaction!, {
                     id: poolId,
                     value: event.price,
+                })
+            )
+
+            actions.push(
+                new RecalculatePricesPoolAction(item.block, item.transaction!, {
+                    id: item.address,
                 })
             )
 

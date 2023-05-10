@@ -4,11 +4,9 @@ import {InitTokenAction, PriceUpdateTokenAction, TokenAction, TokenActionType} f
 import {CommonContext, Storage} from '../types/util'
 import * as bep20 from '../abi/bep20'
 import {BNB_DECIMALS, WBNB_ADDRESS} from '../config'
+import {Store} from '@subsquid/typeorm-store'
 
-export async function processTokenAction(
-    ctx: CommonContext<Storage<{tokens: Token; pools: Pool}>>,
-    action: TokenAction
-) {
+export async function processTokenAction(ctx: CommonContext<Store>, action: TokenAction) {
     switch (action.type) {
         case TokenActionType.Init: {
             await processInitAction(ctx, action)
@@ -21,8 +19,8 @@ export async function processTokenAction(
     }
 }
 
-async function processInitAction(ctx: CommonContext<Storage<{tokens: Token}>>, action: InitTokenAction) {
-    if (ctx.store.tokens.has(action.data.id)) return
+async function processInitAction(ctx: CommonContext<Store>, action: InitTokenAction) {
+    if ((await ctx.store.get(Token, action.data.id)) != null) return
 
     const decimals = await action.data.decimals.get(ctx)
     const symbol = await action.data.symbol.get(ctx)
@@ -37,25 +35,22 @@ async function processInitAction(ctx: CommonContext<Storage<{tokens: Token}>>, a
         }),
     })
 
-    ctx.store.tokens.set(token.id, token)
+    await ctx.store.upsert(token)
     ctx.log.debug(`Token ${token.id} created`)
 }
 
-function processPriceUpdateAction(
-    ctx: CommonContext<Storage<{tokens: Token; pools: Pool}>>,
-    action: PriceUpdateTokenAction
-) {
-    const token = ctx.store.tokens.get(action.data.id)
+async function processPriceUpdateAction(ctx: CommonContext<Store>, action: PriceUpdateTokenAction) {
+    const token = await ctx.store.get(Token, action.data.id)
     assert(token != null, `Missing token ${action.data.id}`)
 
-    const pool = ctx.store.pools.get(action.data.poolId)
+    const pool = await ctx.store.get(Pool, action.data.poolId)
     assert(pool != null, `Missing pool ${action.data.poolId}`)
 
     const [pairedTokenId, tokenPrice, pairedTokenReserve] =
         pool.token0Id === token.id
             ? [pool.token1Id, pool.price0, pool.reserve1]
             : [pool.token0Id, pool.price1, pool.reserve0]
-    const pairedToken = ctx.store.tokens.get(pairedTokenId)
+    const pairedToken = await ctx.store.get(Token, pairedTokenId)
     assert(pairedToken != null, `Missing token ${pairedTokenId}`)
 
     const timestamp = new Date(action.block.timestamp)
@@ -74,4 +69,6 @@ function processPriceUpdateAction(
         token.bnbPrice =
             tokenPrice != null ? (pairedToken.bnbPrice * tokenPrice) / 10n ** BigInt(pairedToken.decimals) : 0n
     }
+
+    await ctx.store.upsert(token)
 }

@@ -14,24 +14,24 @@ import {USD_ADDRESS} from '../config'
 import {processHypervisorAction} from './hypervisor'
 
 export async function processActions(ctx: CommonContext<Store>, actions: Action[]) {
-    const userIds = getUserIds(actions)
-    const users = await ctx.store.findBy(User, {id: In(userIds)}).then(toEntityMap)
+    // const userIds = getUserIds(actions)
+    // const users = await ctx.store.findBy(User, {id: In(userIds)}).then(toEntityMap)
 
-    const poolIds = getPoolIds(actions)
-    const pools = await ctx.store.findBy(Pool, {id: In(poolIds)}).then(toEntityMap)
+    // const poolIds = getPoolIds(actions)
+    // const pools = await ctx.store.findBy(Pool, {id: In(poolIds)}).then(toEntityMap)
 
-    const positionIds = getLiquidityPositionsIds(actions)
-    const positions = await ctx.store.findBy(LiquidityPosition, {id: In(positionIds)}).then(toEntityMap)
+    // const positionIds = getLiquidityPositionsIds(actions)
+    // const positions = await ctx.store.findBy(LiquidityPosition, {id: In(positionIds)}).then(toEntityMap)
 
-    const hypervisorIds = getHypervisorIds(actions)
-    const hypervisors = await ctx.store.findBy(Hypervisor, {id: In(hypervisorIds)}).then(toEntityMap)
+    // const hypervisorIds = getHypervisorIds(actions)
+    // const hypervisors = await ctx.store.findBy(Hypervisor, {id: In(hypervisorIds)}).then(toEntityMap)
 
-    const tokenIds = getTokensIds(actions)
-    tokenIds.push(USD_ADDRESS)
-    const tokens = await ctx.store.findBy(Token, {id: In(tokenIds)}).then(toEntityMap)
+    // const tokenIds = getTokensIds(actions)
+    // tokenIds.push(USD_ADDRESS)
+    // const tokens = await ctx.store.findBy(Token, {id: In(tokenIds)}).then(toEntityMap)
 
-    const trades = new Map<string, Trade[]>()
-    const positionUpdates = new Map<string, LiquidityPositionUpdate[]>()
+    // const trades = new Map<string, Trade[]>()
+    // const positionUpdates = new Map<string, LiquidityPositionUpdate[]>()
 
     for (const action of actions) {
         const newCtx = {
@@ -40,15 +40,15 @@ export async function processActions(ctx: CommonContext<Store>, actions: Action[
                 block: action.block.height,
                 transaction: action.transaction.hash,
             }),
-            store: {
-                users,
-                pools,
-                trades,
-                positions,
-                positionUpdates,
-                tokens,
-                hypervisors,
-            },
+            // store: {
+            //     users,
+            //     pools,
+            //     trades,
+            //     positions,
+            //     positionUpdates,
+            //     tokens,
+            //     hypervisors,
+            // },
         }
 
         try {
@@ -57,10 +57,10 @@ export async function processActions(ctx: CommonContext<Store>, actions: Action[
                     await processPoolAction(newCtx, action)
                     break
                 case ActionKind.User:
-                    processUserAction(newCtx, action)
+                    await processUserAction(newCtx, action)
                     break
                 case ActionKind.LiquidityPosition:
-                    processLiquidityPositionAction(newCtx, action)
+                    await processLiquidityPositionAction(newCtx, action)
                     break
                 case ActionKind.Token:
                     await processTokenAction(newCtx, action)
@@ -75,13 +75,13 @@ export async function processActions(ctx: CommonContext<Store>, actions: Action[
         }
     }
 
-    await ctx.store.upsert([...users.values()])
-    await ctx.store.upsert([...tokens.values()])
-    await ctx.store.upsert([...pools.values()])
-    await ctx.store.upsert([...positions.values()])
-    await ctx.store.upsert([...hypervisors.values()])
-    await ctx.store.insert([...trades.values()].flat())
-    await ctx.store.insert([...positionUpdates.values()].flat())
+    // await ctx.store.upsert([...users.values()])
+    // await ctx.store.upsert([...tokens.values()])
+    // await ctx.store.upsert([...pools.values()])
+    // await ctx.store.upsert([...positions.values()])
+    // await ctx.store.upsert([...hypervisors.values()])
+    // await ctx.store.insert([...trades.values()].flat())
+    // await ctx.store.insert([...positionUpdates.values()].flat())
 }
 
 function getUserIds(actions: Action[]) {

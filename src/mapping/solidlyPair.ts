@@ -8,6 +8,7 @@ import {
     ActionKind,
     ChangeLiquidityPoolAction,
     PriceUpdateTokenAction,
+    RecalculatePricesPoolAction,
     SetBalancesPoolAction,
     SwapUserAction,
     UnknownPoolAction,
@@ -80,6 +81,12 @@ export function getSolidlyPairActions(ctx: DataHandlerContext<unknown>, item: Lo
                     id: item.address,
                     value0: new WrappedValue(event.reserve0),
                     value1: new WrappedValue(event.reserve1),
+                })
+            )
+
+            actions.push(
+                new RecalculatePricesPoolAction(item.block, item.transaction!, {
+                    id: item.address,
                 })
             )
 

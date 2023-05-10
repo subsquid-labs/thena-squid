@@ -10,6 +10,7 @@ export enum PoolActionType {
     SetLiquidity,
     ChangeLiquidity,
     SetSqrtPrice,
+    RecalculatePrices,
 }
 
 export interface BasePoolActionData {
@@ -76,6 +77,10 @@ export class SetSqrtPricePoolAction extends BasePoolAction<SetSqrtPricePoolActio
     readonly type = PoolActionType.SetSqrtPrice
 }
 
+export class RecalculatePricesPoolAction extends BasePoolAction {
+    readonly type = PoolActionType.RecalculatePrices
+}
+
 export class UnknownPoolAction extends BasePoolAction {
     readonly type = PoolActionType.Unknown
 }
@@ -87,4 +92,5 @@ export type PoolAction =
     | SetLiquidityPoolAction
     | ChangeLiquidityPoolAction
     | SetSqrtPricePoolAction
+    | RecalculatePricesPoolAction
     | UnknownPoolAction

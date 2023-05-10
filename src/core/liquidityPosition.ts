@@ -9,36 +9,27 @@ import {
     ValueUpdateLiquidityPositionAction,
 } from '../mapping'
 import {last} from '../utils/misc'
+import {Store} from '@subsquid/typeorm-store'
 
-export function processLiquidityPositionAction(
-    ctx: CommonContext<
-        Storage<{users: User; pools: Pool; positions: LiquidityPosition; positionUpdates: LiquidityPositionUpdate[]}>
-    >,
-    action: LiquidityPositionAction
-) {
+export async function processLiquidityPositionAction(ctx: CommonContext<Store>, action: LiquidityPositionAction) {
     switch (action.type) {
         case LiquidityPositionActionType.ValueUpdate:
-            processLiquidityPositionUpdate(ctx, action)
+            await processLiquidityPositionUpdate(ctx, action)
             break
         case LiquidityPositionActionType.AdjustValueUpdate:
-            processLiquidityPositionAdjustUpdate(ctx, action)
+            await processLiquidityPositionAdjustUpdate(ctx, action)
             break
     }
 }
 
-function processLiquidityPositionUpdate(
-    ctx: CommonContext<
-        Storage<{users: User; pools: Pool; positions: LiquidityPosition; positionUpdates: LiquidityPositionUpdate[]}>
-    >,
-    action: ValueUpdateLiquidityPositionAction
-) {
-    const pool = ctx.store.pools.get(action.data.poolId)
+async function processLiquidityPositionUpdate(ctx: CommonContext<Store>, action: ValueUpdateLiquidityPositionAction) {
+    const pool = await ctx.store.get(Pool, action.data.poolId)
     assert(pool != null, `Missing pool ${action.data.poolId}`)
 
-    const user = ctx.store.users.get(action.data.userId)
+    const user = await ctx.store.get(User, action.data.userId)
     assert(user != null, `Missing user ${action.data.userId}`)
 
-    let position = ctx.store.positions.get(action.data.id)
+    let position = await ctx.store.get(LiquidityPosition, action.data.id)
     if (position == null) {
         position = new LiquidityPosition({
             id: action.data.id,
@@ -46,20 +37,19 @@ function processLiquidityPositionUpdate(
             pool,
             value: 0n,
         })
-        ctx.store.positions.set(position.id, position)
+
+        await ctx.store.insert(position)
         ctx.log.debug(`LiquidityPosition ${position.id} created`)
     }
 
     position.value += action.data.amount
+
+    await ctx.store.upsert(position)
     ctx.log.debug(`Value of LiquidityPostition ${position.id} updated to ${position.value} (${action.data.amount})`)
 
     // assert(position.value >= 0)
 
-    let txPosotionUpdates = ctx.store.positionUpdates.get(action.transaction.id)
-    if (txPosotionUpdates == null) {
-        txPosotionUpdates = []
-        ctx.store.positionUpdates.set(action.transaction.id, txPosotionUpdates)
-    }
+    let txPosotionUpdates = await ctx.store.find(LiquidityPositionUpdate, {where: {txHash: action.transaction.hash}})
 
     const amount0 =
         action.data.amount0 != null ? action.data.amount0 : (action.data.amount * pool.reserve0) / pool.liquidity
@@ -76,17 +66,19 @@ function processLiquidityPositionUpdate(
         amount0,
         amount1,
     })
-    txPosotionUpdates.push(positionUpdate)
+
+    await ctx.store.insert(positionUpdate)
 }
 
-function processLiquidityPositionAdjustUpdate(
-    ctx: CommonContext<Storage<{positionUpdates: LiquidityPositionUpdate[]}>>,
+async function processLiquidityPositionAdjustUpdate(
+    ctx: CommonContext<Store>,
     action: AdjustValueUpdateLiquidityPositionAction
 ) {
-    const txPositionUpdates = ctx.store.positionUpdates.get(action.transaction.id)
-    assert(txPositionUpdates != null && txPositionUpdates.length > 0)
+    const txPositionUpdates = await ctx.store.find(LiquidityPositionUpdate, {where: {txHash: action.transaction.hash}})
 
     const positionUpdate = last(txPositionUpdates)
     positionUpdate.amount0 = action.data.amount0
     positionUpdate.amount1 = action.data.amount1
+
+    await ctx.store.upsert(positionUpdate)
 }

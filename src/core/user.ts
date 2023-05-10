@@ -6,50 +6,43 @@ import {CommonContext, Storage} from '../types/util'
 import {createTradeId} from '../utils/ids'
 import {BNB_DECIMALS, USD_ADDRESS} from '../config'
 import {BigDecimal} from '@subsquid/big-decimal'
+import {Store} from '@subsquid/typeorm-store'
 
-export function processUserAction(
-    ctx: CommonContext<Storage<{users: User; pools: Pool; trades: Trade[]; tokens: Token}>>,
-    action: UserAction
-) {
+export async function processUserAction(ctx: CommonContext<Store>, action: UserAction) {
     switch (action.type) {
         case UserActionType.Balance: {
-            processBalanceAction(ctx, action)
+            await processBalanceAction(ctx, action)
             break
         }
         case UserActionType.Swap: {
-            processSwapAction(ctx, action)
+            await processSwapAction(ctx, action)
             break
         }
         default: {
-            getOrCreateUser(ctx, action)
+            await getOrCreateUser(ctx, action)
             break
         }
     }
 }
 
-function processBalanceAction(ctx: CommonContext<Storage<{users: User}>>, action: BalanceUserAction) {
-    const user = getOrCreateUser(ctx, action)
+async function processBalanceAction(ctx: CommonContext<Store>, action: BalanceUserAction) {
+    const user = await getOrCreateUser(ctx, action)
 
     user.balance += action.data.amount
+
+    ctx.store.upsert(user)
     ctx.log.debug(`Balance of user ${user.id} updated to ${user.balance} (${action.data.amount})`)
 
     // assert(user.balance >= 0)
 }
 
-function processSwapAction(
-    ctx: CommonContext<Storage<{users: User; pools: Pool; trades: Trade[]; tokens: Token}>>,
-    action: SwapUserAction
-) {
-    const pool = ctx.store.pools.get(action.data.poolId)
+async function processSwapAction(ctx: CommonContext<Store>, action: SwapUserAction) {
+    const pool = await ctx.store.get(Pool, action.data.poolId)
     if (pool == null) return // not our factory pool
 
-    const user = getOrCreateUser(ctx, action)
+    const user = await getOrCreateUser(ctx, action)
 
-    let txTrades = ctx.store.trades.get(action.transaction.id)
-    if (txTrades == null) {
-        txTrades = []
-        ctx.store.trades.set(action.transaction.id, txTrades)
-    }
+    const txTrades = await ctx.store.find(Trade, {where: {txHash: action.transaction.hash}})
 
     const {tokenInId, tokenOutId, amountIn, amountOut} = convertTokenValues({
         token0Id: pool.token0Id,
@@ -58,19 +51,25 @@ function processSwapAction(
         amount1: action.data.amount1,
     })
 
-    const tokenIn = ctx.store.tokens.get(tokenInId)
+    const tokenIn = await ctx.store.get(Token, tokenInId)
     assert(tokenIn != null)
-    const tokenOut = ctx.store.tokens.get(tokenOutId)
+    const tokenOut = await ctx.store.get(Token, tokenOutId)
     assert(tokenOut != null)
-    const usdToken = ctx.store.tokens.get(USD_ADDRESS)
+    const usdToken = await ctx.store.get(Token, USD_ADDRESS)
     // assert(usdToken != null)
 
     const usdBnbPrice = BigDecimal(usdToken ? usdToken.bnbPrice : 0n, BNB_DECIMALS)
     const amountInUSD = usdBnbPrice.gt(0)
-        ? BigDecimal(tokenIn.bnbPrice, BNB_DECIMALS).div(usdBnbPrice).mul(BigDecimal(amountIn, tokenIn.decimals)).toNumber()
+        ? BigDecimal(tokenIn.bnbPrice, BNB_DECIMALS)
+              .div(usdBnbPrice)
+              .mul(BigDecimal(amountIn, tokenIn.decimals))
+              .toNumber()
         : 0
     const amountOutUSD = usdBnbPrice.gt(0)
-        ? BigDecimal(tokenOut.bnbPrice, BNB_DECIMALS).div(usdBnbPrice).mul(BigDecimal(amountOut, tokenOut.decimals)).toNumber()
+        ? BigDecimal(tokenOut.bnbPrice, BNB_DECIMALS)
+              .div(usdBnbPrice)
+              .mul(BigDecimal(amountOut, tokenOut.decimals))
+              .toNumber()
         : 0
 
     let trade = txTrades.length > 0 ? last(txTrades) : undefined
@@ -120,23 +119,23 @@ function convertTokenValues(data: {token0Id: string; amount0: bigint; token1Id: 
     }
 }
 
-function createUser(ctx: CommonContext<Storage<{users: User}>>, action: UserAction) {
+async function createUser(ctx: CommonContext<Store>, action: UserAction) {
     const user = new User({
         id: action.data.id,
         firstInteractAt: new Date(action.block.timestamp),
         balance: 0n,
     })
-    ctx.store.users.set(user.id, user)
 
+    await ctx.store.insert(user)
     ctx.log.debug(`User ${user.id} created`)
 
     return user
 }
 
-function getOrCreateUser(ctx: CommonContext<Storage<{users: User}>>, action: UserAction) {
-    let user = ctx.store.users.get(action.data.id)
+async function getOrCreateUser(ctx: CommonContext<Store>, action: UserAction) {
+    let user = await ctx.store.get(User, action.data.id)
     if (user == null) {
-        user = createUser(ctx, action)
+        user = await createUser(ctx, action)
     }
 
     return user
