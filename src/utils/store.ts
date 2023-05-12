@@ -1,9 +1,10 @@
-import {EntityManager, FindOptionsWhere, In, FindOptionsRelations} from 'typeorm'
 import assert from 'assert'
-import {Entity as _Entity, EntityClass, FindManyOptions, FindOneOptions, Store} from '@subsquid/typeorm-store'
-import {Graph} from 'graph-data-structure'
-import {def} from '@subsquid/util-internal'
 import {copy} from 'copy-anything'
+import {Graph} from 'graph-data-structure'
+import {EntityManager, FindOptionsRelations, FindOptionsWhere, In} from 'typeorm'
+import {EntityClass, FindManyOptions, FindOneOptions, Store, Entity as _Entity} from '@subsquid/typeorm-store'
+import {def} from '@subsquid/util-internal'
+import {DeferredValue} from './deferred'
 
 export interface Entity extends _Entity {
     [k: string]: any
@@ -11,6 +12,7 @@ export interface Entity extends _Entity {
 
 export type DeferData<E extends Entity> = {ids: Set<string>; relations: FindOptionsRelations<E>}
 export type CacheMap<E extends Entity> = Map<string, Map<string, E | null>>
+export type ChangeMap<E extends Entity> = Map<string, Map<string, E>>
 
 export class StoreWithCache {
     private em: EntityManager
@@ -19,8 +21,8 @@ export class StoreWithCache {
     private cacheMap: CacheMap<any> = new Map()
     private classes: Map<string, EntityClass<any>> = new Map()
 
-    private insertMap: Map<string, Map<string, Entity>> = new Map()
-    private upsertMap: Map<string, Map<string, Entity>> = new Map()
+    private insertMap: ChangeMap<any> = new Map()
+    private upsertMap: ChangeMap<any> = new Map()
 
     constructor(private store: Store) {
         this.em = (this.store as any).em()
@@ -100,7 +102,7 @@ export class StoreWithCache {
         options.relations =
             options.relations != null ? mergeRelataions(options.relations, _deferData.relations) : _deferData.relations
         const res = await this.store.find(entityClass, options)
-        await this.cache(res)
+        await this.cache(res, options.relations)
         return res
     }
 
@@ -120,7 +122,7 @@ export class StoreWithCache {
         options.relations =
             options.relations != null ? mergeRelataions(options.relations, _deferData.relations) : _deferData.relations
         const res = await this.store.findOne(entityClass, options)
-        if (res != null) await this.cache(res)
+        if (res != null) await this.cache(res, options.relations)
         return res
     }
 
@@ -149,23 +151,27 @@ export class StoreWithCache {
         entityClass: EntityClass<E>,
         optionsOrId: string | FindOneOptions<E>
     ): Promise<E | undefined> {
+        let res: E | undefined
+        let relationMask: FindOptionsRelations<E> | undefined
         if (typeof optionsOrId === 'string') {
             await this.load(entityClass)
             const id = optionsOrId
             const _cacheMap = this.getCacheMap(entityClass.name)
             const entity = _cacheMap.get(id)
             if (entity !== undefined) {
-                if (entity == null) return undefined
-
-                return copy(entity) as E
+                return entity == null ? undefined : (copy(entity) as E)
             } else {
                 await this.flush(entityClass)
-                return await this.store.get(entityClass, id).then((v) => v && this.cache(v))
+                res = await this.store.get(entityClass, id)
             }
         } else {
+            relationMask = optionsOrId.relations
             await this.flush(entityClass)
-            return await this.store.get(entityClass, optionsOrId).then((v) => v && this.cache(v))
+            res = await this.store.get(entityClass, optionsOrId)
         }
+
+        if (res != null) await this.cache(res, relationMask)
+        return res
     }
 
     async getOrFail<E extends Entity>(
@@ -178,8 +184,8 @@ export class StoreWithCache {
     defer<E extends Entity>(
         entityClass: EntityClass<E>,
         id: string,
-        relations?: FindManyOptions<E>['relations']
-    ): DeferredValue<E> {
+        relations?: FindOptionsRelations<E>
+    ): StoreDeferredValue<E> {
         this.classes.set(entityClass.name, entityClass)
 
         const _deferredList = this.getDeferData(entityClass.name)
@@ -187,7 +193,7 @@ export class StoreWithCache {
         _deferredList.relations =
             relations != null ? mergeRelataions(_deferredList.relations, relations) : _deferredList.relations
 
-        return new DeferredValue(this, entityClass, id)
+        return new StoreDeferredValue(this, entityClass, id)
     }
 
     async flush<E extends Entity>(entityClass?: EntityClass<E>): Promise<void> {
@@ -227,9 +233,9 @@ export class StoreWithCache {
         this.deferMap.delete(entityClass.name)
     }
 
-    private cache<E extends Entity>(entity: E): Promise<E>
-    private cache<E extends Entity>(entities: E[]): Promise<E[]>
-    private async cache<E extends Entity>(e: E | E[]) {
+    private cache<E extends Entity>(entity: E, relations?: FindOptionsRelations<any>): Promise<E>
+    private cache<E extends Entity>(entities: E[], relations?: FindOptionsRelations<any>): Promise<E[]>
+    private async cache<E extends Entity>(e: E | E[], relations: FindOptionsRelations<any> = {}) {
         const entities = Array.isArray(e) ? e : [e]
         if (entities.length == 0) return
 
@@ -246,12 +252,13 @@ export class StoreWithCache {
                 if (column.relationMetadata) {
                     const relationMetadata = column.relationMetadata
                     const relationPropertyName = relationMetadata.propertyName
-                    if (relationPropertyName in entity) {
+                    const mask = relations[relationPropertyName]
+                    if (relationPropertyName in entity && mask) {
                         assert(!relationMetadata.isOneToMany, `OneToMany relations can't be cached`)
                         cached[relationPropertyName] =
                             entity[relationPropertyName] == null
                                 ? undefined
-                                : await this.cache(entity[relationPropertyName])
+                                : await this.cache(entity[relationPropertyName], mask === true ? {} : mask)
                     }
 
                     if (propertyName != relationPropertyName) {
@@ -350,7 +357,7 @@ function mergeRelataions<E extends Entity>(
     return mergedObject
 }
 
-export class DeferredValue<E extends Entity> {
+export class StoreDeferredValue<E extends Entity> implements DeferredValue<E, true> {
     constructor(private store: StoreWithCache, private entityClass: EntityClass<E>, private id: string) {}
 
     @def

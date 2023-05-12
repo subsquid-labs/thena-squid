@@ -26,7 +26,7 @@ export async function processUserAction(ctx: DataHandlerContext<StoreWithCache>,
 }
 
 async function processEnsureAction(ctx: DataHandlerContext<StoreWithCache>, action: EnsureUserAction) {
-    let user = await action.data.user.get(ctx)
+    let user = await action.data.user.get()
     if (user != null) return
 
     user = new User({
@@ -40,7 +40,7 @@ async function processEnsureAction(ctx: DataHandlerContext<StoreWithCache>, acti
 }
 
 async function processBalanceAction(ctx: DataHandlerContext<StoreWithCache>, action: BalanceUserAction) {
-    const user = await action.data.user.get(ctx)
+    const user = await action.data.user.get()
     assert(user != null)
 
     user.balance += action.data.amount
@@ -52,10 +52,10 @@ async function processBalanceAction(ctx: DataHandlerContext<StoreWithCache>, act
 }
 
 async function processSwapAction(ctx: DataHandlerContext<StoreWithCache>, action: SwapUserAction) {
-    const pool = await action.data.pool.get(ctx)
+    const pool = await action.data.pool.get()
     assert(pool != null)
 
-    const user = await action.data.user.get(ctx)
+    const user = await action.data.user.get()
     assert(user != null)
 
     const txTrades = await ctx.store.find(Trade, {where: {txHash: action.transaction.hash}})
@@ -69,7 +69,7 @@ async function processSwapAction(ctx: DataHandlerContext<StoreWithCache>, action
     const [tokenIn, tokenOut] = tokenInId == pool.token0.id ? [pool.token0, pool.token1] : [pool.token1, pool.token0]
     assert(tokenIn != null)
     assert(tokenOut != null)
-    const usdToken = await action.data.usdToken.get(ctx)
+    const usdToken = await action.data.usdToken.get()
     // assert(usdToken != null)
 
     const usdBnbPrice = BigDecimal(usdToken ? usdToken.bnbPrice : 0n, BNB_DECIMALS)

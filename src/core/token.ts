@@ -20,11 +20,11 @@ export async function processTokenAction(ctx: DataHandlerContext<StoreWithCache>
 }
 
 async function processEnsureAction(ctx: DataHandlerContext<StoreWithCache>, action: EnsureTokenAction) {
-    let token = await action.data.token.get(ctx)
+    let token = await action.data.token.get()
     if (token != null) return
 
-    const decimals = await action.data.decimals.get(ctx)
-    const symbol = await action.data.symbol.get(ctx)
+    const decimals = await action.data.decimals.get()
+    const symbol = await action.data.symbol.get()
     token = new Token({
         id: action.data.address,
         decimals,
@@ -41,10 +41,10 @@ async function processEnsureAction(ctx: DataHandlerContext<StoreWithCache>, acti
 }
 
 async function processPriceUpdateAction(ctx: DataHandlerContext<StoreWithCache>, action: PriceUpdateTokenAction) {
-    const token = await action.data.token.get(ctx)
+    const token = await action.data.token.get()
     assert(token != null, `Missing token`)
 
-    const pool = await action.data.pool.get(ctx)
+    const pool = await action.data.pool.get()
     assert(pool != null, `Missing pool`)
 
     const [pairedTokenId, tokenPrice, pairedTokenReserve] =

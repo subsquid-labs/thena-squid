@@ -30,12 +30,12 @@ async function processEnsureLiquidityPositionAction(
     ctx: DataHandlerContext<StoreWithCache>,
     action: EnsureLiquidityPositionAction
 ) {
-    let position = await action.data.position.get(ctx)
+    let position = await action.data.position.get()
     if (position != null) return
 
-    const user = await action.data.user.get(ctx)
+    const user = await action.data.user.get()
     assert(user != null)
-    const pool = await action.data.pool.get(ctx)
+    const pool = await action.data.pool.get()
     assert(pool != null)
 
     position = new LiquidityPosition({
@@ -53,7 +53,7 @@ async function processLiquidityPositionUpdate(
     ctx: DataHandlerContext<StoreWithCache>,
     action: ValueUpdateLiquidityPositionAction
 ) {
-    const position = await action.data.position.get(ctx)
+    const position = await action.data.position.get()
     assert(position != null, `Missing position`)
 
     const pool = position.pool

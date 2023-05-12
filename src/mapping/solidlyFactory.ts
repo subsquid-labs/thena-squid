@@ -5,9 +5,9 @@ import * as solidlyFactory from '../abi/solidlyFactory'
 import * as bep20 from '../abi/bep20'
 import {Action, CreatePoolAction, EnsureTokenAction} from '../types/action'
 import {PoolManager} from '../utils/pairManager'
-import {DeferredCall} from '../utils/deferred'
 import {Pool, PoolType, Token} from '../model'
 import {StoreWithCache} from '../utils/store'
+import {CallManager} from '../utils/callManager'
 
 export function isSolidlyFactoryItem(item: Log) {
     return item.address === SOLIDLY_FACTORY
@@ -25,32 +25,29 @@ export function getSolidlyFactoryActions(ctx: DataHandlerContext<StoreWithCache>
             const token0 = event.token0.toLowerCase()
             const token1 = event.token1.toLowerCase()
 
+            const callManager = CallManager.get(ctx)
             actions.push(
                 new EnsureTokenAction(item.block, item.transaction!, {
                     token: ctx.store.defer(Token, token0),
                     address: token0,
-                    decimals: new DeferredCall(item.block, {
+                    decimals: callManager.defer(item.block, bep20.functions.decimals, {
                         address: token0,
-                        func: bep20.functions.decimals,
                         args: [],
                     }),
-                    symbol: new DeferredCall(item.block, {
+                    symbol: callManager.defer(item.block, bep20.functions.symbol, {
                         address: token0,
-                        func: bep20.functions.symbol,
                         args: [],
                     }),
                 }),
                 new EnsureTokenAction(item.block, item.transaction!, {
                     token: ctx.store.defer(Token, token1),
                     address: token1,
-                    decimals: new DeferredCall(item.block, {
+                    decimals: callManager.defer(item.block, bep20.functions.decimals, {
                         address: token1,
-                        func: bep20.functions.decimals,
                         args: [],
                     }),
-                    symbol: new DeferredCall(item.block, {
+                    symbol: callManager.defer(item.block, bep20.functions.symbol, {
                         address: token1,
-                        func: bep20.functions.symbol,
                         args: [],
                     }),
                 }),

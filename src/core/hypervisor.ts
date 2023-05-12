@@ -30,7 +30,7 @@ export async function processHypervisorAction(ctx: DataHandlerContext<StoreWithC
 async function processEnsureAction(ctx: DataHandlerContext<StoreWithCache>, action: EnsureHypervisorAction) {
     const hypervisor = new Hypervisor({
         id: action.data.address,
-        poolId: await action.data.poolId.get(ctx),
+        poolId: await action.data.poolId.get(),
     })
 
     await ctx.store.insert(hypervisor)
@@ -38,13 +38,13 @@ async function processEnsureAction(ctx: DataHandlerContext<StoreWithCache>, acti
 }
 
 async function processSetPositionAction(ctx: DataHandlerContext<StoreWithCache>, action: SetPositionHypervisorAction) {
-    const hypervisor = await action.data.hypervisor.get(ctx)
+    const hypervisor = await action.data.hypervisor.get()
     assert(hypervisor != null)
 
     if (hypervisor.basePosition == null) {
-        hypervisor.basePosition = await action.data.position.get(ctx)
+        hypervisor.basePosition = await action.data.position.get()
     } else if (hypervisor.limitPositionId == null) {
-        hypervisor.limitPosition = await action.data.position.get(ctx)
+        hypervisor.limitPosition = await action.data.position.get()
     } else {
         throw new Error()
     }
@@ -56,7 +56,7 @@ async function processRemovePositionAction(
     ctx: DataHandlerContext<StoreWithCache>,
     action: RemovePositionHypervisorAction
 ) {
-    const hypervisor = await action.data.hypervisor.get(ctx)
+    const hypervisor = await action.data.hypervisor.get()
     assert(hypervisor != null)
 
     // if (hypervisor.basePositionId === action.data.positionId) {

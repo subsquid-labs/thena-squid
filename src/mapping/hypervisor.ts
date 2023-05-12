@@ -18,7 +18,7 @@ import {
 import {createLiquidityPositionId} from '../utils/ids'
 import {ZERO_ADDRESS} from '../config'
 import {HypervisorManager} from '../utils/hypervisorManager'
-import {DeferredCall, DefferedFunction, WrappedValue} from '../utils/deferred'
+import {DefferedFunction, WrappedValue} from '../utils/deferred'
 import {PoolType} from '../model'
 import {PoolManager} from '../utils/pairManager'
 

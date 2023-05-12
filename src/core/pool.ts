@@ -41,12 +41,12 @@ export async function processPoolAction(ctx: DataHandlerContext<StoreWithCache>,
 }
 
 async function processPoolCreation(ctx: DataHandlerContext<StoreWithCache>, action: CreatePoolAction) {
-    let pool = await action.data.pool.get(ctx)
+    let pool = await action.data.pool.get()
     assert(pool == null)
 
-    const token0 = await action.data.token0.get(ctx)
+    const token0 = await action.data.token0.get()
     assert(token0 != null)
-    const token1 = await action.data.token1.get(ctx)
+    const token1 = await action.data.token1.get()
     assert(token1 != null)
 
     pool = new Pool({
@@ -68,7 +68,7 @@ async function processPoolCreation(ctx: DataHandlerContext<StoreWithCache>, acti
 }
 
 async function processLiquidity(ctx: DataHandlerContext<StoreWithCache>, action: ChangeLiquidityPoolAction) {
-    const pool = await action.data.pool.get(ctx)
+    const pool = await action.data.pool.get()
     assert(pool != null, `Missing pool`)
 
     pool.liquidity += action.data.amount
@@ -78,28 +78,28 @@ async function processLiquidity(ctx: DataHandlerContext<StoreWithCache>, action:
 }
 
 async function processSetLiquidity(ctx: DataHandlerContext<StoreWithCache>, action: SetLiquidityPoolAction) {
-    const pool = await action.data.pool.get(ctx)
+    const pool = await action.data.pool.get()
     assert(pool != null, `Missing pool`)
 
-    pool.liquidity = await action.data.value.get(ctx)
+    pool.liquidity = await action.data.value.get()
 
     await ctx.store.upsert(pool)
     ctx.log.debug(`Liquidity of pool ${pool.id} set to ${pool.liquidity}`)
 }
 
 async function processBalances(ctx: DataHandlerContext<StoreWithCache>, action: SetBalancesPoolAction) {
-    const pool = await action.data.pool.get(ctx)
+    const pool = await action.data.pool.get()
     assert(pool != null, `Missing pool`)
 
-    pool.reserve0 = await action.data.value0.get(ctx)
-    pool.reserve1 = await action.data.value1.get(ctx)
+    pool.reserve0 = await action.data.value0.get()
+    pool.reserve1 = await action.data.value1.get()
 
     await ctx.store.upsert(pool)
     ctx.log.debug(`Balances of pool ${pool.id} updated to ${action.data.value0}, ${action.data.value1}`)
 }
 
 async function processRecalculatePrices(ctx: DataHandlerContext<StoreWithCache>, action: RecalculatePricesPoolAction) {
-    const pool = await action.data.pool.get(ctx)
+    const pool = await action.data.pool.get()
     assert(pool != null, `Missing pool`)
 
     const token0 = pool.token0
@@ -125,7 +125,7 @@ async function processRecalculatePrices(ctx: DataHandlerContext<StoreWithCache>,
 }
 
 async function processChangeBalances(ctx: DataHandlerContext<StoreWithCache>, action: ChangeBalancesPoolAction) {
-    const pool = await action.data.pool.get(ctx)
+    const pool = await action.data.pool.get()
     assert(pool != null, `Missing pool`)
 
     pool.reserve0 += action.data.value0
@@ -138,7 +138,7 @@ async function processChangeBalances(ctx: DataHandlerContext<StoreWithCache>, ac
 }
 
 async function processSetSqrtPrice(ctx: DataHandlerContext<StoreWithCache>, action: SetSqrtPricePoolAction) {
-    const pool = await action.data.pool.get(ctx)
+    const pool = await action.data.pool.get()
     assert(pool != null, `Missing pool`)
 
     pool.sqrtPriceX96 = action.data.value
