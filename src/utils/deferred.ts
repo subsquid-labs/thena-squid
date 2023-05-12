@@ -89,6 +89,6 @@ export class WrappedValue<T> implements DeferredValue<T> {
     }
 }
 
-export interface DeferredValue<T> {
-    get(ctx: ChainContext): Promise<T>
+export interface DeferredValue<T, Nullable extends boolean = false> {
+    get(ctx: ChainContext): Promise<Nullable extends true ? T | undefined : T>
 }

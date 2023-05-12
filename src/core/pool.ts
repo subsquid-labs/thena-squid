@@ -11,10 +11,10 @@ import {
     SetSqrtPricePoolAction,
 } from '../types/action'
 import {Pool, PoolType, Token} from '../model'
-import {CommonContext, Storage} from '../types/util'
-import {Store} from '@subsquid/typeorm-store'
+import {DataHandlerContext} from '@subsquid/evm-processor'
+import {StoreWithCache} from '../utils/store'
 
-export async function processPoolAction(ctx: CommonContext<Store>, action: PoolAction) {
+export async function processPoolAction(ctx: DataHandlerContext<StoreWithCache>, action: PoolAction) {
     switch (action.type) {
         case PoolActionType.Creation:
             await processPoolCreation(ctx, action)
@@ -40,11 +40,19 @@ export async function processPoolAction(ctx: CommonContext<Store>, action: PoolA
     }
 }
 
-async function processPoolCreation(ctx: CommonContext<Store>, action: CreatePoolAction) {
-    const pool = new Pool({
-        id: action.data.id,
-        token0Id: await action.data.token0.get(ctx),
-        token1Id: await action.data.token1.get(ctx),
+async function processPoolCreation(ctx: DataHandlerContext<StoreWithCache>, action: CreatePoolAction) {
+    let pool = await action.data.pool.get(ctx)
+    assert(pool == null)
+
+    const token0 = await action.data.token0.get(ctx)
+    assert(token0 != null)
+    const token1 = await action.data.token1.get(ctx)
+    assert(token1 != null)
+
+    pool = new Pool({
+        id: action.data.address,
+        token0,
+        token1,
         factory: action.data.factory,
         liquidity: 0n,
         reserve0: 0n,
@@ -59,9 +67,9 @@ async function processPoolCreation(ctx: CommonContext<Store>, action: CreatePool
     ctx.log.debug(`Created pool ${pool.id}`)
 }
 
-async function processLiquidity(ctx: CommonContext<Store>, action: ChangeLiquidityPoolAction) {
-    const pool = await ctx.store.get(Pool, action.data.id)
-    assert(pool != null, `Missing pool ${action.data.id}`)
+async function processLiquidity(ctx: DataHandlerContext<StoreWithCache>, action: ChangeLiquidityPoolAction) {
+    const pool = await action.data.pool.get(ctx)
+    assert(pool != null, `Missing pool`)
 
     pool.liquidity += action.data.amount
 
@@ -69,9 +77,9 @@ async function processLiquidity(ctx: CommonContext<Store>, action: ChangeLiquidi
     ctx.log.debug(`Liquidity of pool ${pool.id} changed by ${action.data.amount}`)
 }
 
-async function processSetLiquidity(ctx: CommonContext<Store>, action: SetLiquidityPoolAction) {
-    const pool = await ctx.store.get(Pool, action.data.id)
-    assert(pool != null, `Missing pool ${action.data.id}`)
+async function processSetLiquidity(ctx: DataHandlerContext<StoreWithCache>, action: SetLiquidityPoolAction) {
+    const pool = await action.data.pool.get(ctx)
+    assert(pool != null, `Missing pool`)
 
     pool.liquidity = await action.data.value.get(ctx)
 
@@ -79,9 +87,9 @@ async function processSetLiquidity(ctx: CommonContext<Store>, action: SetLiquidi
     ctx.log.debug(`Liquidity of pool ${pool.id} set to ${pool.liquidity}`)
 }
 
-async function processBalances(ctx: CommonContext<Store>, action: SetBalancesPoolAction) {
-    const pool = await ctx.store.get(Pool, action.data.id)
-    assert(pool != null, `Missing pool ${action.data.id}`)
+async function processBalances(ctx: DataHandlerContext<StoreWithCache>, action: SetBalancesPoolAction) {
+    const pool = await action.data.pool.get(ctx)
+    assert(pool != null, `Missing pool`)
 
     pool.reserve0 = await action.data.value0.get(ctx)
     pool.reserve1 = await action.data.value1.get(ctx)
@@ -90,13 +98,13 @@ async function processBalances(ctx: CommonContext<Store>, action: SetBalancesPoo
     ctx.log.debug(`Balances of pool ${pool.id} updated to ${action.data.value0}, ${action.data.value1}`)
 }
 
-async function processRecalculatePrices(ctx: CommonContext<Store>, action: RecalculatePricesPoolAction) {
-    const pool = await ctx.store.get(Pool, action.data.id)
-    assert(pool != null, `Missing pool ${action.data.id}`)
+async function processRecalculatePrices(ctx: DataHandlerContext<StoreWithCache>, action: RecalculatePricesPoolAction) {
+    const pool = await action.data.pool.get(ctx)
+    assert(pool != null, `Missing pool`)
 
-    const token0 = await ctx.store.get(Token, pool.token0Id)
+    const token0 = pool.token0
     assert(token0 != null)
-    const token1 = await ctx.store.get(Token, pool.token1Id)
+    const token1 = pool.token1
     assert(token1 != null)
 
     switch (pool.type) {
@@ -116,9 +124,9 @@ async function processRecalculatePrices(ctx: CommonContext<Store>, action: Recal
     ctx.log.debug(`Prices of pool ${pool.id} updated to ${pool.price0}, ${pool.price1}`)
 }
 
-async function processChangeBalances(ctx: CommonContext<Store>, action: ChangeBalancesPoolAction) {
-    const pool = await ctx.store.get(Pool, action.data.id)
-    assert(pool != null, `Missing pool ${action.data.id}`)
+async function processChangeBalances(ctx: DataHandlerContext<StoreWithCache>, action: ChangeBalancesPoolAction) {
+    const pool = await action.data.pool.get(ctx)
+    assert(pool != null, `Missing pool`)
 
     pool.reserve0 += action.data.value0
     pool.reserve1 += action.data.value1
@@ -129,9 +137,9 @@ async function processChangeBalances(ctx: CommonContext<Store>, action: ChangeBa
     )
 }
 
-async function processSetSqrtPrice(ctx: CommonContext<Store>, action: SetSqrtPricePoolAction) {
-    const pool = await ctx.store.get(Pool, action.data.id)
-    assert(pool != null, `Missing pool ${action.data.id}`)
+async function processSetSqrtPrice(ctx: DataHandlerContext<StoreWithCache>, action: SetSqrtPricePoolAction) {
+    const pool = await action.data.pool.get(ctx)
+    assert(pool != null, `Missing pool`)
 
     pool.sqrtPriceX96 = action.data.value
 
@@ -150,19 +158,19 @@ export function sqrtPriceX96ToTokenPrices(pool: Pool, token0: Token, token1: Tok
 function _getPrice(pool: Pool, tokenIn: Token, tokenOut: Token) {
     let amountIn = 10n ** BigInt(tokenIn.decimals)
     if (pool.stable) {
-        let decimals0 = 10n ** BigInt(tokenIn.id == pool.token0Id ? tokenIn.decimals : tokenOut.decimals)
-        let decimals1 = 10n ** BigInt(tokenOut.id == pool.token1Id ? tokenOut.decimals : tokenIn.decimals)
+        let decimals0 = 10n ** BigInt(tokenIn.id == pool.token0.id ? tokenIn.decimals : tokenOut.decimals)
+        let decimals1 = 10n ** BigInt(tokenOut.id == pool.token1.id ? tokenOut.decimals : tokenIn.decimals)
         let xy = _k(pool.reserve0, pool.reserve1, pool.stable, decimals0, decimals1)
         let _reserve0 = (pool.reserve0 * _1E18) / decimals0
         let _reserve1 = (pool.reserve1 * _1E18) / decimals1
-        let [reserveA, reserveB] = tokenIn.id == pool.token0Id ? [_reserve0, _reserve1] : [_reserve1, _reserve0]
-        amountIn = tokenIn.id == pool.token0Id ? (amountIn * _1E18) / decimals0 : (amountIn * _1E18) / decimals1
+        let [reserveA, reserveB] = tokenIn.id == pool.token0.id ? [_reserve0, _reserve1] : [_reserve1, _reserve0]
+        amountIn = tokenIn.id == pool.token0.id ? (amountIn * _1E18) / decimals0 : (amountIn * _1E18) / decimals1
         let y = reserveB - _get_y(amountIn + reserveA, xy, reserveB)
         y = y < 0n ? 0n : y
-        return (y * (tokenIn.id == pool.token0Id ? decimals1 : decimals0)) / _1E18
+        return (y * (tokenIn.id == pool.token0.id ? decimals1 : decimals0)) / _1E18
     } else {
         let [reserveA, reserveB] =
-            tokenIn.id == pool.token0Id ? [pool.reserve0, pool.reserve1] : [pool.reserve1, pool.reserve0]
+            tokenIn.id == pool.token0.id ? [pool.reserve0, pool.reserve1] : [pool.reserve1, pool.reserve0]
         return (amountIn * reserveB) / (reserveA + amountIn)
     }
 }

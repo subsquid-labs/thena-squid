@@ -2,13 +2,22 @@ import {DataHandlerContext} from '@subsquid/evm-processor'
 import * as thena from '../abi/bep20'
 import {THENA_ADDRESS, ZERO_ADDRESS} from '../config'
 import {Log} from '../processor'
-import {Action, ActionKind, BalanceUserAction, UnknownUserAction, UserActionType} from '../types/action'
+import {
+    Action,
+    ActionKind,
+    BalanceUserAction,
+    EnsureUserAction,
+    UnknownUserAction,
+    UserActionType,
+} from '../types/action'
+import {StoreWithCache} from '../utils/store'
+import {User} from '../model'
 
 export function isThenaItem(item: Log) {
     return item.address === THENA_ADDRESS
 }
 
-export function getThenaActions(ctx: DataHandlerContext<unknown>, item: Log) {
+export function getThenaActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     const actions: Action[] = []
 
     // switch (item.kind) {
@@ -25,8 +34,12 @@ export function getThenaActions(ctx: DataHandlerContext<unknown>, item: Log) {
 
             if (from !== ZERO_ADDRESS) {
                 actions.push(
+                    new EnsureUserAction(item.block, item.transaction!, {
+                        user: ctx.store.defer(User, from),
+                        address: from,
+                    }),
                     new BalanceUserAction(item.block, item.transaction!, {
-                        id: from,
+                        user: ctx.store.defer(User, from),
                         amount: -amount,
                     })
                 )
@@ -34,8 +47,12 @@ export function getThenaActions(ctx: DataHandlerContext<unknown>, item: Log) {
 
             if (to !== ZERO_ADDRESS) {
                 actions.push(
+                    new EnsureUserAction(item.block, item.transaction!, {
+                        user: ctx.store.defer(User, to),
+                        address: to,
+                    }),
                     new BalanceUserAction(item.block, item.transaction!, {
-                        id: to,
+                        user: ctx.store.defer(User, to),
                         amount,
                     })
                 )
@@ -46,8 +63,16 @@ export function getThenaActions(ctx: DataHandlerContext<unknown>, item: Log) {
         case thena.events.Approval.topic: {
             const event = thena.events.Approval.decode(item)
 
-            actions.push(new UnknownUserAction(item.block, item.transaction!, {id: event.owner.toLowerCase()}))
-            actions.push(new UnknownUserAction(item.block, item.transaction!, {id: event.spender.toLowerCase()}))
+            actions.push(
+                new EnsureUserAction(item.block, item.transaction!, {
+                    user: ctx.store.defer(User, event.owner.toLowerCase()),
+                    address: event.owner.toLowerCase(),
+                }),
+                new EnsureUserAction(item.block, item.transaction!, {
+                    user: ctx.store.defer(User, event.spender.toLowerCase()),
+                    address: event.spender.toLowerCase(),
+                })
+            )
             break
         }
         default: {

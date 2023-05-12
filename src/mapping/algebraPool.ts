@@ -1,35 +1,35 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import * as algebraPool from '../abi/algebraPool'
-import {ALGEBRA_FACTORY} from '../config'
+import {ALGEBRA_FACTORY, USD_ADDRESS} from '../config'
 import {Log} from '../processor'
 import {PoolManager} from '../utils/pairManager'
 import {
     Action,
     ChangeLiquidityPoolAction,
+    EnsureLiquidityPositionAction,
+    EnsureUserAction,
     RecalculatePricesPoolAction,
     RemovePositionHypervisorAction,
     SetLiquidityPoolAction,
     SetPositionHypervisorAction,
     SetSqrtPricePoolAction,
     SwapUserAction,
-    UnknownPoolAction,
-    UnknownTokenAction,
     UnknownUserAction,
     ValueUpdateLiquidityPositionAction,
 } from '../types/action'
 import {createLiquidityPositionId} from '../utils/ids'
 import {WrappedValue} from '../utils/deferred'
 import {HypervisorManager} from '../utils/hypervisorManager'
+import {StoreWithCache} from '../utils/store'
+import {Hypervisor, LiquidityPosition, Pool, Token, User} from '../model'
 
 export function isAlgebraPoolItem(item: Log) {
     return PoolManager.instance.isPool(ALGEBRA_FACTORY, item.address)
 }
 
-export function getAlgebraPoolActions(ctx: DataHandlerContext<unknown>, item: Log) {
+export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     const actions: Action[] = []
 
-    // switch (item.kind) {
-    //     case 'evmLog': {
     switch (item.topics[0]) {
         case algebraPool.events.Swap.topic: {
             const event = algebraPool.events.Swap.decode(item)
@@ -43,42 +43,27 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<unknown>, item: Lo
             const liquidity = event.liquidity
 
             actions.push(
-                new UnknownTokenAction(item.block, item.transaction!, {
-                    id: PoolManager.instance.getTokens(poolId).token0,
-                })
-            )
-            actions.push(
-                new UnknownTokenAction(item.block, item.transaction!, {
-                    id: PoolManager.instance.getTokens(poolId).token1,
-                })
-            )
-
-            actions.push(
+                new EnsureUserAction(item.block, item.transaction!, {
+                    user: ctx.store.defer(User, id),
+                    address: id,
+                }),
                 new SwapUserAction(item.block, item.transaction!, {
-                    id,
+                    user: ctx.store.defer(User, id),
                     amount0,
                     amount1,
-                    poolId,
-                })
-            )
-
-            actions.push(
+                    pool: ctx.store.defer(Pool, item.address, {token0: true, token1: true}),
+                    usdToken: ctx.store.defer(Token, USD_ADDRESS),
+                }),
                 new SetLiquidityPoolAction(item.block, item.transaction!, {
-                    id: poolId,
+                    pool: ctx.store.defer(Pool, item.address),
                     value: new WrappedValue(liquidity),
-                })
-            )
-
-            actions.push(
+                }),
                 new SetSqrtPricePoolAction(item.block, item.transaction!, {
-                    id: poolId,
+                    pool: ctx.store.defer(Pool, item.address),
                     value: event.price,
-                })
-            )
-
-            actions.push(
+                }),
                 new RecalculatePricesPoolAction(item.block, item.transaction!, {
-                    id: item.address,
+                    pool: ctx.store.defer(Pool, item.address, {token0: true, token1: true}),
                 })
             )
 
@@ -93,27 +78,28 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<unknown>, item: Lo
             const amount = event.liquidityAmount
             if (amount === 0n) break
 
+            const positionId = createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick)
             actions.push(
                 new ChangeLiquidityPoolAction(item.block, item.transaction!, {
-                    id: poolId,
+                    pool: ctx.store.defer(Pool, item.address),
                     amount,
-                })
-            )
-
-            actions.push(new UnknownUserAction(item.block, item.transaction!, {id: userId}))
-
-            actions.push(
+                }),
+                new EnsureUserAction(item.block, item.transaction!, {
+                    user: ctx.store.defer(User, userId),
+                    address: userId,
+                }),
+                new EnsureLiquidityPositionAction(item.block, item.transaction!, {
+                    position: ctx.store.defer(LiquidityPosition, positionId),
+                    id: positionId,
+                    user: ctx.store.defer(User, userId),
+                    pool: ctx.store.defer(Pool, item.address),
+                }),
+                new ChangeLiquidityPoolAction(item.block, item.transaction!, {
+                    pool: ctx.store.defer(Pool, item.address),
+                    amount,
+                }),
                 new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-                    id: createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick),
-                    amount,
-                    userId,
-                    poolId,
-                })
-            )
-
-            actions.push(
-                new ChangeLiquidityPoolAction(item.block, item.transaction!, {
-                    id: poolId,
+                    position: ctx.store.defer(LiquidityPosition, positionId),
                     amount,
                 })
             )
@@ -121,8 +107,8 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<unknown>, item: Lo
             if (HypervisorManager.instance.isTracked(userId)) {
                 actions.push(
                     new SetPositionHypervisorAction(item.block, item.transaction!, {
-                        id: userId,
-                        positionId: createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick),
+                        hypervisor: ctx.store.defer(Hypervisor, userId, {basePosition: true, limitPosition: true}),
+                        position: ctx.store.defer(LiquidityPosition, positionId),
                     })
                 )
             }
@@ -138,27 +124,28 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<unknown>, item: Lo
             const amount = -event.liquidityAmount
             if (amount === 0n) break
 
+            const positionId = createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick)
             actions.push(
                 new ChangeLiquidityPoolAction(item.block, item.transaction!, {
-                    id: poolId,
+                    pool: ctx.store.defer(Pool, item.address),
                     amount,
-                })
-            )
-
-            actions.push(new UnknownUserAction(item.block, item.transaction!, {id: userId}))
-
-            actions.push(
+                }),
+                new EnsureUserAction(item.block, item.transaction!, {
+                    user: ctx.store.defer(User, userId),
+                    address: userId,
+                }),
+                new EnsureLiquidityPositionAction(item.block, item.transaction!, {
+                    position: ctx.store.defer(LiquidityPosition, positionId),
+                    id: positionId,
+                    user: ctx.store.defer(User, userId),
+                    pool: ctx.store.defer(Pool, item.address),
+                }),
+                new ChangeLiquidityPoolAction(item.block, item.transaction!, {
+                    pool: ctx.store.defer(Pool, item.address),
+                    amount,
+                }),
                 new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-                    id: createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick),
-                    amount,
-                    userId,
-                    poolId,
-                })
-            )
-
-            actions.push(
-                new ChangeLiquidityPoolAction(item.block, item.transaction!, {
-                    id: poolId,
+                    position: ctx.store.defer(LiquidityPosition, positionId),
                     amount,
                 })
             )
@@ -166,8 +153,8 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<unknown>, item: Lo
             if (HypervisorManager.instance.isTracked(userId)) {
                 actions.push(
                     new RemovePositionHypervisorAction(item.block, item.transaction!, {
-                        id: userId,
-                        positionId: createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick),
+                        hypervisor: ctx.store.defer(Hypervisor, userId, {basePosition: true, limitPosition: true}),
+                        position: ctx.store.defer(LiquidityPosition, positionId),
                     })
                 )
             }
@@ -178,9 +165,6 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<unknown>, item: Lo
             ctx.log.error(`unknown event ${item.topics[0]}`)
         }
     }
-    //         break
-    //     }
-    // }
 
     return actions
 }

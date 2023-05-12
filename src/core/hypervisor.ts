@@ -2,18 +2,18 @@ import assert from 'assert'
 import {
     HypervisorAction,
     HypervisorActionType,
-    InitHypervisorAction,
+    EnsureHypervisorAction,
     RemovePositionHypervisorAction,
     SetPositionHypervisorAction,
-} from '../mapping'
+} from '../types/action'
 import {Hypervisor} from '../model'
-import {CommonContext, Storage} from '../types/util'
-import {Store} from '@subsquid/typeorm-store'
+import {DataHandlerContext} from '@subsquid/evm-processor'
+import {StoreWithCache} from '../utils/store'
 
-export async function processHypervisorAction(ctx: CommonContext<Store>, action: HypervisorAction) {
+export async function processHypervisorAction(ctx: DataHandlerContext<StoreWithCache>, action: HypervisorAction) {
     switch (action.type) {
-        case HypervisorActionType.Init: {
-            await processInitAction(ctx, action)
+        case HypervisorActionType.Ensure: {
+            await processEnsureAction(ctx, action)
             break
         }
         case HypervisorActionType.SetPosition: {
@@ -27,9 +27,9 @@ export async function processHypervisorAction(ctx: CommonContext<Store>, action:
     }
 }
 
-async function processInitAction(ctx: CommonContext<Store>, action: InitHypervisorAction) {
+async function processEnsureAction(ctx: DataHandlerContext<StoreWithCache>, action: EnsureHypervisorAction) {
     const hypervisor = new Hypervisor({
-        id: action.data.id,
+        id: action.data.address,
         poolId: await action.data.poolId.get(ctx),
     })
 
@@ -37,14 +37,14 @@ async function processInitAction(ctx: CommonContext<Store>, action: InitHypervis
     ctx.log.debug(`Hypervisor ${hypervisor.id} created`)
 }
 
-async function processSetPositionAction(ctx: CommonContext<Store>, action: SetPositionHypervisorAction) {
-    const hypervisor = await ctx.store.get(Hypervisor, action.data.id)
+async function processSetPositionAction(ctx: DataHandlerContext<StoreWithCache>, action: SetPositionHypervisorAction) {
+    const hypervisor = await action.data.hypervisor.get(ctx)
     assert(hypervisor != null)
 
-    if (hypervisor.basePositionId == null) {
-        hypervisor.basePositionId = action.data.positionId
+    if (hypervisor.basePosition == null) {
+        hypervisor.basePosition = await action.data.position.get(ctx)
     } else if (hypervisor.limitPositionId == null) {
-        hypervisor.limitPositionId = action.data.positionId
+        hypervisor.limitPosition = await action.data.position.get(ctx)
     } else {
         throw new Error()
     }
@@ -52,17 +52,20 @@ async function processSetPositionAction(ctx: CommonContext<Store>, action: SetPo
     await ctx.store.upsert(hypervisor)
 }
 
-async function processRemovePositionAction(ctx: CommonContext<Store>, action: RemovePositionHypervisorAction) {
-    const hypervisor = await ctx.store.get(Hypervisor, action.data.id)
+async function processRemovePositionAction(
+    ctx: DataHandlerContext<StoreWithCache>,
+    action: RemovePositionHypervisorAction
+) {
+    const hypervisor = await action.data.hypervisor.get(ctx)
     assert(hypervisor != null)
 
-    if (hypervisor.basePositionId === action.data.positionId) {
-        hypervisor.basePositionId = null
-    } else if (hypervisor.limitPositionId == action.data.positionId) {
-        hypervisor.limitPositionId = null
-    } else {
-        throw new Error()
-    }
+    // if (hypervisor.basePositionId === action.data.positionId) {
+    //     hypervisor.basePositionId = null
+    // } else if (hypervisor.limitPositionId == action.data.positionId) {
+    //     hypervisor.limitPositionId = null
+    // } else {
+    //     throw new Error()
+    // }
 
     await ctx.store.upsert(hypervisor)
 }

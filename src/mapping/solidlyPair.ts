@@ -1,15 +1,18 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import * as solidlyPair from '../abi/solidlyPair'
-import {SOLIDLY_FACTORY, WHITELIST_TOKENS, ZERO_ADDRESS} from '../config'
+import {SOLIDLY_FACTORY, USD_ADDRESS, WHITELIST_TOKENS, ZERO_ADDRESS} from '../config'
 import {Log} from '../processor'
 import {PoolManager} from '../utils/pairManager'
 import {
     Action,
     ActionKind,
     ChangeLiquidityPoolAction,
+    EnsureUserAction,
     PriceUpdateTokenAction,
     RecalculatePricesPoolAction,
     SetBalancesPoolAction,
+    SetLiquidityPoolAction,
+    SetSqrtPricePoolAction,
     SwapUserAction,
     UnknownPoolAction,
     UnknownTokenAction,
@@ -17,50 +20,42 @@ import {
 } from '../types/action'
 import {
     AdjustValueUpdateLiquidityPositionAction,
+    EnsureLiquidityPositionAction,
     ValueUpdateLiquidityPositionAction,
 } from '../types/action/liquidityPosition'
 import {createLiquidityPositionId, createLiquidityPositionUpdateId} from '../utils/ids'
-import {WrappedValue} from '../utils/deferred'
+import {DefferedFunction, WrappedValue} from '../utils/deferred'
+import {User, Pool, Token, LiquidityPosition} from '../model'
+import {StoreWithCache} from '../utils/store'
 
 export function isSolidlyPairItem(item: Log) {
     return PoolManager.instance.isPool(SOLIDLY_FACTORY, item.address)
 }
 
-export function getSolidlyPairActions(ctx: DataHandlerContext<unknown>, item: Log) {
+export function getSolidlyPairActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     const actions: Action[] = []
 
-    // switch (item.kind) {
-    //     case 'evmLog': {
     switch (item.topics[0]) {
         case solidlyPair.events.Swap.topic: {
             const event = solidlyPair.events.Swap.decode(item)
 
-            const poolId = item.address
             const id = event.to.toLowerCase()
 
             const [amount0, amount1] =
                 event.amount0In === 0n ? [-event.amount0Out, event.amount1In] : [event.amount0In, -event.amount1Out]
             if (amount0 === 0n || amount1 === 0n) break
 
-            // to make sure it will be prefetched
-            actions.push(new UnknownPoolAction(item.block, item.transaction!, {id: poolId}))
             actions.push(
-                new UnknownTokenAction(item.block, item.transaction!, {
-                    id: PoolManager.instance.getTokens(poolId).token0,
-                })
-            )
-            actions.push(
-                new UnknownTokenAction(item.block, item.transaction!, {
-                    id: PoolManager.instance.getTokens(poolId).token1,
-                })
-            )
-
-            actions.push(
+                new EnsureUserAction(item.block, item.transaction!, {
+                    user: ctx.store.defer(User, id),
+                    address: id,
+                }),
                 new SwapUserAction(item.block, item.transaction!, {
-                    id,
+                    user: ctx.store.defer(User, id),
                     amount0,
                     amount1,
-                    poolId,
+                    pool: ctx.store.defer(Pool, item.address, {token0: true, token1: true}),
+                    usdToken: ctx.store.defer(Token, USD_ADDRESS),
                 })
             )
 
@@ -69,44 +64,31 @@ export function getSolidlyPairActions(ctx: DataHandlerContext<unknown>, item: Lo
         case solidlyPair.events.Sync.topic: {
             const event = solidlyPair.events.Sync.decode(item)
 
-            const poolTokens = PoolManager.instance.getTokens(item.address)
-
-            actions.push(
-                new UnknownTokenAction(item.block, item.transaction!, {id: poolTokens.token0}),
-                new UnknownTokenAction(item.block, item.transaction!, {id: poolTokens.token1})
-            )
-
             actions.push(
                 new SetBalancesPoolAction(item.block, item.transaction!, {
-                    id: item.address,
+                    pool: ctx.store.defer(Pool, item.address),
                     value0: new WrappedValue(event.reserve0),
                     value1: new WrappedValue(event.reserve1),
+                }),
+                new RecalculatePricesPoolAction(item.block, item.transaction!, {
+                    pool: ctx.store.defer(Pool, item.address, {token0: true, token1: true}),
+                })
+            )
+
+            const deferredPool = ctx.store.defer(Pool, item.address, {token0: true, token1: true})
+            actions.push(
+                new PriceUpdateTokenAction(item.block, item.transaction!, {
+                    token: new DefferedFunction(async () => await deferredPool.get().then((p) => p?.token0)),
+                    pool: deferredPool,
                 })
             )
 
             actions.push(
-                new RecalculatePricesPoolAction(item.block, item.transaction!, {
-                    id: item.address,
+                new PriceUpdateTokenAction(item.block, item.transaction!, {
+                    token: new DefferedFunction(async () => await deferredPool.get().then((p) => p?.token1)),
+                    pool: deferredPool,
                 })
             )
-
-            if (WHITELIST_TOKENS.indexOf(poolTokens.token1) > -1) {
-                actions.push(
-                    new PriceUpdateTokenAction(item.block, item.transaction!, {
-                        id: poolTokens.token0,
-                        poolId: item.address,
-                    })
-                )
-            }
-
-            if (WHITELIST_TOKENS.indexOf(poolTokens.token0) > -1) {
-                actions.push(
-                    new PriceUpdateTokenAction(item.block, item.transaction!, {
-                        id: poolTokens.token1,
-                        poolId: item.address,
-                    })
-                )
-            }
 
             break
         }
@@ -119,25 +101,29 @@ export function getSolidlyPairActions(ctx: DataHandlerContext<unknown>, item: Lo
 
             const poolId = item.address
 
-            // to make sure it will be prefetched
-            actions.push(new UnknownPoolAction(item.block, item.transaction!, {id: poolId}))
-
             if (from === ZERO_ADDRESS) {
                 actions.push(
                     new ChangeLiquidityPoolAction(item.block, item.transaction!, {
-                        id: item.address,
+                        pool: ctx.store.defer(Pool, item.address),
                         amount,
                     })
                 )
             } else {
-                actions.push(new UnknownUserAction(item.block, item.transaction!, {id: from}))
-
+                const positionId = createLiquidityPositionId(item.address, from)
                 actions.push(
+                    new EnsureUserAction(item.block, item.transaction!, {
+                        user: ctx.store.defer(User, from),
+                        address: from,
+                    }),
+                    new EnsureLiquidityPositionAction(item.block, item.transaction!, {
+                        position: ctx.store.defer(LiquidityPosition, positionId),
+                        id: positionId,
+                        user: ctx.store.defer(User, from),
+                        pool: ctx.store.defer(Pool, item.address),
+                    }),
                     new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-                        id: createLiquidityPositionId(item.address, from),
+                        position: ctx.store.defer(LiquidityPosition, positionId, {pool: true}),
                         amount: -amount,
-                        userId: from,
-                        poolId,
                     })
                 )
             }
@@ -145,19 +131,26 @@ export function getSolidlyPairActions(ctx: DataHandlerContext<unknown>, item: Lo
             if (to === ZERO_ADDRESS && from !== ZERO_ADDRESS) {
                 actions.push(
                     new ChangeLiquidityPoolAction(item.block, item.transaction!, {
-                        id: item.address,
+                        pool: ctx.store.defer(Pool, item.address),
                         amount: -amount,
                     })
                 )
             } else {
-                actions.push(new UnknownUserAction(item.block, item.transaction!, {id: to}))
-
+                const positionId = createLiquidityPositionId(item.address, to)
                 actions.push(
+                    new EnsureUserAction(item.block, item.transaction!, {
+                        user: ctx.store.defer(User, to),
+                        address: to,
+                    }),
+                    new EnsureLiquidityPositionAction(item.block, item.transaction!, {
+                        position: ctx.store.defer(LiquidityPosition, positionId),
+                        id: positionId,
+                        user: ctx.store.defer(User, to),
+                        pool: ctx.store.defer(Pool, item.address),
+                    }),
                     new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-                        id: createLiquidityPositionId(item.address, to),
+                        position: ctx.store.defer(LiquidityPosition, positionId, {pool: true}),
                         amount,
-                        userId: to,
-                        poolId,
                     })
                 )
             }
@@ -175,9 +168,7 @@ export function getSolidlyPairActions(ctx: DataHandlerContext<unknown>, item: Lo
 
             actions.push(
                 new AdjustValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-                    id: createLiquidityPositionId(poolId, userId),
-                    poolId,
-                    userId,
+                    position: ctx.store.defer(LiquidityPosition, createLiquidityPositionId(poolId, userId)),
                     amount0,
                     amount1,
                 })
@@ -196,9 +187,7 @@ export function getSolidlyPairActions(ctx: DataHandlerContext<unknown>, item: Lo
 
             actions.push(
                 new AdjustValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-                    id: createLiquidityPositionId(poolId, userId),
-                    poolId,
-                    userId,
+                    position: ctx.store.defer(LiquidityPosition, createLiquidityPositionId(poolId, userId)),
                     amount0,
                     amount1,
                 })
@@ -206,30 +195,10 @@ export function getSolidlyPairActions(ctx: DataHandlerContext<unknown>, item: Lo
 
             break
         }
-        // case solidlyPair.events.Fees.topic: {
-        //     const event = pair.events.Burn.decode(item)
-
-        //     actions.push({
-        //         block,
-        //         kind: ActionKind.Pool,
-        //         transaction: item.transaction!,
-        //         data: {
-        //             id: item.address,
-        //             type: PoolActionType.Balances,
-        //             amount0: -event.amount0,
-        //             amount1: -event.amount1,
-        //         },
-        //     })
-
-        //     break
-        // }
         default: {
             ctx.log.error(`unknown event ${item.topics[0]}`)
         }
     }
-    //         break
-    //     }
-    // }
 
     return actions
 }

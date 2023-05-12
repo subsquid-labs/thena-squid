@@ -1,15 +1,16 @@
+import {LiquidityPosition, Pool, User} from '../../model'
+import {DeferredValue} from '../../utils/deferred'
 import {ActionKind, BaseAction} from './common'
 
 export enum LiquidityPositionActionType {
     Unknown,
     ValueUpdate,
     AdjustValueUpdate,
+    Ensure,
 }
 
 export interface BaseLiquidityPositionActionData {
-    id: string
-    userId: string
-    poolId: string
+    position: DeferredValue<LiquidityPosition, true>
 }
 
 export abstract class BaseLiquidityPositionAction<
@@ -18,6 +19,16 @@ export abstract class BaseLiquidityPositionAction<
     abstract readonly type: LiquidityPositionActionType
 
     readonly kind = ActionKind.LiquidityPosition
+}
+
+export interface EnsureLiquidityPositionActionData extends BaseLiquidityPositionActionData {
+    id: string
+    user: DeferredValue<User, true>
+    pool: DeferredValue<Pool, true>
+}
+
+export class EnsureLiquidityPositionAction extends BaseLiquidityPositionAction<EnsureLiquidityPositionActionData> {
+    readonly type = LiquidityPositionActionType.Ensure
 }
 
 export interface ValueUpdateLiquidityPositionActionData extends BaseLiquidityPositionActionData {
@@ -47,3 +58,4 @@ export type LiquidityPositionAction =
     | ValueUpdateLiquidityPositionAction
     | AdjustValueUpdateLiquidityPositionAction
     | UnknownLiquidityPositionAction
+    | EnsureLiquidityPositionAction

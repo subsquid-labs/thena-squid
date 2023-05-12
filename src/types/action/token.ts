@@ -1,14 +1,15 @@
+import {Pool, Token} from '../../model'
 import {DeferredValue} from '../../utils/deferred'
 import {ActionKind, BaseAction} from './common'
 
 export enum TokenActionType {
     Unknown,
-    Init,
+    Ensure,
     PriceUpdate,
 }
 
 export interface BaseTokenActionData {
-    id: string
+    token: DeferredValue<Token, true>
 }
 
 export abstract class BaseTokenAction<T extends BaseTokenActionData = BaseTokenActionData> extends BaseAction<T> {
@@ -17,17 +18,18 @@ export abstract class BaseTokenAction<T extends BaseTokenActionData = BaseTokenA
     readonly kind = ActionKind.Token
 }
 
-export interface InitTokenActionData extends BaseTokenActionData {
+export interface EnsureTokenActionData extends BaseTokenActionData {
+    address: string
     decimals: DeferredValue<number>
     symbol: DeferredValue<string>
 }
 
-export class InitTokenAction extends BaseTokenAction<InitTokenActionData> {
-    readonly type = TokenActionType.Init
+export class EnsureTokenAction extends BaseTokenAction<EnsureTokenActionData> {
+    readonly type = TokenActionType.Ensure
 }
 
 export interface PriceUpdateTokenActionData extends BaseTokenActionData {
-    poolId: string
+    pool: DeferredValue<Pool, true>
 }
 
 export class PriceUpdateTokenAction extends BaseTokenAction<PriceUpdateTokenActionData> {
@@ -38,4 +40,4 @@ export class UnknownTokenAction extends BaseTokenAction {
     readonly type = TokenActionType.Unknown
 }
 
-export type TokenAction = PriceUpdateTokenAction | InitTokenAction | UnknownTokenAction
+export type TokenAction = PriceUpdateTokenAction | EnsureTokenAction | UnknownTokenAction

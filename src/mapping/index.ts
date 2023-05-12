@@ -9,8 +9,9 @@ import {getAlgebraPoolActions, isAlgebraPoolItem} from './algebraPool'
 import {getHypervisorActions, isHypervisorItem} from './hypervisor'
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Fields, Log} from '../processor'
+import {StoreWithCache} from '../utils/store'
 
-export async function getActions(ctx: DataHandlerContext<unknown, Fields>): Promise<Action[]> {
+export async function getActions(ctx: DataHandlerContext<StoreWithCache, Fields>): Promise<Action[]> {
     const actions: Action[] = []
     for (let {header: block, logs, transactions} of ctx.blocks) {
         for (let log of logs) {
@@ -22,7 +23,7 @@ export async function getActions(ctx: DataHandlerContext<unknown, Fields>): Prom
     return actions
 }
 
-export async function getItemActions(ctx: DataHandlerContext<unknown, Fields>, item: Log): Promise<Action[]> {
+export async function getItemActions(ctx: DataHandlerContext<StoreWithCache, Fields>, item: Log): Promise<Action[]> {
     if (isThenaItem(item)) {
         ctx.log.debug(`processing Thena item...`)
         return getThenaActions(ctx, item)

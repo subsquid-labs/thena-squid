@@ -1,15 +1,16 @@
+import {Hypervisor, LiquidityPosition} from '../../model'
 import {DeferredValue} from '../../utils/deferred'
 import {ActionKind, BaseAction} from './common'
 
 export enum HypervisorActionType {
     Unknown,
-    Init,
+    Ensure,
     SetPosition,
     RemovePosition,
 }
 
 export interface BaseHypervisorActionData {
-    id: string
+    hypervisor: DeferredValue<Hypervisor, true>
 }
 
 export abstract class BaseHypervisorAction<
@@ -20,16 +21,17 @@ export abstract class BaseHypervisorAction<
     readonly kind = ActionKind.Hypervisor
 }
 
-export interface InitHypervisorActionData extends BaseHypervisorActionData {
+export interface EnsureHypervisorActionData extends BaseHypervisorActionData {
+    address: string
     poolId: DeferredValue<string>
 }
 
-export class InitHypervisorAction extends BaseHypervisorAction<InitHypervisorActionData> {
-    readonly type = HypervisorActionType.Init
+export class EnsureHypervisorAction extends BaseHypervisorAction<EnsureHypervisorActionData> {
+    readonly type = HypervisorActionType.Ensure
 }
 
 export interface SetPositionHypervisorActionData extends BaseHypervisorActionData {
-    positionId: string
+    position: DeferredValue<LiquidityPosition, true>
 }
 
 export class SetPositionHypervisorAction extends BaseHypervisorAction<SetPositionHypervisorActionData> {
@@ -37,11 +39,11 @@ export class SetPositionHypervisorAction extends BaseHypervisorAction<SetPositio
 }
 
 export interface RemovePositionHypervisorActionData extends BaseHypervisorActionData {
-    positionId: string
+    position: DeferredValue<LiquidityPosition, true>
 }
 
 export class RemovePositionHypervisorAction extends BaseHypervisorAction<RemovePositionHypervisorActionData> {
     readonly type = HypervisorActionType.RemovePosition
 }
 
-export type HypervisorAction = InitHypervisorAction | SetPositionHypervisorAction | RemovePositionHypervisorAction
+export type HypervisorAction = EnsureHypervisorAction | SetPositionHypervisorAction | RemovePositionHypervisorAction

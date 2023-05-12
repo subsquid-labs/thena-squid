@@ -12,17 +12,11 @@ export class Pool {
     @PrimaryColumn_()
     id!: string
 
-    @Column_("text", {nullable: false})
-    token0Id!: string
-
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     reserve0!: bigint
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
     price0!: bigint | undefined | null
-
-    @Column_("text", {nullable: false})
-    token1Id!: string
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     reserve1!: bigint
