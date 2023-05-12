@@ -240,7 +240,7 @@ export class StoreWithCache {
         if (entities.length == 0) return
 
         const _cacheMap = this.getCacheMap(entities[0].constructor.name)
-        const caachedEntities: Entity[] = []
+        const cachedEntities: Entity[] = []
         for (const entity of entities) {
             const constructor = entity.constructor as any
             const cached = _cacheMap.get(entity.id) || (new constructor() as Entity)
@@ -253,12 +253,20 @@ export class StoreWithCache {
                     const relationMetadata = column.relationMetadata
                     const relationPropertyName = relationMetadata.propertyName
                     const mask = relations[relationPropertyName]
-                    if (relationPropertyName in entity && mask) {
-                        assert(!relationMetadata.isOneToMany, `OneToMany relations can't be cached`)
-                        cached[relationPropertyName] =
-                            entity[relationPropertyName] == null
-                                ? undefined
-                                : await this.cache(entity[relationPropertyName], mask === true ? {} : mask)
+                    if (relationPropertyName in entity) {
+                        const relation = entity[relationPropertyName]
+                        if (relation == null) {
+                            cached[relationPropertyName] = undefined
+                        } else if (mask) {
+                            assert(!relationMetadata.isOneToMany, `OneToMany relations can't be cached`)
+                            cached[relationPropertyName] = await this.cache(relation, mask === true ? {} : mask)
+                        } else if (cached[relationPropertyName] == null) {
+                            const _relationCacheMap = this.getCacheMap(relation.constructor.name)
+                            const relationConstructor = relation.constructor as any
+                            cached[relationPropertyName] =
+                                _relationCacheMap.get(relation.id) ||
+                                (await this.cache(new relationConstructor({id: relation.id})))
+                        }
                     }
 
                     if (propertyName != relationPropertyName) {
@@ -270,10 +278,10 @@ export class StoreWithCache {
             }
 
             _cacheMap.set(cached.id, cached)
-            caachedEntities.push(cached)
+            cachedEntities.push(cached)
         }
 
-        return Array.isArray(e) ? caachedEntities : caachedEntities[0]
+        return Array.isArray(e) ? cachedEntities : cachedEntities[0]
     }
 
     @def
