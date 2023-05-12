@@ -1,76 +1,89 @@
 import assert from 'assert'
 import {User, Pool, Trade, Token} from '../model'
 import {last} from '../utils/misc'
-import {UserAction, UserActionType, BalanceUserAction, SwapUserAction} from '../types/action'
-import {CommonContext, Storage} from '../types/util'
+import {UserAction, UserActionType, BalanceUserAction, SwapUserAction, EnsureUserAction} from '../types/action'
 import {createTradeId} from '../utils/ids'
 import {BNB_DECIMALS, USD_ADDRESS} from '../config'
 import {BigDecimal} from '@subsquid/big-decimal'
+import {DataHandlerContext} from '@subsquid/evm-processor'
+import {StoreWithCache} from '../utils/store'
 
-export function processUserAction(
-    ctx: CommonContext<Storage<{users: User; pools: Pool; trades: Trade[]; tokens: Token}>>,
-    action: UserAction
-) {
+export async function processUserAction(ctx: DataHandlerContext<StoreWithCache>, action: UserAction) {
     switch (action.type) {
         case UserActionType.Balance: {
-            processBalanceAction(ctx, action)
+            await processBalanceAction(ctx, action)
             break
         }
         case UserActionType.Swap: {
-            processSwapAction(ctx, action)
+            await processSwapAction(ctx, action)
             break
         }
-        default: {
-            getOrCreateUser(ctx, action)
+        case UserActionType.Ensure: {
+            await processEnsureAction(ctx, action)
             break
         }
     }
 }
 
-function processBalanceAction(ctx: CommonContext<Storage<{users: User}>>, action: BalanceUserAction) {
-    const user = getOrCreateUser(ctx, action)
+async function processEnsureAction(ctx: DataHandlerContext<StoreWithCache>, action: EnsureUserAction) {
+    let user = await action.data.user.get()
+    if (user != null) return
+
+    user = new User({
+        id: action.data.address,
+        firstInteractAt: new Date(action.block.timestamp),
+        balance: 0n,
+    })
+
+    await ctx.store.insert(user)
+    ctx.log.debug(`User ${user.id} created`)
+}
+
+async function processBalanceAction(ctx: DataHandlerContext<StoreWithCache>, action: BalanceUserAction) {
+    const user = await action.data.user.get()
+    assert(user != null)
 
     user.balance += action.data.amount
+
+    ctx.store.upsert(user)
     ctx.log.debug(`Balance of user ${user.id} updated to ${user.balance} (${action.data.amount})`)
 
     // assert(user.balance >= 0)
 }
 
-function processSwapAction(
-    ctx: CommonContext<Storage<{users: User; pools: Pool; trades: Trade[]; tokens: Token}>>,
-    action: SwapUserAction
-) {
-    const pool = ctx.store.pools.get(action.data.poolId)
-    if (pool == null) return // not our factory pool
+async function processSwapAction(ctx: DataHandlerContext<StoreWithCache>, action: SwapUserAction) {
+    const pool = await action.data.pool.get()
+    assert(pool != null)
 
-    const user = getOrCreateUser(ctx, action)
+    const user = await action.data.user.get()
+    assert(user != null)
 
-    let txTrades = ctx.store.trades.get(action.transaction.id)
-    if (txTrades == null) {
-        txTrades = []
-        ctx.store.trades.set(action.transaction.id, txTrades)
-    }
-
+    const txTrades = await ctx.store.find(Trade, {where: {txHash: action.transaction.hash}})
     const {tokenInId, tokenOutId, amountIn, amountOut} = convertTokenValues({
-        token0Id: pool.token0Id,
+        token0Id: pool.token0.id,
         amount0: action.data.amount0,
-        token1Id: pool.token1Id,
+        token1Id: pool.token1.id,
         amount1: action.data.amount1,
     })
 
-    const tokenIn = ctx.store.tokens.get(tokenInId)
+    const [tokenIn, tokenOut] = tokenInId == pool.token0.id ? [pool.token0, pool.token1] : [pool.token1, pool.token0]
     assert(tokenIn != null)
-    const tokenOut = ctx.store.tokens.get(tokenOutId)
     assert(tokenOut != null)
-    const usdToken = ctx.store.tokens.get(USD_ADDRESS)
-    assert(usdToken != null)
+    const usdToken = await action.data.usdToken.get()
+    // assert(usdToken != null)
 
-    const usdBnbPrice = BigDecimal(usdToken.bnbPrice, BNB_DECIMALS)
+    const usdBnbPrice = BigDecimal(usdToken ? usdToken.bnbPrice : 0n, BNB_DECIMALS)
     const amountInUSD = usdBnbPrice.gt(0)
-        ? BigDecimal(tokenIn.bnbPrice, BNB_DECIMALS).div(usdBnbPrice).mul(BigDecimal(amountIn, tokenIn.decimals)).toNumber()
+        ? BigDecimal(tokenIn.bnbPrice, BNB_DECIMALS)
+              .div(usdBnbPrice)
+              .mul(BigDecimal(amountIn, tokenIn.decimals))
+              .toNumber()
         : 0
     const amountOutUSD = usdBnbPrice.gt(0)
-        ? BigDecimal(tokenOut.bnbPrice, BNB_DECIMALS).div(usdBnbPrice).mul(BigDecimal(amountOut, tokenOut.decimals)).toNumber()
+        ? BigDecimal(tokenOut.bnbPrice, BNB_DECIMALS)
+              .div(usdBnbPrice)
+              .mul(BigDecimal(amountOut, tokenOut.decimals))
+              .toNumber()
         : 0
 
     let trade = txTrades.length > 0 ? last(txTrades) : undefined
@@ -87,14 +100,15 @@ function processSwapAction(
             tokenOutId,
             amountOut,
             amountOutUSD,
-            routes: [action.data.poolId],
+            routes: [pool.id],
         })
-        txTrades.push(trade)
+        await ctx.store.insert(trade)
     } else {
         trade.amountOut = amountOut
         trade.tokenOut = tokenOut
         trade.user = user
-        trade.routes.push(action.data.poolId)
+        trade.routes.push(pool.id)
+        await ctx.store.upsert(trade)
     }
 }
 
@@ -118,26 +132,4 @@ function convertTokenValues(data: {token0Id: string; amount0: bigint; token1Id: 
     } else {
         throw new Error(`Unexpected case: amount0: ${amount0}, amount1: ${amount1}`)
     }
-}
-
-function createUser(ctx: CommonContext<Storage<{users: User}>>, action: UserAction) {
-    const user = new User({
-        id: action.data.id,
-        firstInteractAt: new Date(action.block.timestamp),
-        balance: 0n,
-    })
-    ctx.store.users.set(user.id, user)
-
-    ctx.log.debug(`User ${user.id} created`)
-
-    return user
-}
-
-function getOrCreateUser(ctx: CommonContext<Storage<{users: User}>>, action: UserAction) {
-    let user = ctx.store.users.get(action.data.id)
-    if (user == null) {
-        user = createUser(ctx, action)
-    }
-
-    return user
 }

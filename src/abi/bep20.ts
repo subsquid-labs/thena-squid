@@ -2,25 +2,25 @@ import * as ethers from 'ethers'
 import {LogEvent, Func, ContractBase} from './abi.support'
 import {ABI_JSON} from './bep20.abi'
 
-export const abi = new ethers.utils.Interface(ABI_JSON);
+export const abi = new ethers.Interface(ABI_JSON);
 
 export const events = {
-    Approval: new LogEvent<([owner: string, spender: string, value: ethers.BigNumber] & {owner: string, spender: string, value: ethers.BigNumber})>(
+    Approval: new LogEvent<([owner: string, spender: string, value: bigint] & {owner: string, spender: string, value: bigint})>(
         abi, '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
     ),
-    Transfer: new LogEvent<([from: string, to: string, value: ethers.BigNumber] & {from: string, to: string, value: ethers.BigNumber})>(
+    Transfer: new LogEvent<([from: string, to: string, value: bigint] & {from: string, to: string, value: bigint})>(
         abi, '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
     ),
 }
 
 export const functions = {
-    allowance: new Func<[_: string, _: string], {}, ethers.BigNumber>(
+    allowance: new Func<[_: string, _: string], {}, bigint>(
         abi, '0xdd62ed3e'
     ),
-    approve: new Func<[_spender: string, _value: ethers.BigNumber], {_spender: string, _value: ethers.BigNumber}, boolean>(
+    approve: new Func<[_spender: string, _value: bigint], {_spender: string, _value: bigint}, boolean>(
         abi, '0x095ea7b3'
     ),
-    balanceOf: new Func<[_: string], {}, ethers.BigNumber>(
+    balanceOf: new Func<[_: string], {}, bigint>(
         abi, '0x70a08231'
     ),
     decimals: new Func<[], {}, number>(
@@ -35,7 +35,7 @@ export const functions = {
     merkleClaim: new Func<[], {}, string>(
         abi, '0xe752c44a'
     ),
-    mint: new Func<[account: string, amount: ethers.BigNumber], {account: string, amount: ethers.BigNumber}, boolean>(
+    mint: new Func<[account: string, amount: bigint], {account: string, amount: bigint}, boolean>(
         abi, '0x40c10f19'
     ),
     minter: new Func<[], {}, string>(
@@ -53,24 +53,24 @@ export const functions = {
     symbol: new Func<[], {}, string>(
         abi, '0x95d89b41'
     ),
-    totalSupply: new Func<[], {}, ethers.BigNumber>(
+    totalSupply: new Func<[], {}, bigint>(
         abi, '0x18160ddd'
     ),
-    transfer: new Func<[_to: string, _value: ethers.BigNumber], {_to: string, _value: ethers.BigNumber}, boolean>(
+    transfer: new Func<[_to: string, _value: bigint], {_to: string, _value: bigint}, boolean>(
         abi, '0xa9059cbb'
     ),
-    transferFrom: new Func<[_from: string, _to: string, _value: ethers.BigNumber], {_from: string, _to: string, _value: ethers.BigNumber}, boolean>(
+    transferFrom: new Func<[_from: string, _to: string, _value: bigint], {_from: string, _to: string, _value: bigint}, boolean>(
         abi, '0x23b872dd'
     ),
 }
 
 export class Contract extends ContractBase {
 
-    allowance(arg0: string, arg1: string): Promise<ethers.BigNumber> {
+    allowance(arg0: string, arg1: string): Promise<bigint> {
         return this.eth_call(functions.allowance, [arg0, arg1])
     }
 
-    balanceOf(arg0: string): Promise<ethers.BigNumber> {
+    balanceOf(arg0: string): Promise<bigint> {
         return this.eth_call(functions.balanceOf, [arg0])
     }
 
@@ -102,7 +102,7 @@ export class Contract extends ContractBase {
         return this.eth_call(functions.symbol, [])
     }
 
-    totalSupply(): Promise<ethers.BigNumber> {
+    totalSupply(): Promise<bigint> {
         return this.eth_call(functions.totalSupply, [])
     }
 }

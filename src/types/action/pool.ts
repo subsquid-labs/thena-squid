@@ -1,4 +1,4 @@
-import {PoolType} from '../../model'
+import {Pool, PoolType, Token} from '../../model'
 import {DeferredValue} from '../../utils/deferred'
 import {ActionKind, BaseAction} from './common'
 
@@ -10,10 +10,11 @@ export enum PoolActionType {
     SetLiquidity,
     ChangeLiquidity,
     SetSqrtPrice,
+    RecalculatePrices,
 }
 
 export interface BasePoolActionData {
-    id: string
+    pool: DeferredValue<Pool, true>
 }
 
 export abstract class BasePoolAction<T extends BasePoolActionData = BasePoolActionData> extends BaseAction<T> {
@@ -23,8 +24,9 @@ export abstract class BasePoolAction<T extends BasePoolActionData = BasePoolActi
 }
 
 export interface CreatePoolActionData extends BasePoolActionData {
-    token0: DeferredValue<string>
-    token1: DeferredValue<string>
+    address: string
+    token0: DeferredValue<Token, true>
+    token1: DeferredValue<Token, true>
     stable?: boolean
     factory: string
     type: PoolType
@@ -76,6 +78,10 @@ export class SetSqrtPricePoolAction extends BasePoolAction<SetSqrtPricePoolActio
     readonly type = PoolActionType.SetSqrtPrice
 }
 
+export class RecalculatePricesPoolAction extends BasePoolAction {
+    readonly type = PoolActionType.RecalculatePrices
+}
+
 export class UnknownPoolAction extends BasePoolAction {
     readonly type = PoolActionType.Unknown
 }
@@ -87,4 +93,5 @@ export type PoolAction =
     | SetLiquidityPoolAction
     | ChangeLiquidityPoolAction
     | SetSqrtPricePoolAction
+    | RecalculatePricesPoolAction
     | UnknownPoolAction

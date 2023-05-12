@@ -2,7 +2,7 @@ import * as ethers from 'ethers'
 import {LogEvent, Func, ContractBase} from './abi.support'
 import {ABI_JSON} from './solidlyFactory.abi'
 
-export const abi = new ethers.utils.Interface(ABI_JSON);
+export const abi = new ethers.Interface(ABI_JSON);
 
 export const events = {
     Initialized: new LogEvent<([version: number] & {version: number})>(
@@ -11,25 +11,25 @@ export const events = {
     OwnershipTransferred: new LogEvent<([previousOwner: string, newOwner: string] & {previousOwner: string, newOwner: string})>(
         abi, '0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0'
     ),
-    PairCreated: new LogEvent<([token0: string, token1: string, stable: boolean, pair: string, _: ethers.BigNumber] & {token0: string, token1: string, stable: boolean, pair: string})>(
+    PairCreated: new LogEvent<([token0: string, token1: string, stable: boolean, pair: string, _: bigint] & {token0: string, token1: string, stable: boolean, pair: string})>(
         abi, '0xc4805696c66d7cf352fc1d6bb633ad5ee82f6cb577c453024b6e0eb8306c6fc9'
     ),
 }
 
 export const functions = {
-    MAX_FEE: new Func<[], {}, ethers.BigNumber>(
+    MAX_FEE: new Func<[], {}, bigint>(
         abi, '0xbc063e1a'
     ),
-    MAX_REFERRAL_FEE: new Func<[], {}, ethers.BigNumber>(
+    MAX_REFERRAL_FEE: new Func<[], {}, bigint>(
         abi, '0x1e61079c'
     ),
     acceptFeeManager: new Func<[], {}, []>(
         abi, '0xf94c53c7'
     ),
-    allPairs: new Func<[_: ethers.BigNumber], {}, string>(
+    allPairs: new Func<[_: bigint], {}, string>(
         abi, '0x1e3dd18b'
     ),
-    allPairsLength: new Func<[], {}, ethers.BigNumber>(
+    allPairsLength: new Func<[], {}, bigint>(
         abi, '0x574f2ba3'
     ),
     createPair: new Func<[tokenA: string, tokenB: string, stable: boolean], {tokenA: string, tokenB: string, stable: boolean}, string>(
@@ -41,7 +41,7 @@ export const functions = {
     feeManager: new Func<[], {}, string>(
         abi, '0xd0fb0203'
     ),
-    getFee: new Func<[_stable: boolean], {_stable: boolean}, ethers.BigNumber>(
+    getFee: new Func<[_stable: boolean], {_stable: boolean}, bigint>(
         abi, '0x512b45ea'
     ),
     getInitializable: new Func<[], {}, [_: string, _: string, _: boolean]>(
@@ -77,7 +77,7 @@ export const functions = {
     setDibs: new Func<[_dibs: string], {_dibs: string}, []>(
         abi, '0x0c74db12'
     ),
-    setFee: new Func<[_stable: boolean, _fee: ethers.BigNumber], {_stable: boolean, _fee: ethers.BigNumber}, []>(
+    setFee: new Func<[_stable: boolean, _fee: bigint], {_stable: boolean, _fee: bigint}, []>(
         abi, '0xe1f76b44'
     ),
     setFeeManager: new Func<[_feeManager: string], {_feeManager: string}, []>(
@@ -86,47 +86,47 @@ export const functions = {
     setPause: new Func<[_state: boolean], {_state: boolean}, []>(
         abi, '0xbedb86fb'
     ),
-    setReferralFee: new Func<[_refFee: ethers.BigNumber], {_refFee: ethers.BigNumber}, []>(
+    setReferralFee: new Func<[_refFee: bigint], {_refFee: bigint}, []>(
         abi, '0x713494d7'
     ),
     setStakingFeeAddress: new Func<[_feehandler: string], {_feehandler: string}, []>(
         abi, '0x4091cb77'
     ),
-    setStakingFees: new Func<[_newFee: ethers.BigNumber], {_newFee: ethers.BigNumber}, []>(
+    setStakingFees: new Func<[_newFee: bigint], {_newFee: bigint}, []>(
         abi, '0x482a8d07'
     ),
-    stableFee: new Func<[], {}, ethers.BigNumber>(
+    stableFee: new Func<[], {}, bigint>(
         abi, '0x40bbd775'
     ),
     stakingFeeHandler: new Func<[], {}, string>(
         abi, '0xc124a4a2'
     ),
-    stakingNFTFee: new Func<[], {}, ethers.BigNumber>(
+    stakingNFTFee: new Func<[], {}, bigint>(
         abi, '0x956f94a1'
     ),
     transferOwnership: new Func<[newOwner: string], {newOwner: string}, []>(
         abi, '0xf2fde38b'
     ),
-    volatileFee: new Func<[], {}, ethers.BigNumber>(
+    volatileFee: new Func<[], {}, bigint>(
         abi, '0x5084ed03'
     ),
 }
 
 export class Contract extends ContractBase {
 
-    MAX_FEE(): Promise<ethers.BigNumber> {
+    MAX_FEE(): Promise<bigint> {
         return this.eth_call(functions.MAX_FEE, [])
     }
 
-    MAX_REFERRAL_FEE(): Promise<ethers.BigNumber> {
+    MAX_REFERRAL_FEE(): Promise<bigint> {
         return this.eth_call(functions.MAX_REFERRAL_FEE, [])
     }
 
-    allPairs(arg0: ethers.BigNumber): Promise<string> {
+    allPairs(arg0: bigint): Promise<string> {
         return this.eth_call(functions.allPairs, [arg0])
     }
 
-    allPairsLength(): Promise<ethers.BigNumber> {
+    allPairsLength(): Promise<bigint> {
         return this.eth_call(functions.allPairsLength, [])
     }
 
@@ -138,7 +138,7 @@ export class Contract extends ContractBase {
         return this.eth_call(functions.feeManager, [])
     }
 
-    getFee(_stable: boolean): Promise<ethers.BigNumber> {
+    getFee(_stable: boolean): Promise<bigint> {
         return this.eth_call(functions.getFee, [_stable])
     }
 
@@ -174,7 +174,7 @@ export class Contract extends ContractBase {
         return this.eth_call(functions.pendingFeeManager, [])
     }
 
-    stableFee(): Promise<ethers.BigNumber> {
+    stableFee(): Promise<bigint> {
         return this.eth_call(functions.stableFee, [])
     }
 
@@ -182,11 +182,11 @@ export class Contract extends ContractBase {
         return this.eth_call(functions.stakingFeeHandler, [])
     }
 
-    stakingNFTFee(): Promise<ethers.BigNumber> {
+    stakingNFTFee(): Promise<bigint> {
         return this.eth_call(functions.stakingNFTFee, [])
     }
 
-    volatileFee(): Promise<ethers.BigNumber> {
+    volatileFee(): Promise<bigint> {
         return this.eth_call(functions.volatileFee, [])
     }
 }

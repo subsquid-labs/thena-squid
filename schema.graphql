@@ -77,12 +77,10 @@ type Pool @entity {
     id: ID!
 
     # token0
-    token0Id: ID!
     reserve0: BigInt!
     price0: BigInt
 
     # token1
-    token1Id: ID!
     reserve1: BigInt!
     price1: BigInt
 

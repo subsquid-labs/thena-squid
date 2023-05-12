@@ -1,181 +1,168 @@
-import {BatchHandlerContext, EvmBlock} from '@subsquid/evm-processor'
+import {DataHandlerContext} from '@subsquid/evm-processor'
 import * as algebraPool from '../abi/algebraPool'
-import {ALGEBRA_FACTORY} from '../config'
-import {ProcessorItem} from '../processor'
+import {ALGEBRA_FACTORY, USD_ADDRESS} from '../config'
+import {Log} from '../processor'
 import {PoolManager} from '../utils/pairManager'
 import {
     Action,
     ChangeLiquidityPoolAction,
+    EnsureLiquidityPositionAction,
+    EnsureUserAction,
+    RecalculatePricesPoolAction,
     RemovePositionHypervisorAction,
     SetLiquidityPoolAction,
     SetPositionHypervisorAction,
     SetSqrtPricePoolAction,
     SwapUserAction,
-    UnknownPoolAction,
-    UnknownTokenAction,
     UnknownUserAction,
     ValueUpdateLiquidityPositionAction,
 } from '../types/action'
 import {createLiquidityPositionId} from '../utils/ids'
 import {WrappedValue} from '../utils/deferred'
 import {HypervisorManager} from '../utils/hypervisorManager'
+import {StoreWithCache} from '../utils/store'
+import {Hypervisor, LiquidityPosition, Pool, Token, User} from '../model'
 
-export function isAlgebraPoolItem(item: ProcessorItem) {
+export function isAlgebraPoolItem(item: Log) {
     return PoolManager.instance.isPool(ALGEBRA_FACTORY, item.address)
 }
 
-export function getAlgebraPoolActions(
-    ctx: BatchHandlerContext<unknown, unknown>,
-    block: EvmBlock,
-    item: ProcessorItem
-) {
+export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     const actions: Action[] = []
 
-    switch (item.kind) {
-        case 'evmLog': {
-            switch (item.evmLog.topics[0]) {
-                case algebraPool.events.Swap.topic: {
-                    const event = algebraPool.events.Swap.decode(item.evmLog)
+    switch (item.topics[0]) {
+        case algebraPool.events.Swap.topic: {
+            const event = algebraPool.events.Swap.decode(item)
 
-                    const id = event.recipient
-                    const poolId = item.address
+            const id = event.recipient
+            const poolId = item.address
 
-                    const amount0 = event.amount0.toBigInt()
-                    const amount1 = event.amount1.toBigInt()
+            const amount0 = event.amount0
+            const amount1 = event.amount1
 
-                    const liquidity = event.liquidity.toBigInt()
+            const liquidity = event.liquidity
 
-                    actions.push(
-                        new UnknownTokenAction(block, item.transaction, {
-                            id: PoolManager.instance.getTokens(poolId).token0,
-                        })
-                    )
-                    actions.push(
-                        new UnknownTokenAction(block, item.transaction, {
-                            id: PoolManager.instance.getTokens(poolId).token1,
-                        })
-                    )
+            actions.push(
+                new EnsureUserAction(item.block, item.transaction!, {
+                    user: ctx.store.defer(User, id),
+                    address: id,
+                }),
+                new SwapUserAction(item.block, item.transaction!, {
+                    user: ctx.store.defer(User, id),
+                    amount0,
+                    amount1,
+                    pool: ctx.store.defer(Pool, item.address, {token0: true, token1: true}),
+                    usdToken: ctx.store.defer(Token, USD_ADDRESS),
+                }),
+                new SetLiquidityPoolAction(item.block, item.transaction!, {
+                    pool: ctx.store.defer(Pool, item.address),
+                    value: new WrappedValue(liquidity),
+                }),
+                new SetSqrtPricePoolAction(item.block, item.transaction!, {
+                    pool: ctx.store.defer(Pool, item.address),
+                    value: event.price,
+                }),
+                new RecalculatePricesPoolAction(item.block, item.transaction!, {
+                    pool: ctx.store.defer(Pool, item.address, {token0: true, token1: true}),
+                })
+            )
 
-                    actions.push(
-                        new SwapUserAction(block, item.transaction, {
-                            id,
-                            amount0,
-                            amount1,
-                            poolId,
-                        })
-                    )
-
-                    actions.push(
-                        new SetLiquidityPoolAction(block, item.transaction, {
-                            id: poolId,
-                            value: new WrappedValue(liquidity),
-                        })
-                    )
-
-                    actions.push(
-                        new SetSqrtPricePoolAction(block, item.transaction, {
-                            id: poolId,
-                            value: event.price.toBigInt(),
-                        })
-                    )
-
-                    break
-                }
-                case algebraPool.events.Mint.topic: {
-                    const event = algebraPool.events.Mint.decode(item.evmLog)
-
-                    const userId = event.owner.toLowerCase()
-                    const poolId = item.address
-
-                    const amount = event.liquidityAmount.toBigInt()
-                    if (amount === 0n) break
-
-                    actions.push(
-                        new ChangeLiquidityPoolAction(block, item.transaction, {
-                            id: poolId,
-                            amount,
-                        })
-                    )
-
-                    actions.push(new UnknownUserAction(block, item.transaction, {id: userId}))
-
-                    actions.push(
-                        new ValueUpdateLiquidityPositionAction(block, item.transaction, {
-                            id: createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick),
-                            amount,
-                            userId,
-                            poolId,
-                        })
-                    )
-
-                    actions.push(
-                        new ChangeLiquidityPoolAction(block, item.transaction, {
-                            id: poolId,
-                            amount,
-                        })
-                    )
-
-                    if (HypervisorManager.instance.isTracked(userId)) {
-                        actions.push(
-                            new SetPositionHypervisorAction(block, item.transaction, {
-                                id: userId,
-                                positionId: createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick),
-                            })
-                        )
-                    }
-
-                    break
-                }
-                case algebraPool.events.Burn.topic: {
-                    const event = algebraPool.events.Burn.decode(item.evmLog)
-
-                    const userId = event.owner.toLowerCase()
-                    const poolId = item.address
-
-                    const amount = -event.liquidityAmount.toBigInt()
-                    if (amount === 0n) break
-
-                    actions.push(
-                        new ChangeLiquidityPoolAction(block, item.transaction, {
-                            id: poolId,
-                            amount,
-                        })
-                    )
-
-                    actions.push(new UnknownUserAction(block, item.transaction, {id: userId}))
-
-                    actions.push(
-                        new ValueUpdateLiquidityPositionAction(block, item.transaction, {
-                            id: createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick),
-                            amount,
-                            userId,
-                            poolId,
-                        })
-                    )
-
-                    actions.push(
-                        new ChangeLiquidityPoolAction(block, item.transaction, {
-                            id: poolId,
-                            amount,
-                        })
-                    )
-
-                    if (HypervisorManager.instance.isTracked(userId)) {
-                        actions.push(
-                            new RemovePositionHypervisorAction(block, item.transaction, {
-                                id: userId,
-                                positionId: createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick),
-                            })
-                        )
-                    }
-
-                    break
-                }
-                default: {
-                    ctx.log.error(`unknown event ${item.evmLog.topics[0]}`)
-                }
-            }
             break
+        }
+        case algebraPool.events.Mint.topic: {
+            const event = algebraPool.events.Mint.decode(item)
+
+            const userId = event.owner.toLowerCase()
+            const poolId = item.address
+
+            const amount = event.liquidityAmount
+            if (amount === 0n) break
+
+            const positionId = createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick)
+            actions.push(
+                new ChangeLiquidityPoolAction(item.block, item.transaction!, {
+                    pool: ctx.store.defer(Pool, item.address),
+                    amount,
+                }),
+                new EnsureUserAction(item.block, item.transaction!, {
+                    user: ctx.store.defer(User, userId),
+                    address: userId,
+                }),
+                new EnsureLiquidityPositionAction(item.block, item.transaction!, {
+                    position: ctx.store.defer(LiquidityPosition, positionId),
+                    id: positionId,
+                    user: ctx.store.defer(User, userId),
+                    pool: ctx.store.defer(Pool, item.address),
+                }),
+                new ChangeLiquidityPoolAction(item.block, item.transaction!, {
+                    pool: ctx.store.defer(Pool, item.address),
+                    amount,
+                }),
+                new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
+                    position: ctx.store.defer(LiquidityPosition, positionId),
+                    amount,
+                })
+            )
+
+            if (HypervisorManager.instance.isTracked(userId)) {
+                actions.push(
+                    new SetPositionHypervisorAction(item.block, item.transaction!, {
+                        hypervisor: ctx.store.defer(Hypervisor, userId, {basePosition: true, limitPosition: true}),
+                        position: ctx.store.defer(LiquidityPosition, positionId),
+                    })
+                )
+            }
+
+            break
+        }
+        case algebraPool.events.Burn.topic: {
+            const event = algebraPool.events.Burn.decode(item)
+
+            const userId = event.owner.toLowerCase()
+            const poolId = item.address
+
+            const amount = -event.liquidityAmount
+            if (amount === 0n) break
+
+            const positionId = createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick)
+            actions.push(
+                new ChangeLiquidityPoolAction(item.block, item.transaction!, {
+                    pool: ctx.store.defer(Pool, item.address),
+                    amount,
+                }),
+                new EnsureUserAction(item.block, item.transaction!, {
+                    user: ctx.store.defer(User, userId),
+                    address: userId,
+                }),
+                new EnsureLiquidityPositionAction(item.block, item.transaction!, {
+                    position: ctx.store.defer(LiquidityPosition, positionId),
+                    id: positionId,
+                    user: ctx.store.defer(User, userId),
+                    pool: ctx.store.defer(Pool, item.address),
+                }),
+                new ChangeLiquidityPoolAction(item.block, item.transaction!, {
+                    pool: ctx.store.defer(Pool, item.address),
+                    amount,
+                }),
+                new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
+                    position: ctx.store.defer(LiquidityPosition, positionId),
+                    amount,
+                })
+            )
+
+            if (HypervisorManager.instance.isTracked(userId)) {
+                actions.push(
+                    new RemovePositionHypervisorAction(item.block, item.transaction!, {
+                        hypervisor: ctx.store.defer(Hypervisor, userId, {basePosition: true, limitPosition: true}),
+                        position: ctx.store.defer(LiquidityPosition, positionId),
+                    })
+                )
+            }
+
+            break
+        }
+        default: {
+            ctx.log.error(`unknown event ${item.topics[0]}`)
         }
     }
 

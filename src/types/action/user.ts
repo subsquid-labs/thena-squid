@@ -1,3 +1,5 @@
+import {Pool, Token, User} from '../../model'
+import {DeferredValue} from '../../utils/deferred'
 import {ActionKind, BaseAction} from './common'
 
 export enum UserActionType {
@@ -5,10 +7,11 @@ export enum UserActionType {
     Balance,
     Swap,
     Liquidity,
+    Ensure,
 }
 
 export interface BaseUserActionData {
-    id: string
+    user: DeferredValue<User, true>
 }
 
 export abstract class BaseUserAction<T extends BaseUserActionData = BaseUserActionData> extends BaseAction<T> {
@@ -16,6 +19,15 @@ export abstract class BaseUserAction<T extends BaseUserActionData = BaseUserActi
 
     readonly kind: ActionKind.User = ActionKind.User
 }
+
+export interface EnsureUserActionData extends BaseUserActionData {
+    address: string
+}
+
+export class EnsureUserAction extends BaseUserAction<EnsureUserActionData> {
+    readonly type = UserActionType.Ensure
+}
+
 export interface BalanceUserActionData extends BaseUserActionData {
     amount: bigint
 }
@@ -27,7 +39,8 @@ export class BalanceUserAction extends BaseUserAction<BalanceUserActionData> {
 export interface SwapUserActionData extends BaseUserActionData {
     amount0: bigint
     amount1: bigint
-    poolId: string
+    pool: DeferredValue<Pool, true>
+    usdToken: DeferredValue<Token, true>
 }
 
 export class SwapUserAction extends BaseUserAction<SwapUserActionData> {
@@ -38,4 +51,4 @@ export class UnknownUserAction extends BaseUserAction {
     readonly type = UserActionType.Unknown
 }
 
-export type UserAction = BalanceUserAction | SwapUserAction | UnknownUserAction
+export type UserAction = BalanceUserAction | SwapUserAction | UnknownUserAction | EnsureUserAction

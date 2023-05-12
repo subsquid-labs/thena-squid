@@ -4,6 +4,7 @@ import {processActions} from './core'
 import {processor} from './processor'
 import {PoolManager} from './utils/pairManager'
 import {HypervisorManager} from './utils/hypervisorManager'
+import {StoreWithCache} from './utils/store'
 
 processor.run(new TypeormDatabase(), async (ctx) => {
     const poolManager = PoolManager.instance
@@ -16,6 +17,13 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         await hypervisorManager.init(ctx.store)
     }
 
-    const actions = await getActions(ctx)
-    await processActions(ctx, actions)
+    const newCtx = {
+        ...ctx,
+        store: new StoreWithCache(ctx.store),
+    }
+
+    const actions = await getActions(newCtx)
+    await processActions(newCtx, actions)
+
+    await newCtx.store.flush()
 })

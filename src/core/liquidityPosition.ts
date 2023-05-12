@@ -1,65 +1,72 @@
 import assert from 'assert'
 import {User, Pool, LiquidityPosition, LiquidityPositionUpdate} from '../model'
-import {CommonContext, Storage} from '../types/util'
 import {createLiquidityPositionUpdateId} from '../utils/ids'
 import {
     AdjustValueUpdateLiquidityPositionAction,
+    EnsureLiquidityPositionAction,
     LiquidityPositionAction,
     LiquidityPositionActionType,
     ValueUpdateLiquidityPositionAction,
-} from '../mapping'
+} from '../types/action'
 import {last} from '../utils/misc'
+import {DataHandlerContext} from '@subsquid/evm-processor'
+import {StoreWithCache} from '../utils/store'
 
-export function processLiquidityPositionAction(
-    ctx: CommonContext<
-        Storage<{users: User; pools: Pool; positions: LiquidityPosition; positionUpdates: LiquidityPositionUpdate[]}>
-    >,
-    action: LiquidityPositionAction
-) {
+export async function processLiquidityPositionAction(ctx: DataHandlerContext<StoreWithCache>, action: LiquidityPositionAction) {
     switch (action.type) {
         case LiquidityPositionActionType.ValueUpdate:
-            processLiquidityPositionUpdate(ctx, action)
+            await processLiquidityPositionUpdate(ctx, action)
             break
         case LiquidityPositionActionType.AdjustValueUpdate:
-            processLiquidityPositionAdjustUpdate(ctx, action)
+            await processLiquidityPositionAdjustUpdate(ctx, action)
+            break
+        case LiquidityPositionActionType.Ensure:
+            await processEnsureLiquidityPositionAction(ctx, action)
             break
     }
 }
 
-function processLiquidityPositionUpdate(
-    ctx: CommonContext<
-        Storage<{users: User; pools: Pool; positions: LiquidityPosition; positionUpdates: LiquidityPositionUpdate[]}>
-    >,
+async function processEnsureLiquidityPositionAction(
+    ctx: DataHandlerContext<StoreWithCache>,
+    action: EnsureLiquidityPositionAction
+) {
+    let position = await action.data.position.get()
+    if (position != null) return
+
+    const user = await action.data.user.get()
+    assert(user != null)
+    const pool = await action.data.pool.get()
+    assert(pool != null)
+
+    position = new LiquidityPosition({
+        id: action.data.id,
+        user,
+        pool,
+        value: 0n,
+    })
+
+    await ctx.store.insert(position)
+    ctx.log.debug(`LiquidityPosition ${position.id} created`)
+}
+
+async function processLiquidityPositionUpdate(
+    ctx: DataHandlerContext<StoreWithCache>,
     action: ValueUpdateLiquidityPositionAction
 ) {
-    const pool = ctx.store.pools.get(action.data.poolId)
-    assert(pool != null, `Missing pool ${action.data.poolId}`)
+    const position = await action.data.position.get()
+    assert(position != null, `Missing position`)
 
-    const user = ctx.store.users.get(action.data.userId)
-    assert(user != null, `Missing user ${action.data.userId}`)
-
-    let position = ctx.store.positions.get(action.data.id)
-    if (position == null) {
-        position = new LiquidityPosition({
-            id: action.data.id,
-            user,
-            pool,
-            value: 0n,
-        })
-        ctx.store.positions.set(position.id, position)
-        ctx.log.debug(`LiquidityPosition ${position.id} created`)
-    }
+    const pool = position.pool
+    assert(pool != null, `Missing pool`)
 
     position.value += action.data.amount
+
+    await ctx.store.upsert(position)
     ctx.log.debug(`Value of LiquidityPostition ${position.id} updated to ${position.value} (${action.data.amount})`)
 
     // assert(position.value >= 0)
 
-    let txPosotionUpdates = ctx.store.positionUpdates.get(action.transaction.id)
-    if (txPosotionUpdates == null) {
-        txPosotionUpdates = []
-        ctx.store.positionUpdates.set(action.transaction.id, txPosotionUpdates)
-    }
+    let txPosotionUpdates = await ctx.store.find(LiquidityPositionUpdate, {where: {txHash: action.transaction.hash}})
 
     const amount0 =
         action.data.amount0 != null ? action.data.amount0 : (action.data.amount * pool.reserve0) / pool.liquidity
@@ -76,17 +83,19 @@ function processLiquidityPositionUpdate(
         amount0,
         amount1,
     })
-    txPosotionUpdates.push(positionUpdate)
+
+    await ctx.store.insert(positionUpdate)
 }
 
-function processLiquidityPositionAdjustUpdate(
-    ctx: CommonContext<Storage<{positionUpdates: LiquidityPositionUpdate[]}>>,
+async function processLiquidityPositionAdjustUpdate(
+    ctx: DataHandlerContext<StoreWithCache>,
     action: AdjustValueUpdateLiquidityPositionAction
 ) {
-    const txPositionUpdates = ctx.store.positionUpdates.get(action.transaction.id)
-    assert(txPositionUpdates != null && txPositionUpdates.length > 0)
+    const txPositionUpdates = await ctx.store.find(LiquidityPositionUpdate, {where: {txHash: action.transaction.hash}})
 
     const positionUpdate = last(txPositionUpdates)
     positionUpdate.amount0 = action.data.amount0
     positionUpdate.amount1 = action.data.amount1
+
+    await ctx.store.upsert(positionUpdate)
 }

@@ -2,7 +2,7 @@ import * as ethers from 'ethers'
 import {LogEvent, Func, ContractBase} from './abi.support'
 import {ABI_JSON} from './algebraFactory.abi'
 
-export const abi = new ethers.utils.Interface(ABI_JSON);
+export const abi = new ethers.Interface(ABI_JSON);
 
 export const events = {
     FarmingAddress: new LogEvent<([newFarmingAddress: string] & {newFarmingAddress: string})>(

@@ -1,5 +1,12 @@
 import {lookupArchive} from '@subsquid/archive-registry'
-import {BatchProcessorItem, EvmBatchProcessor} from '@subsquid/evm-processor'
+import {
+    BlockHeader,
+    DataHandlerContext,
+    EvmBatchProcessor,
+    EvmBatchProcessorFields,
+    Log as _Log,
+    Transaction as _Transaction,
+} from '@subsquid/evm-processor'
 import * as thena from './abi/bep20'
 import * as solidlyPair from './abi/solidlyPair'
 import * as solidlyFactory from './abi/solidlyFactory'
@@ -8,100 +15,95 @@ import * as algebraFactory from './abi/algebraFactory'
 import * as hypervisor from './abi/hypervisor'
 import {THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS, SOLIDLY_FACTORY, ALGEBRA_FACTORY} from './config'
 import fs from 'fs'
-
-const transactionData = {
-    transaction: {
-        from: true,
-        hash: true,
-    },
-} as const
-
-const evmLogData = {
-    ...transactionData,
-    evmLog: {
-        topics: true,
-        data: true,
-    },
-} as const
+import {Store} from '@subsquid/typeorm-store'
 
 const poolMetadata = getPreIndexedPools()
 const hypervisors = getHypervisors()
 
 export const processor = new EvmBatchProcessor()
-    .setBlockRange({from: 24468802})
+    .setBlockRange({from: 25_000_000}) //24468802
     .setDataSource({
-        archive: lookupArchive('binance'),
+        archive: 'https://v2.archive.subsquid.io/network/bsc-mainnet-25m',
         chain: 'https://rpc.ankr.com/bsc',
     })
-    .addLog(THENA_ADDRESS, {
-        filter: [[thena.events.Transfer.topic, thena.events.Approval.topic]],
-        data: evmLogData,
+    .setFields({
+        log: {
+            topics: true,
+            data: true,
+        },
+        transaction: {
+            from: true,
+            hash: true,
+        },
     })
-    .addLog(SOLIDLY_FACTORY, {
-        filter: [[solidlyFactory.events.PairCreated.topic]],
-        data: evmLogData,
+    .addLog({
+        address: [THENA_ADDRESS],
+        topic0: [thena.events.Transfer.topic, thena.events.Approval.topic],
+        transaction: true,
     })
-    .addLog(poolMetadata.pools[SOLIDLY_FACTORY], {
-        filter: [
-            [
-                solidlyPair.events.Swap.topic,
-                solidlyPair.events.Sync.topic,
-                solidlyPair.events.Transfer.topic,
-                solidlyPair.events.Mint.topic,
-                solidlyPair.events.Burn.topic,
-            ],
+    .addLog({
+        address: [SOLIDLY_FACTORY],
+        topic0: [solidlyFactory.events.PairCreated.topic],
+        transaction: true,
+    })
+    .addLog({
+        address: poolMetadata.pools[SOLIDLY_FACTORY],
+        topic0: [
+            solidlyPair.events.Swap.topic,
+            solidlyPair.events.Sync.topic,
+            solidlyPair.events.Transfer.topic,
+            solidlyPair.events.Mint.topic,
+            solidlyPair.events.Burn.topic,
         ],
-        data: evmLogData,
         range: {from: 0, to: poolMetadata.block},
+        transaction: true,
     })
-    .addLog([], {
-        filter: [
-            [
-                solidlyPair.events.Swap.topic,
-                solidlyPair.events.Sync.topic,
-                solidlyPair.events.Transfer.topic,
-                solidlyPair.events.Mint.topic,
-                solidlyPair.events.Burn.topic,
-            ],
+    .addLog({
+        topic0: [
+            solidlyPair.events.Swap.topic,
+            solidlyPair.events.Sync.topic,
+            solidlyPair.events.Transfer.topic,
+            solidlyPair.events.Mint.topic,
+            solidlyPair.events.Burn.topic,
         ],
-        data: evmLogData,
         range: {from: poolMetadata.block + 1},
+        transaction: true,
     })
-    .addLog(ALGEBRA_FACTORY, {
-        filter: [[algebraFactory.events.Pool.topic]],
-        data: evmLogData,
+    .addLog({
+        address: [ALGEBRA_FACTORY],
+        topic0: [algebraFactory.events.Pool.topic],
+        transaction: true,
     })
-    .addLog(poolMetadata.pools[ALGEBRA_FACTORY], {
-        filter: [[algebraPool.events.Swap.topic]],
-        data: evmLogData,
+    .addLog({
+        address: poolMetadata.pools[ALGEBRA_FACTORY],
+        topic0: [algebraPool.events.Swap.topic],
         range: {from: 0, to: poolMetadata.block},
+        transaction: true,
     })
-    .addLog([], {
-        filter: [[algebraPool.events.Swap.topic]],
-        data: evmLogData,
+    .addLog({
+        topic0: [algebraPool.events.Swap.topic],
         range: {from: poolMetadata.block + 1},
+        transaction: true,
     })
-    .addLog(hypervisors.addresses, {
-        filter: [
-            [
-                hypervisor.events.Deposit.topic,
-                hypervisor.events.Withdraw.topic,
-                hypervisor.events.Transfer.topic,
-                hypervisor.events.Rebalance.topic,
-            ],
+    .addLog({
+        address: hypervisors.addresses,
+        topic0: [
+            hypervisor.events.Deposit.topic,
+            hypervisor.events.Withdraw.topic,
+            hypervisor.events.Transfer.topic,
+            hypervisor.events.Rebalance.topic,
         ],
-        data: evmLogData,
+        transaction: true,
     })
-    .addTransaction(hypervisors.addresses, {
-        sighash: [hypervisor.functions.setWhitelist.sighash],
-        data: transactionData,
-    })
-    .addTransaction([THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS], {
-        sighash: [],
-        data: transactionData,
+    .addTransaction({
+        to: [THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS],
     })
 
-export type ProcessorItem = BatchProcessorItem<typeof processor>
+export type Fields = EvmBatchProcessorFields<typeof processor>
+export type Context = DataHandlerContext<Store, Fields>
+export type Block = BlockHeader<Fields>
+export type Log = _Log<Fields>
+export type Transaction = _Transaction<Fields>
 
 type PoolsMetadata = {
     block: number
