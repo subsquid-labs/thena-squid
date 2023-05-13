@@ -260,7 +260,10 @@ export class StoreWithCache {
                         } else if (mask) {
                             assert(!relationMetadata.isOneToMany, `OneToMany relations can't be cached`)
                             cached[relationPropertyName] = await this.cache(relation, mask === true ? {} : mask)
-                        } else if (cached[relationPropertyName] == null) {
+                        } else if (
+                            cached[relationPropertyName] == null ||
+                            cached[relationPropertyName].id !== relation.id
+                        ) {
                             const _relationCacheMap = this.getCacheMap(relation.constructor.name)
                             const relationConstructor = relation.constructor as any
                             cached[relationPropertyName] =
