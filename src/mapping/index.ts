@@ -10,8 +10,20 @@ import {getHypervisorActions, isHypervisorItem} from './hypervisor'
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Fields, Log} from '../processor'
 import {StoreWithCache} from '../utils/store'
+import {HypervisorManager} from '../utils/hypervisorManager'
+import {PoolManager} from '../utils/pairManager'
 
 export async function getActions(ctx: DataHandlerContext<StoreWithCache, Fields>): Promise<Action[]> {
+    const poolManager = PoolManager.instance
+    if (!poolManager.initialized) {
+        await poolManager.init(ctx.store as any)
+    }
+
+    const hypervisorManager = HypervisorManager.instance
+    if (!hypervisorManager.initialized) {
+        await hypervisorManager.init(ctx.store as any)
+    }
+
     const actions: Action[] = []
     for (let {header: block, logs, transactions} of ctx.blocks) {
         for (let log of logs) {

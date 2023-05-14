@@ -7,12 +7,10 @@ import {
     AdjustValueUpdateLiquidityPositionAction,
     ChangeLiquidityPoolAction,
     CreatePoolAction,
-    EnsureHypervisorAction,
+    // EnsureHypervisorAction,
     EnsureTokenAction,
     SetBalancesPoolAction,
     SetLiquidityPoolAction,
-    UnknownPoolAction,
-    UnknownUserAction,
     ValueUpdateLiquidityPositionAction,
 } from '../types/action'
 import {createLiquidityPositionId} from '../utils/ids'

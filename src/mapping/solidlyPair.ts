@@ -5,7 +5,6 @@ import {Log} from '../processor'
 import {PoolManager} from '../utils/pairManager'
 import {
     Action,
-    ActionKind,
     ChangeLiquidityPoolAction,
     EnsureUserAction,
     PriceUpdateTokenAction,
@@ -14,9 +13,6 @@ import {
     SetLiquidityPoolAction,
     SetSqrtPricePoolAction,
     SwapUserAction,
-    UnknownPoolAction,
-    UnknownTokenAction,
-    UnknownUserAction,
 } from '../types/action'
 import {
     AdjustValueUpdateLiquidityPositionAction,

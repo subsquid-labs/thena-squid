@@ -1,7 +1,7 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import * as algebraPool from '../abi/algebraPool'
 import {Log} from '../processor'
-import {Action, UnknownUserAction} from '../types/action'
+import {Action} from '../types/action'
 import {ROUTER_V3_ADDRESS} from '../config'
 
 export function isRouterV3Item(item: Log) {

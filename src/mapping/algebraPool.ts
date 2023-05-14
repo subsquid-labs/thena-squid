@@ -9,12 +9,11 @@ import {
     EnsureLiquidityPositionAction,
     EnsureUserAction,
     RecalculatePricesPoolAction,
-    RemovePositionHypervisorAction,
+    // RemovePositionHypervisorAction,
     SetLiquidityPoolAction,
-    SetPositionHypervisorAction,
+    // SetPositionHypervisorAction,
     SetSqrtPricePoolAction,
     SwapUserAction,
-    UnknownUserAction,
     ValueUpdateLiquidityPositionAction,
 } from '../types/action'
 import {createLiquidityPositionId} from '../utils/ids'
@@ -105,12 +104,12 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, i
             )
 
             if (HypervisorManager.instance.isTracked(userId)) {
-                actions.push(
-                    new SetPositionHypervisorAction(item.block, item.transaction!, {
-                        hypervisor: ctx.store.defer(Hypervisor, userId, {basePosition: true, limitPosition: true}),
-                        position: ctx.store.defer(LiquidityPosition, positionId),
-                    })
-                )
+                // actions.push(
+                //     new SetPositionHypervisorAction(item.block, item.transaction!, {
+                //         hypervisor: ctx.store.defer(Hypervisor, userId, {basePosition: true, limitPosition: true}),
+                //         position: ctx.store.defer(LiquidityPosition, positionId),
+                //     })
+                // )
             }
 
             break
@@ -151,12 +150,12 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, i
             )
 
             if (HypervisorManager.instance.isTracked(userId)) {
-                actions.push(
-                    new RemovePositionHypervisorAction(item.block, item.transaction!, {
-                        hypervisor: ctx.store.defer(Hypervisor, userId, {basePosition: true, limitPosition: true}),
-                        position: ctx.store.defer(LiquidityPosition, positionId),
-                    })
-                )
+                // actions.push(
+                //     new RemovePositionHypervisorAction(item.block, item.transaction!, {
+                //         hypervisor: ctx.store.defer(Hypervisor, userId, {basePosition: true, limitPosition: true}),
+                //         position: ctx.store.defer(LiquidityPosition, positionId),
+                //     })
+                // )
             }
 
             break

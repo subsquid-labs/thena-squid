@@ -1,13 +1,10 @@
-import {LiquidityPosition, Pool, User} from '../../model'
+import {DataHandlerContext} from '@subsquid/evm-processor'
+import {LiquidityPosition, LiquidityPositionUpdate, Pool, User} from '../../model'
 import {DeferredValue} from '../../utils/deferred'
-import {ActionKind, BaseAction} from './common'
-
-export enum LiquidityPositionActionType {
-    Unknown,
-    ValueUpdate,
-    AdjustValueUpdate,
-    Ensure,
-}
+import {StoreWithCache} from '../../utils/store'
+import {Action} from './base'
+import assert from 'assert'
+import {createLiquidityPositionUpdateId} from '../../utils/ids'
 
 export interface BaseLiquidityPositionActionData {
     position: DeferredValue<LiquidityPosition, true>
@@ -15,11 +12,7 @@ export interface BaseLiquidityPositionActionData {
 
 export abstract class BaseLiquidityPositionAction<
     T extends BaseLiquidityPositionActionData = BaseLiquidityPositionActionData
-> extends BaseAction<T> {
-    abstract readonly type: LiquidityPositionActionType
-
-    readonly kind = ActionKind.LiquidityPosition
-}
+> extends Action<T> {}
 
 export interface EnsureLiquidityPositionActionData extends BaseLiquidityPositionActionData {
     id: string
@@ -28,7 +21,25 @@ export interface EnsureLiquidityPositionActionData extends BaseLiquidityPosition
 }
 
 export class EnsureLiquidityPositionAction extends BaseLiquidityPositionAction<EnsureLiquidityPositionActionData> {
-    readonly type = LiquidityPositionActionType.Ensure
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        let position = await this.data.position.get()
+        if (position != null) return
+
+        const user = await this.data.user.get()
+        assert(user != null)
+        const pool = await this.data.pool.get()
+        assert(pool != null)
+
+        position = new LiquidityPosition({
+            id: this.data.id,
+            user,
+            pool,
+            value: 0n,
+        })
+
+        await ctx.store.insert(position)
+        ctx.log.debug(`Created LiquidityPosition ${position.id}`)
+    }
 }
 
 export interface ValueUpdateLiquidityPositionActionData extends BaseLiquidityPositionActionData {
@@ -38,7 +49,52 @@ export interface ValueUpdateLiquidityPositionActionData extends BaseLiquidityPos
 }
 
 export class ValueUpdateLiquidityPositionAction extends BaseLiquidityPositionAction<ValueUpdateLiquidityPositionActionData> {
-    readonly type = LiquidityPositionActionType.ValueUpdate
+    static lastUpdate:
+        | {
+              id: string
+              txHash: string
+              blockNumber: number
+              index: number
+          }
+        | undefined
+
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const position = await this.data.position.get()
+        assert(position != null, `Missing position`)
+
+        const pool = position.pool
+        assert(pool != null, `Missing pool`)
+
+        position.value += this.data.amount
+        // assert(position.value >= 0)
+
+        await ctx.store.upsert(position)
+        ctx.log.debug(`Value of LiquidityPostition ${position.id} updated to ${position.value} (${this.data.amount})`)
+
+        const amount0 =
+            this.data.amount0 != null ? this.data.amount0 : (this.data.amount * pool.reserve0) / pool.liquidity
+        const amount1 =
+            this.data.amount1 != null ? this.data.amount1 : (this.data.amount * pool.reserve1) / pool.liquidity
+
+        const index =
+            ValueUpdateLiquidityPositionAction.lastUpdate?.txHash === this.transaction.hash
+                ? ValueUpdateLiquidityPositionAction.lastUpdate.index + 1
+                : 0
+        const positionUpdate = new LiquidityPositionUpdate({
+            id: createLiquidityPositionUpdateId(this.transaction.id, index),
+            blockNumber: this.block.height,
+            timestamp: new Date(this.block.timestamp),
+            txHash: this.transaction.hash,
+            position,
+            amount: this.data.amount,
+            amount0,
+            amount1,
+        })
+
+        await ctx.store.insert(positionUpdate)
+
+        ValueUpdateLiquidityPositionAction.lastUpdate = {...positionUpdate, index}
+    }
 }
 
 export interface AdjustValueUpdateLiquidityPositionActionData extends BaseLiquidityPositionActionData {
@@ -47,15 +103,27 @@ export interface AdjustValueUpdateLiquidityPositionActionData extends BaseLiquid
 }
 
 export class AdjustValueUpdateLiquidityPositionAction extends BaseLiquidityPositionAction<AdjustValueUpdateLiquidityPositionActionData> {
-    readonly type = LiquidityPositionActionType.AdjustValueUpdate
-}
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        if (
+            ValueUpdateLiquidityPositionAction.lastUpdate == null ||
+            ValueUpdateLiquidityPositionAction.lastUpdate.blockNumber !== this.block.height ||
+            ValueUpdateLiquidityPositionAction.lastUpdate.txHash !== this.transaction.hash
+        )
+            return
 
-export class UnknownLiquidityPositionAction extends BaseLiquidityPositionAction {
-    readonly type = LiquidityPositionActionType.Unknown
+        const positionUpdate = await ctx.store.getOrFail(
+            LiquidityPositionUpdate,
+            ValueUpdateLiquidityPositionAction.lastUpdate.id
+        )
+
+        positionUpdate.amount0 = this.data.amount0
+        positionUpdate.amount1 = this.data.amount1
+
+        await ctx.store.upsert(positionUpdate)
+    }
 }
 
 export type LiquidityPositionAction =
     | ValueUpdateLiquidityPositionAction
     | AdjustValueUpdateLiquidityPositionAction
-    | UnknownLiquidityPositionAction
     | EnsureLiquidityPositionAction
