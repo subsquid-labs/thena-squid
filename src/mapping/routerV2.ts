@@ -1,6 +1,6 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Log} from '../processor'
-import {Action} from '../types/action'
+import {Action} from '../action'
 import {ROUTER_V2_ADDRESS} from '../config'
 
 export function isRouterV2Item(item: Log) {

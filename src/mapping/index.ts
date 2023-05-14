@@ -1,6 +1,6 @@
 import {getRouterV2Actions, isRouterV2Item} from './routerV2'
 import {getThenaActions, isThenaItem} from './thena'
-import {Action} from '../types/action'
+import {Action} from '../action'
 import {getRouterV3Actions, isRouterV3Item} from './routerV3'
 import {getAlgebraFactoryActions, isAlgebraFactoryItem} from './algebraFactory'
 import {getSolidlyFactoryActions, isSolidlyFactoryItem} from './solidlyFactory'

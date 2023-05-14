@@ -2,7 +2,7 @@ import {DataHandlerContext} from '@subsquid/evm-processor'
 import * as thena from '../abi/bep20'
 import {THENA_ADDRESS, ZERO_ADDRESS} from '../config'
 import {Log} from '../processor'
-import {Action, BalanceUserAction, EnsureUserAction} from '../types/action'
+import {Action, BalanceUserAction, EnsureUserAction} from '../action'
 import {StoreWithCache} from '../utils/store'
 import {User} from '../model'
 

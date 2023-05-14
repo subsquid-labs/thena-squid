@@ -1,5 +1,5 @@
 import {BlockHeader, DataHandlerContext, Transaction} from '@subsquid/evm-processor'
-import {StoreWithCache} from '../../utils/store'
+import {StoreWithCache} from '../utils/store'
 
 export abstract class Action<T = unknown> {
     constructor(

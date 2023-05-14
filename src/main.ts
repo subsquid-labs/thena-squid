@@ -4,7 +4,7 @@ import {processor} from './processor'
 import {StoreWithCache} from './utils/store'
 import {exit} from 'process'
 import {DataHandlerContext} from '@subsquid/evm-processor'
-import {Action} from './types/action'
+import {Action} from './action'
 
 processor.run(new TypeormDatabase(), async (ctx) => {
     const newCtx = {

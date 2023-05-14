@@ -13,12 +13,12 @@ import {
     SetLiquidityPoolAction,
     SetSqrtPricePoolAction,
     SwapUserAction,
-} from '../types/action'
+} from '../action'
 import {
     AdjustValueUpdateLiquidityPositionAction,
     EnsureLiquidityPositionAction,
     ValueUpdateLiquidityPositionAction,
-} from '../types/action/liquidityPosition'
+} from '../action/liquidityPosition'
 import {createLiquidityPositionId, createLiquidityPositionUpdateId} from '../utils/ids'
 import {DefferedFunction, WrappedValue} from '../utils/deferred'
 import {User, Pool, Token, LiquidityPosition} from '../model'

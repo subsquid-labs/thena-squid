@@ -15,7 +15,7 @@ import {
     SetSqrtPricePoolAction,
     SwapUserAction,
     ValueUpdateLiquidityPositionAction,
-} from '../types/action'
+} from '../action'
 import {createLiquidityPositionId} from '../utils/ids'
 import {WrappedValue} from '../utils/deferred'
 import {HypervisorManager} from '../utils/hypervisorManager'

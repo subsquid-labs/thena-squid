@@ -1,8 +1,8 @@
 import assert from 'assert'
 import {DataHandlerContext} from '@subsquid/evm-processor'
-import {Pool, PoolType, Token} from '../../model'
-import {DeferredValue} from '../../utils/deferred'
-import {StoreWithCache} from '../../utils/store'
+import {Pool, PoolType, Token} from '../model'
+import {DeferredValue} from '../utils/deferred'
+import {StoreWithCache} from '../utils/store'
 import {Action} from './base'
 
 export interface BasePoolActionData {

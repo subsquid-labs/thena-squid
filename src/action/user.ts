@@ -1,11 +1,11 @@
 import assert from 'assert'
 import {BigDecimal} from '@subsquid/big-decimal'
 import {DataHandlerContext} from '@subsquid/evm-processor'
-import {BNB_DECIMALS} from '../../config'
-import {Pool, Token, Trade, User} from '../../model'
-import {DeferredValue} from '../../utils/deferred'
-import {createTradeId} from '../../utils/ids'
-import {StoreWithCache} from '../../utils/store'
+import {BNB_DECIMALS} from '../config'
+import {Pool, Token, Trade, User} from '../model'
+import {DeferredValue} from '../utils/deferred'
+import {createTradeId} from '../utils/ids'
+import {StoreWithCache} from '../utils/store'
 import {Action} from './base'
 
 export interface BaseUserActionData {

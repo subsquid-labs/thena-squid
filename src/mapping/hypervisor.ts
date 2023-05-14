@@ -12,7 +12,7 @@ import {
     SetBalancesPoolAction,
     SetLiquidityPoolAction,
     ValueUpdateLiquidityPositionAction,
-} from '../types/action'
+} from '../action'
 import {createLiquidityPositionId} from '../utils/ids'
 import {ZERO_ADDRESS} from '../config'
 import {HypervisorManager} from '../utils/hypervisorManager'

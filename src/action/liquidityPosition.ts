@@ -1,10 +1,10 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
-import {LiquidityPosition, LiquidityPositionUpdate, Pool, User} from '../../model'
-import {DeferredValue} from '../../utils/deferred'
-import {StoreWithCache} from '../../utils/store'
+import {LiquidityPosition, LiquidityPositionUpdate, Pool, User} from '../model'
+import {DeferredValue} from '../utils/deferred'
+import {StoreWithCache} from '../utils/store'
 import {Action} from './base'
 import assert from 'assert'
-import {createLiquidityPositionUpdateId} from '../../utils/ids'
+import {createLiquidityPositionUpdateId} from '../utils/ids'
 
 export interface BaseLiquidityPositionActionData {
     position: DeferredValue<LiquidityPosition, true>
