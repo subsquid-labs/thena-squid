@@ -7,18 +7,17 @@ import {
     Log as _Log,
     Transaction as _Transaction,
 } from '@subsquid/evm-processor'
-import * as thena from './abi/bep20'
-import * as solidlyPair from './abi/solidlyPair'
-import * as solidlyFactory from './abi/solidlyFactory'
-import * as algebraPool from './abi/algebraPool'
 import * as algebraFactory from './abi/algebraFactory'
+import * as algebraPool from './abi/algebraPool'
+import * as thena from './abi/bep20'
 import * as hypervisor from './abi/hypervisor'
-import {THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS, SOLIDLY_FACTORY, ALGEBRA_FACTORY} from './config'
-import fs from 'fs'
-import {Store} from '@subsquid/typeorm-store'
+import * as solidlyFactory from './abi/solidlyFactory'
+import * as solidlyPair from './abi/solidlyPair'
+import {ALGEBRA_FACTORY, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS, SOLIDLY_FACTORY, THENA_ADDRESS} from './config'
+import {loadHypervisors, loadPreIndexedPools} from './utils/loaders'
 
-const poolMetadata = getPreIndexedPools()
-const hypervisors = getHypervisors()
+const poolMetadata = loadPreIndexedPools()
+const hypervisors = loadHypervisors()
 
 export const processor = new EvmBatchProcessor()
     .setBlockRange({from: 25_000_000}) //24468802
@@ -100,24 +99,6 @@ export const processor = new EvmBatchProcessor()
     })
 
 export type Fields = EvmBatchProcessorFields<typeof processor>
-export type Context = DataHandlerContext<Store, Fields>
 export type Block = BlockHeader<Fields>
 export type Log = _Log<Fields>
 export type Transaction = _Transaction<Fields>
-
-type PoolsMetadata = {
-    block: number
-    pools: Record<string, string[]>
-}
-
-function getPreIndexedPools(): PoolsMetadata {
-    const file = fs.readFileSync('./assets/pools.json', 'utf-8')
-    const metadata: PoolsMetadata = JSON.parse(file)
-    return metadata
-}
-
-function getHypervisors(): {addresses: string[]} {
-    const file = fs.readFileSync('./assets/hypervisors.json', 'utf-8')
-    const metadata = JSON.parse(file)
-    return metadata
-}

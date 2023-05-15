@@ -1,6 +1,7 @@
 import {Store} from '@subsquid/typeorm-store'
 import {Pool} from '../model'
 import assert from 'assert'
+import {StoreWithCache} from './store'
 
 export class PoolManager {
     private static _instance: PoolManager | undefined
@@ -20,7 +21,7 @@ export class PoolManager {
         PoolManager._instance = this
     }
 
-    async init(store: Store) {
+    async init(store: StoreWithCache) {
         const pools = await store.find(Pool, {})
         for (const pool of pools) {
             this.addPool(pool.factory || 'null', pool.id)

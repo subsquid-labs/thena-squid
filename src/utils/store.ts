@@ -15,7 +15,7 @@ export type CacheMap<E extends Entity> = Map<string, Map<string, E | null>>
 export type ChangeMap<E extends Entity> = Map<string, Map<string, E>>
 
 export class StoreWithCache {
-    private em: EntityManager
+    private em: () => EntityManager
 
     private deferMap: Map<string, DeferData<any>> = new Map()
     private cacheMap: CacheMap<any> = new Map()
@@ -25,7 +25,7 @@ export class StoreWithCache {
     private upsertMap: ChangeMap<any> = new Map()
 
     constructor(private store: Store) {
-        this.em = (this.store as any).em()
+        this.em = (this.store as any).em
     }
 
     async insert<E extends _Entity>(entity: E): Promise<void>
@@ -246,7 +246,7 @@ export class StoreWithCache {
             const cached = _cacheMap.get(entity.id) || (new constructor() as Entity)
             _cacheMap.set(entity.id, cached)
 
-            const metadata = this.em.connection.entityMetadatasMap.get(entity.constructor)
+            const metadata = this.em().connection.entityMetadatasMap.get(entity.constructor)
             assert(metadata != null, `Missing metadata for ${entity.constructor.name}`)
             for (const column of metadata.columns) {
                 const propertyName = column.propertyName
@@ -290,7 +290,7 @@ export class StoreWithCache {
     @def
     private async getTopologicalOrder() {
         const graph = Graph()
-        for (const metadata of this.em.connection.entityMetadatas) {
+        for (const metadata of this.em().connection.entityMetadatas) {
             graph.addNode(metadata.name)
             for (const foreignKey of metadata.foreignKeys) {
                 if (foreignKey.referencedEntityMetadata === metadata) continue // don't add self-refs
@@ -339,6 +339,18 @@ export class StoreWithCache {
         }
 
         return list
+    }
+
+    private saveMany() {
+        throw new Error('not implemented')
+    }
+
+    private getFkSignature() {
+        throw new Error('not implemented')
+    }
+
+    private upsertMany() {
+        throw new Error('not implemented')
     }
 }
 

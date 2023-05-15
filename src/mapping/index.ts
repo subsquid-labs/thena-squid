@@ -16,12 +16,12 @@ import {PoolManager} from '../utils/pairManager'
 export async function getActions(ctx: DataHandlerContext<StoreWithCache, Fields>): Promise<Action[]> {
     const poolManager = PoolManager.instance
     if (!poolManager.initialized) {
-        await poolManager.init(ctx.store as any)
+        await poolManager.init(ctx.store)
     }
 
     const hypervisorManager = HypervisorManager.instance
     if (!hypervisorManager.initialized) {
-        await hypervisorManager.init(ctx.store as any)
+        await hypervisorManager.init(ctx.store)
     }
 
     const actions: Action[] = []
