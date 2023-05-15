@@ -1,121 +1,143 @@
-// import {Hypervisor, LiquidityPosition} from '../../model'
-// import {DeferredValue} from '../../utils/deferred'
-// import {ActionKind, Action} from './base'
+import assert from 'assert'
+import {DataHandlerContext} from '@subsquid/evm-processor'
+import * as hypervisorAbi from '../abi/hypervisor'
+import {Hypervisor, LiquidityPosition, Pool, PoolType, Token} from '../model'
+import {CallManager} from '../utils/callManager'
+import {DeferredValue} from '../utils/deferred'
+import {StoreWithCache} from '../utils/store'
+import {Action} from './base'
+import {CreatePoolAction} from './pool'
+import {EnsureTokenAction} from './token'
 
-// export enum HypervisorActionType {
-//     Unknown,
-//     Ensure,
-//     SetPosition,
-//     RemovePosition,
-// }
+export interface BaseHypervisorActionData {
+    hypervisor: DeferredValue<Hypervisor, true>
+}
 
-// export interface BaseHypervisorActionData {
-//     hypervisor: DeferredValue<Hypervisor, true>
-// }
+export abstract class BaseHypervisorAction<
+    T extends BaseHypervisorActionData = BaseHypervisorActionData
+> extends Action<T> {}
 
-// export abstract class BaseHypervisorAction<
-//     T extends BaseHypervisorActionData = BaseHypervisorActionData
-// > extends Action<T> {
-//     abstract readonly type: HypervisorActionType
+export interface EnsureHypervisorActionData extends BaseHypervisorActionData {
+    address: string
+    hypervisorPool: DeferredValue<string>
+    pool: DeferredValue<Pool, true>
+    token0: DeferredValue<string>
+    token1: DeferredValue<string>
+}
 
-//     readonly kind = ActionKind.Hypervisor
-// }
+export class EnsureHypervisorAction extends BaseHypervisorAction<EnsureHypervisorActionData> {
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        let hypervisor = await this.data.hypervisor.get()
+        if (hypervisor != null) return
 
-// export interface EnsureHypervisorActionData extends BaseHypervisorActionData {
-//     address: string
-//     poolId: DeferredValue<string>
-// }
+        const callManager = CallManager.get(ctx)
 
-// export class EnsureHypervisorAction extends BaseHypervisorAction<EnsureHypervisorActionData> {
-//     readonly type = HypervisorActionType.Ensure
-// }
+        const token0Address = await this.data.token0.get()
+        const ensureToken0 = new EnsureTokenAction(this.block, this.transaction, {
+            token: ctx.store.defer(Token, token0Address),
+            address: token0Address,
+            decimals: callManager.defer(this.block, hypervisorAbi.functions.decimals, {
+                address: token0Address,
+                args: [],
+            }),
+            symbol: callManager.defer(this.block, hypervisorAbi.functions.symbol, {
+                address: token0Address,
+                args: [],
+            }),
+        })
 
-// export interface SetPositionHypervisorActionData extends BaseHypervisorActionData {
-//     position: DeferredValue<LiquidityPosition, true>
-// }
+        const token1Address = await this.data.token1.get()
+        const ensureToken1 = new EnsureTokenAction(this.block, this.transaction, {
+            token: ctx.store.defer(Token, token1Address),
+            address: token0Address,
+            decimals: callManager.defer(this.block, hypervisorAbi.functions.decimals, {
+                address: token1Address,
+                args: [],
+            }),
+            symbol: callManager.defer(this.block, hypervisorAbi.functions.symbol, {
+                address: token1Address,
+                args: [],
+            }),
+        })
 
-// export class SetPositionHypervisorAction extends BaseHypervisorAction<SetPositionHypervisorActionData> {
-//     readonly type = HypervisorActionType.SetPosition
-// }
+        const poolCreation = new CreatePoolAction(this.block, this.transaction, {
+            pool: ctx.store.defer(Pool, this.data.address),
+            address: this.data.address,
+            factory: this.data.address,
+            type: PoolType.Hypervisor,
+            token0: ctx.store.defer(Token, token0Address),
+            token1: ctx.store.defer(Token, token1Address),
+        })
 
-// export interface RemovePositionHypervisorActionData extends BaseHypervisorActionData {
-//     position: DeferredValue<LiquidityPosition, true>
-// }
+        await ensureToken0.perform(ctx)
+        await ensureToken1.perform(ctx)
+        await poolCreation.perform(ctx)
 
-// export class RemovePositionHypervisorAction extends BaseHypervisorAction<RemovePositionHypervisorActionData> {
-//     readonly type = HypervisorActionType.RemovePosition
-// }
+        const pool = await this.data.pool.get()
+        assert(pool != null)
 
-// export type HypervisorAction = EnsureHypervisorAction | SetPositionHypervisorAction | RemovePositionHypervisorAction
+        hypervisor = new Hypervisor({
+            id: this.data.address,
+            pool,
+            basePosition: undefined,
+            limitPosition: undefined,
+        })
 
-// import assert from 'assert'
-// import {
-//     HypervisorAction,
-//     HypervisorActionType,
-//     EnsureHypervisorAction,
-//     RemovePositionHypervisorAction,
-//     SetPositionHypervisorAction,
-// } from '../types/action'
-// import {Hypervisor} from '../model'
-// import {DataHandlerContext} from '@subsquid/evm-processor'
-// import {StoreWithCache} from '../utils/store'
+        await ctx.store.insert(hypervisor)
+        ctx.log.debug(`Hypervisor ${hypervisor.id} created`)
+    }
+}
 
-// export async function processHypervisorAction(ctx: DataHandlerContext<StoreWithCache>, action: HypervisorAction) {
-//     switch (action.type) {
-//         case HypervisorActionType.Ensure: {
-//             await processEnsureAction(ctx, action)
-//             break
-//         }
-//         case HypervisorActionType.SetPosition: {
-//             await processSetPositionAction(ctx, action)
-//             break
-//         }
-//         case HypervisorActionType.RemovePosition: {
-//             await processRemovePositionAction(ctx, action)
-//             break
-//         }
-//     }
-// }
+export interface SetPositionHypervisorActionData extends BaseHypervisorActionData {
+    position: DeferredValue<LiquidityPosition, true>
+}
 
-// async function processEnsureAction(ctx: DataHandlerContext<StoreWithCache>, action: EnsureHypervisorAction) {
-//     const hypervisor = new Hypervisor({
-//         id: action.data.address,
-//         poolId: await action.data.poolId.get(),
-//     })
+export class SetPositionHypervisorAction extends BaseHypervisorAction<SetPositionHypervisorActionData> {
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const hypervisor = await this.data.hypervisor.get()
+        assert(hypervisor != null)
 
-//     await ctx.store.insert(hypervisor)
-//     ctx.log.debug(`Hypervisor ${hypervisor.id} created`)
-// }
+        const position = await this.data.position.get()
+        assert(position != null, 'Missing position')
 
-// async function processSetPositionAction(ctx: DataHandlerContext<StoreWithCache>, action: SetPositionHypervisorAction) {
-//     const hypervisor = await action.data.hypervisor.get()
-//     assert(hypervisor != null)
+        if (hypervisor.basePosition == null) {
+            hypervisor.basePosition = position
+            ctx.log.debug(`Base position of Hypervisor ${hypervisor.id} set to ${position.id}`)
+        } else if (hypervisor.limitPositionId == null) {
+            hypervisor.limitPosition = position
+            ctx.log.debug(`Limit position of Hypervisor ${hypervisor.id} set to ${position.id}`)
+        } else {
+            throw new Error(`Unexpected case`)
+        }
 
-//     if (hypervisor.basePosition == null) {
-//         hypervisor.basePosition = await action.data.position.get()
-//     } else if (hypervisor.limitPositionId == null) {
-//         hypervisor.limitPosition = await action.data.position.get()
-//     } else {
-//         throw new Error()
-//     }
+        await ctx.store.upsert(hypervisor)
+    }
+}
 
-//     await ctx.store.upsert(hypervisor)
-// }
+export interface RemovePositionHypervisorActionData extends BaseHypervisorActionData {
+    position: DeferredValue<LiquidityPosition, true>
+}
 
-// async function processRemovePositionAction(
-//     ctx: DataHandlerContext<StoreWithCache>,
-//     action: RemovePositionHypervisorAction
-// ) {
-//     const hypervisor = await action.data.hypervisor.get()
-//     assert(hypervisor != null)
+export class RemovePositionHypervisorAction extends BaseHypervisorAction<RemovePositionHypervisorActionData> {
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const hypervisor = await this.data.hypervisor.get()
+        assert(hypervisor != null)
 
-//     // if (hypervisor.basePositionId === action.data.positionId) {
-//     //     hypervisor.basePositionId = null
-//     // } else if (hypervisor.limitPositionId == action.data.positionId) {
-//     //     hypervisor.limitPositionId = null
-//     // } else {
-//     //     throw new Error()
-//     // }
+        const position = await this.data.position.get()
+        assert(position != null, 'Missing position')
 
-//     await ctx.store.upsert(hypervisor)
-// }
+        if (hypervisor.basePosition?.id === position.id) {
+            hypervisor.basePositionId = null
+            ctx.log.debug(`Base position of Hypervisor ${hypervisor.id} removed`)
+        } else if (hypervisor.limitPosition?.id == position.id) {
+            hypervisor.limitPositionId = null
+            ctx.log.debug(`Limit position of Hypervisor ${hypervisor.id} removed`)
+        } else {
+            throw new Error(`Unexpected case`)
+        }
+
+        await ctx.store.upsert(hypervisor)
+    }
+}
+
+export type HypervisorAction = EnsureHypervisorAction | SetPositionHypervisorAction | RemovePositionHypervisorAction

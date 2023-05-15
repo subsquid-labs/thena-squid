@@ -1,272 +1,223 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import * as hypervisor from '../abi/hypervisor'
-import * as bep20 from '../abi/bep20'
-import {Log} from '../processor'
 import {
     Action,
     AdjustValueUpdateLiquidityPositionAction,
     ChangeLiquidityPoolAction,
-    CreatePoolAction,
-    // EnsureHypervisorAction,
-    EnsureTokenAction,
+    EnsureHypervisorAction,
+    EnsureLiquidityPositionAction,
+    EnsureUserAction,
     SetBalancesPoolAction,
-    SetLiquidityPoolAction,
     ValueUpdateLiquidityPositionAction,
 } from '../action'
-import {createLiquidityPositionId} from '../utils/ids'
 import {ZERO_ADDRESS} from '../config'
+import {Hypervisor, LiquidityPosition, Pool, User} from '../model'
+import {Log} from '../processor'
+import {CallManager} from '../utils/callManager'
+import {WrappedValue} from '../utils/deferred'
 import {HypervisorManager} from '../utils/hypervisorManager'
-import {DefferedFunction, WrappedValue} from '../utils/deferred'
-import {PoolType} from '../model'
-import {PoolManager} from '../utils/pairManager'
+import {createLiquidityPositionId} from '../utils/ids'
+import {StoreWithCache} from '../utils/store'
 
 export function isHypervisorItem(item: Log) {
     return HypervisorManager.instance.isHypervisor(item.address)
 }
 
-export async function getHypervisorActions(ctx: DataHandlerContext<unknown>, item: Log) {
+export async function getHypervisorActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     const actions: Action[] = []
 
-    // if (!HypervisorManager.instance.isTracked(item.address)) {
-    //     const token0 = new DeferredCall(item.block, {
-    //         address: item.address,
-    //         func: hypervisor.functions.token0,
-    //         args: [],
-    //         transform: (v) => v.toLowerCase(),
-    //     })
+    // if (!HypervisorManager.instance.isTracked(poolId)) {
+    const hypervisorId = item.address
 
-    //     const token1 = new DeferredCall(item.block, {
-    //         address: item.address,
-    //         func: hypervisor.functions.token1,
-    //         args: [],
-    //         transform: (v) => v.toLowerCase(),
-    //     })
+    const callManager = CallManager.get(ctx)
+    const token0 = callManager.defer(item.block, hypervisor.functions.token0, {
+        address: hypervisorId,
+        args: [],
+        transform: (v) => v.toLowerCase(),
+    })
 
-    //     actions.push(
-    //         new EnsureTokenAction(item.block, item.transaction!, {
-    //             id: await token0.get(ctx),
-    //             decimals: new DefferedFunction(async (ctx) =>
-    //                 new DeferredCall(item.block, {
-    //                     address: await token0.get(ctx),
-    //                     func: hypervisor.functions.decimals,
-    //                     args: [],
-    //                 }).get(ctx)
-    //             ),
-    //             symbol: new DefferedFunction(async (ctx) =>
-    //                 new DeferredCall(item.block, {
-    //                     address: await token0.get(ctx),
-    //                     func: hypervisor.functions.symbol,
-    //                     args: [],
-    //                 }).get(ctx)
-    //             ),
-    //         })
-    //     )
+    const token1 = callManager.defer(item.block, hypervisor.functions.token1, {
+        address: hypervisorId,
+        args: [],
+        transform: (v) => v.toLowerCase(),
+    })
 
-    //     actions.push(
-    //         new EnsureTokenAction(item.block, item.transaction!, {
-    //             id: await token1.get(ctx),
-    //             decimals: new DefferedFunction(async (ctx) =>
-    //                 new DeferredCall(item.block, {
-    //                     address: await token1.get(ctx),
-    //                     func: hypervisor.functions.decimals,
-    //                     args: [],
-    //                 }).get(ctx)
-    //             ),
-    //             symbol: new DefferedFunction(async (ctx) =>
-    //                 new DeferredCall(item.block, {
-    //                     address: await token1.get(ctx),
-    //                     func: hypervisor.functions.symbol,
-    //                     args: [],
-    //                 }).get(ctx)
-    //             ),
-    //         })
-    //     )
+    const hypervisorPool = callManager.defer(item.block, hypervisor.functions.pool, {
+        address: hypervisorId,
+        args: [],
+        transform: (v) => v.toLowerCase(),
+    })
 
-    //     actions.push(
-    //         new CreatePoolAction(item.block, item.transaction!, {
-    //             id: item.address,
-    //             factory: item.address,
-    //             token0,
-    //             token1,
-    //             type: PoolType.Hypervisor,
-    //         })
-    //     )
+    actions.push(
+        new EnsureHypervisorAction(item.block, item.transaction!, {
+            hypervisor: ctx.store.defer(Hypervisor, hypervisorId),
+            pool: ctx.store.defer(Pool, hypervisorId),
+            address: hypervisorId,
+            hypervisorPool,
+            token0,
+            token1,
+        })
+    )
 
-    //     actions.push(
-    //         new EnsureHypervisorAction(item.block, item.transaction!, {
-    //             id: item.address,
-    //             poolId: new DeferredCall(item.block, {
-    //                 address: item.address,
-    //                 func: hypervisor.functions.pool,
-    //                 args: [],
-    //                 transform: (v) => v.toLowerCase(),
-    //             }),
-    //         })
-    //     )
-    //     HypervisorManager.instance.add(item.address)
-    //     PoolManager.instance.addPool(item.address, item.address, {
-    //         token0: await token0.get(ctx),
-    //         token1: await token1.get(ctx),
-    //     })
-    // }
+    switch (item.topics[0]) {
+        case hypervisor.events.Transfer.topic: {
+            const event = hypervisor.events.Transfer.decode(item)
 
-    // // switch (item.kind) {
-    // //     case 'evmLog': {
-    // switch (item.topics[0]) {
-    //     case hypervisor.events.Transfer.topic: {
-    //         const event = hypervisor.events.Transfer.decode(item)
+            const amount = event.value
+            const from = event.from.toLowerCase()
+            const to = event.to.toLowerCase()
 
-    //         const amount = event.value
-    //         const from = event.from.toLowerCase()
-    //         const to = event.to.toLowerCase()
+            const poolId = item.address
 
-    //         const poolId = item.address
+            if (from === ZERO_ADDRESS) {
+                actions.push(
+                    new ChangeLiquidityPoolAction(item.block, item.transaction!, {
+                        pool: ctx.store.defer(Pool, poolId),
+                        amount,
+                    })
+                )
+            } else {
+                const positionId = createLiquidityPositionId(poolId, from)
+                actions.push(
+                    new EnsureUserAction(item.block, item.transaction!, {
+                        user: ctx.store.defer(User, from),
+                        address: from,
+                    }),
+                    new EnsureLiquidityPositionAction(item.block, item.transaction!, {
+                        position: ctx.store.defer(LiquidityPosition, positionId),
+                        id: positionId,
+                        user: ctx.store.defer(User, from),
+                        pool: ctx.store.defer(Pool, poolId),
+                    }),
+                    new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
+                        position: ctx.store.defer(LiquidityPosition, positionId, {pool: true}),
+                        amount: -amount,
+                    })
+                )
+            }
 
-    //         // to make sure it will be prefetched
-    //         actions.push(new UnknownPoolAction(item.block, item.transaction!, {id: poolId}))
+            if (to === ZERO_ADDRESS && from !== ZERO_ADDRESS) {
+                actions.push(
+                    new ChangeLiquidityPoolAction(item.block, item.transaction!, {
+                        pool: ctx.store.defer(Pool, poolId),
+                        amount: -amount,
+                    })
+                )
+            } else {
+                const positionId = createLiquidityPositionId(poolId, to)
+                actions.push(
+                    new EnsureUserAction(item.block, item.transaction!, {
+                        user: ctx.store.defer(User, to),
+                        address: to,
+                    }),
+                    new EnsureLiquidityPositionAction(item.block, item.transaction!, {
+                        position: ctx.store.defer(LiquidityPosition, positionId),
+                        id: positionId,
+                        user: ctx.store.defer(User, to),
+                        pool: ctx.store.defer(Pool, poolId),
+                    }),
+                    new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
+                        position: ctx.store.defer(LiquidityPosition, positionId, {pool: true}),
+                        amount,
+                    })
+                )
+            }
 
-    //         if (from === ZERO_ADDRESS) {
-    //             actions.push(
-    //                 new ChangeLiquidityPoolAction(item.block, item.transaction!, {
-    //                     id: item.address,
-    //                     amount,
-    //                 })
-    //             )
-    //         } else {
-    //             actions.push(new UnknownUserAction(item.block, item.transaction!, {id: from}))
+            break
+        }
+        case hypervisor.events.Deposit.topic: {
+            const event = hypervisor.events.Deposit.decode(item)
 
-    //             actions.push(
-    //                 new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-    //                     id: createLiquidityPositionId(item.address, from),
-    //                     amount: -amount,
-    //                     userId: from,
-    //                     poolId,
-    //                 })
-    //             )
-    //         }
+            const userId = event.to.toLowerCase()
+            const poolId = item.address
 
-    //         if (to === ZERO_ADDRESS && from !== ZERO_ADDRESS) {
-    //             actions.push(
-    //                 new ChangeLiquidityPoolAction(item.block, item.transaction!, {
-    //                     id: item.address,
-    //                     amount: -amount,
-    //                 })
-    //             )
-    //         } else {
-    //             actions.push(new UnknownUserAction(item.block, item.transaction!, {id: to}))
+            const amount0 = event.amount0
+            const amount1 = event.amount1
 
-    //             actions.push(
-    //                 new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-    //                     id: createLiquidityPositionId(item.address, to),
-    //                     amount,
-    //                     userId: to,
-    //                     poolId,
-    //                 })
-    //             )
-    //         }
+            actions.push(
+                new AdjustValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
+                    position: ctx.store.defer(LiquidityPosition, createLiquidityPositionId(poolId, userId)),
+                    amount0,
+                    amount1,
+                })
+            )
 
-    //         break
-    //     }
-    //     case hypervisor.events.Deposit.topic: {
-    //         const event = hypervisor.events.Deposit.decode(item)
+            // actions.push(
+            //     new SetBalancesPoolAction(item.block, item.transaction!, {
+            //         id: poolId,
+            //         value0: new DeferredCall(item.block, {
+            //             address: PoolManager.instance.getTokens(poolId).token0,
+            //             func: bep20.functions.balanceOf,
+            //             args: [poolId],
+            //             transform: (v) => v,
+            //         }),
+            //         value1: new DeferredCall(item.block, {
+            //             address: PoolManager.instance.getTokens(poolId).token1,
+            //             func: bep20.functions.balanceOf,
+            //             args: [poolId],
+            //             transform: (v) => v,
+            //         }),
+            //     })
+            // )
 
-    //         const userId = event.to.toLowerCase()
-    //         const poolId = item.address
+            break
+        }
+        case hypervisor.events.Withdraw.topic: {
+            const event = hypervisor.events.Withdraw.decode(item)
 
-    //         const amount0 = event.amount0
-    //         const amount1 = event.amount1
+            const userId = event.to.toLowerCase()
+            const poolId = item.address
 
-    //         actions.push(
-    //             new AdjustValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-    //                 id: createLiquidityPositionId(poolId, userId),
-    //                 poolId,
-    //                 userId,
-    //                 amount0,
-    //                 amount1,
-    //             })
-    //         )
+            const amount0 = -event.amount0
+            const amount1 = -event.amount1
 
-    //         // actions.push(
-    //         //     new SetBalancesPoolAction(item.block, item.transaction!, {
-    //         //         id: item.address,
-    //         //         value0: new DeferredCall(item.block, {
-    //         //             address: PoolManager.instance.getTokens(item.address).token0,
-    //         //             func: bep20.functions.balanceOf,
-    //         //             args: [item.address],
-    //         //             transform: (v) => v,
-    //         //         }),
-    //         //         value1: new DeferredCall(item.block, {
-    //         //             address: PoolManager.instance.getTokens(item.address).token1,
-    //         //             func: bep20.functions.balanceOf,
-    //         //             args: [item.address],
-    //         //             transform: (v) => v,
-    //         //         }),
-    //         //     })
-    //         // )
+            actions.push(
+                new AdjustValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
+                    position: ctx.store.defer(LiquidityPosition, createLiquidityPositionId(poolId, userId)),
+                    amount0,
+                    amount1,
+                })
+            )
 
-    //         break
-    //     }
-    //     case hypervisor.events.Withdraw.topic: {
-    //         const event = hypervisor.events.Withdraw.decode(item)
+            // actions.push(
+            //     new SetBalancesPoolAction(item.block, item.transaction!, {
+            //         id: poolId,
+            //         value0: new DeferredCall(item.block, {
+            //             address: PoolManager.instance.getTokens(poolId).token0,
+            //             func: bep20.functions.balanceOf,
+            //             args: [poolId],
+            //             transform: (v) => v,
+            //         }),
+            //         value1: new DeferredCall(item.block, {
+            //             address: PoolManager.instance.getTokens(poolId).token1,
+            //             func: bep20.functions.balanceOf,
+            //             args: [poolId],
+            //             transform: (v) => v,
+            //         }),
+            //     })
+            // )
 
-    //         const userId = event.to.toLowerCase()
-    //         const poolId = item.address
+            break
+        }
+        case hypervisor.events.Rebalance.topic: {
+            const event = hypervisor.events.Rebalance.decode(item)
 
-    //         const amount0 = -event.amount0
-    //         const amount1 = -event.amount1
+            const poolId = item.address
 
-    //         actions.push(
-    //             new AdjustValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-    //                 id: createLiquidityPositionId(poolId, userId),
-    //                 poolId,
-    //                 userId,
-    //                 amount0,
-    //                 amount1,
-    //             })
-    //         )
+            actions.push(
+                new SetBalancesPoolAction(item.block, item.transaction!, {
+                    pool: ctx.store.defer(Pool, poolId),
+                    value0: new WrappedValue(event.totalAmount0),
+                    value1: new WrappedValue(event.totalAmount1),
+                })
+            )
 
-    //         // actions.push(
-    //         //     new SetBalancesPoolAction(item.block, item.transaction!, {
-    //         //         id: item.address,
-    //         //         value0: new DeferredCall(item.block, {
-    //         //             address: PoolManager.instance.getTokens(item.address).token0,
-    //         //             func: bep20.functions.balanceOf,
-    //         //             args: [item.address],
-    //         //             transform: (v) => v,
-    //         //         }),
-    //         //         value1: new DeferredCall(item.block, {
-    //         //             address: PoolManager.instance.getTokens(item.address).token1,
-    //         //             func: bep20.functions.balanceOf,
-    //         //             args: [item.address],
-    //         //             transform: (v) => v,
-    //         //         }),
-    //         //     })
-    //         // )
-
-    //         break
-    //     }
-    //     case hypervisor.events.Rebalance.topic: {
-    //         const event = hypervisor.events.Rebalance.decode(item)
-
-    //         const poolId = item.address
-
-    //         actions.push(
-    //             new SetBalancesPoolAction(item.block, item.transaction!, {
-    //                 id: poolId,
-    //                 value0: new WrappedValue(event.totalAmount0),
-    //                 value1: new WrappedValue(event.totalAmount1),
-    //             })
-    //         )
-
-    //         break
-    //     }
-    //     default: {
-    //         ctx.log.error(`unknown event ${item.topics[0]}`)
-    //     }
-    // }
-    // // break
-    // //     }
-    // // }
+            break
+        }
+        default: {
+            ctx.log.error(`unknown event ${item.topics[0]}`)
+        }
+    }
 
     return actions
 }
