@@ -244,6 +244,7 @@ export class StoreWithCache {
         for (const entity of entities) {
             const constructor = entity.constructor as any
             const cached = _cacheMap.get(entity.id) || (new constructor() as Entity)
+            _cacheMap.set(entity.id, cached)
 
             const metadata = this.em.connection.entityMetadatasMap.get(entity.constructor)
             assert(metadata != null, `Missing metadata for ${entity.constructor.name}`)
@@ -280,7 +281,6 @@ export class StoreWithCache {
                 }
             }
 
-            _cacheMap.set(cached.id, cached)
             cachedEntities.push(cached)
         }
 
@@ -293,6 +293,8 @@ export class StoreWithCache {
         for (const metadata of this.em.connection.entityMetadatas) {
             graph.addNode(metadata.name)
             for (const foreignKey of metadata.foreignKeys) {
+                if (foreignKey.referencedEntityMetadata === metadata) continue // don't add self-refs
+
                 graph.addEdge(metadata.name, foreignKey.referencedEntityMetadata.name)
             }
         }
