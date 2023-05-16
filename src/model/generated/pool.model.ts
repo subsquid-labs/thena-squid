@@ -12,23 +12,31 @@ export class Pool {
     @PrimaryColumn_()
     id!: string
 
+    @Column_("varchar", {length: 10, nullable: false})
+    type!: PoolType
+
+    @Column_("text", {nullable: true})
+    factory!: string | undefined | null
+
+    @Index_()
+    @ManyToOne_(() => Token, {nullable: true})
+    token0!: Token
+
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     reserve0!: bigint
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
     price0!: bigint | undefined | null
 
+    @Index_()
+    @ManyToOne_(() => Token, {nullable: true})
+    token1!: Token
+
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     reserve1!: bigint
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
     price1!: bigint | undefined | null
-
-    @Column_("varchar", {length: 10, nullable: false})
-    type!: PoolType
-
-    @Column_("text", {nullable: true})
-    factory!: string | undefined | null
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     liquidity!: bigint
@@ -38,18 +46,4 @@ export class Pool {
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
     sqrtPriceX96!: bigint | undefined | null
-
-    /**
-     * @private Use token0Id instead
-     */
-    @Index_()
-    @ManyToOne_(() => Token, {nullable: true})
-    token0!: Token
-
-    /**
-     * @private Use token1Id instead
-     */
-    @Index_()
-    @ManyToOne_(() => Token, {nullable: true})
-    token1!: Token
 }

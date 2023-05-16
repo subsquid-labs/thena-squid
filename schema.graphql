@@ -13,26 +13,19 @@ type Trade @entity {
     timestamp: DateTime!
     txHash: String!
 
+    user: User!
+
     # in
-    tokenInId: ID!
+    tokenIn: Token!
     amountIn: BigInt!
     amountInUSD: Float!
 
     # out
-    tokenOutId: ID!
+    tokenOut: Token!
     amountOut: BigInt!
     amountOutUSD: Float!
 
-    userId: ID!
     routes: [String!]!
-
-    # relations
-    "@private Use tokenInId instead"
-    tokenIn: Token!
-    "@private Use tokenOutId instead"
-    tokenOut: Token!
-    "@private Use userId instead"
-    user: User!
 }
 
 type Swap @entity {
@@ -44,26 +37,16 @@ type Swap @entity {
     txHash: String!
 
     # in
-    tokenInId: ID!
+    tokenIn: Token!
     amountIn: BigInt!
     amountInUSD: Float!
 
     # out
-    tokenOutId: ID!
+    tokenOut: Token!
     amountOut: BigInt!
     amountOutUSD: Float!
 
-    tradeId: ID!
-    poolId: ID!
-
-    # relations
-    "@private Use tokenInId instead"
-    tokenIn: Token!
-    "@private Use tokenOutId instead"
-    tokenOut: Token!
-    "@private Use tradeId instead"
     trade: Trade!
-    "@private Use poolId instead"
     pool: Pool!
 }
 
@@ -76,56 +59,48 @@ enum PoolType {
 type Pool @entity {
     id: ID!
 
+    type: PoolType!
+    factory: String
+
     # token0
+    token0: Token!
     reserve0: BigInt!
     price0: BigInt
 
     # token1
+    token1: Token!
     reserve1: BigInt!
     price1: BigInt
 
-    type: PoolType!
-    factory: String
     liquidity: BigInt!
     stable: Boolean
     sqrtPriceX96: BigInt
-
-    # relations
-    "@private Use token0Id instead"
-    token0: Token!
-    "@private Use token1Id instead"
-    token1: Token!
 }
 
 type LiquidityPosition @entity {
     id: ID!
 
-    userId: ID!
-    poolId: ID!
+    user: User!
+    pool: Pool!
+
     value: BigInt!
 
-    # relations
-    "@private Use userId instead"
-    user: User!
-    "@private Use poolId instead"
-    pool: Pool!
-    "@private Don't use"
     updates: [LiquidityPositionUpdate!]! @derivedFrom(field: "position")
 }
 
 type LiquidityPositionUpdate @entity {
     id: ID!
+
     blockNumber: Int!
     timestamp: DateTime!
     txHash: String!
-    positionId: ID!
+
+    position: LiquidityPosition!
+
     amount: BigInt!
+
     amount0: BigInt!
     amount1: BigInt!
-
-    # relations
-    "Use positionId instead"
-    position: LiquidityPosition!
 }
 
 type Token @entity {
@@ -146,12 +121,81 @@ type Hypervisor @entity {
 
     pool: Pool!
 
-    basePositionId: ID
-    limitPositionId: ID
-
-    # relations
     basePosition: LiquidityPosition
     limitPosition: LiquidityPosition
-    "Use poolId instead"
+}
+
+type Bribe @entity {
+    id: ID!
+
+    totalSupply: BigInt!
+}
+
+type Gauge @entity {
+    id: ID!
+
     pool: Pool!
+    totalSupply: BigInt!
+
+    externalBribe: Bribe!
+    internalBribe: Bribe!
+
+    isAlive: Boolean!
+}
+
+type GaugeStake @entity {
+    id: ID!
+
+    gauge: Gauge!
+    user: User!
+
+    value: BigInt!
+    collectedReward: BigInt!
+}
+
+type GaugeStakeUpdate @entity {
+    id: ID!
+
+    # meatadata
+    blockNumber: Int!
+    timestamp: DateTime!
+    txHash: String!
+
+    stake: GaugeStake!
+
+    amount: BigInt!
+}
+
+type GaugeStakeReward @entity {
+    id: ID!
+
+    # meatadata
+    blockNumber: Int!
+    timestamp: DateTime!
+    txHash: String!
+
+    stake: GaugeStake!
+
+    amount: BigInt!
+}
+
+type Vote @entity {
+    id: ID!
+
+    # meatadata
+    blockNumber: Int!
+    timestamp: DateTime!
+    txHash: String!
+
+    user: User!
+    token: VeToken!
+    pool: Pool!
+
+    weight: Float!
+}
+
+type VeToken @entity {
+    id: ID!
+
+    owner: User!
 }

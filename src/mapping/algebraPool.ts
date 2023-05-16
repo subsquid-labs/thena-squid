@@ -2,28 +2,28 @@ import {DataHandlerContext} from '@subsquid/evm-processor'
 import * as algebraPool from '../abi/algebraPool'
 import {ALGEBRA_FACTORY, USD_ADDRESS} from '../config'
 import {Log} from '../processor'
-import {PoolManager} from '../utils/pairManager'
+import {PoolManager} from '../utils/manager/poolManager'
 import {
     Action,
     ChangeLiquidityPoolAction,
     EnsureLiquidityPositionAction,
     EnsureUserAction,
     RecalculatePricesPoolAction,
-    // RemovePositionHypervisorAction,
+    RemovePositionHypervisorAction,
     SetLiquidityPoolAction,
-    // SetPositionHypervisorAction,
+    SetPositionHypervisorAction,
     SetSqrtPricePoolAction,
     SwapUserAction,
     ValueUpdateLiquidityPositionAction,
 } from '../action'
 import {createLiquidityPositionId} from '../utils/ids'
 import {WrappedValue} from '../utils/deferred'
-import {HypervisorManager} from '../utils/hypervisorManager'
+import {HypervisorManager} from '../utils/manager/hypervisorManager'
 import {StoreWithCache} from '../utils/store'
 import {Hypervisor, LiquidityPosition, Pool, Token, User} from '../model'
 
-export function isAlgebraPoolItem(item: Log) {
-    return PoolManager.instance.isPool(ALGEBRA_FACTORY, item.address)
+export function isAlgebraPoolItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+    return PoolManager.get(ctx).isPool(ALGEBRA_FACTORY, item.address)
 }
 
 export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
@@ -103,13 +103,13 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, i
                 })
             )
 
-            if (HypervisorManager.instance.isTracked(userId)) {
-                // actions.push(
-                //     new SetPositionHypervisorAction(item.block, item.transaction!, {
-                //         hypervisor: ctx.store.defer(Hypervisor, userId, {basePosition: true, limitPosition: true}),
-                //         position: ctx.store.defer(LiquidityPosition, positionId),
-                //     })
-                // )
+            if (HypervisorManager.get(ctx).isTracked(userId)) {
+                actions.push(
+                    new SetPositionHypervisorAction(item.block, item.transaction!, {
+                        hypervisor: ctx.store.defer(Hypervisor, userId, {basePosition: true, limitPosition: true}),
+                        position: ctx.store.defer(LiquidityPosition, positionId),
+                    })
+                )
             }
 
             break
@@ -149,13 +149,13 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, i
                 })
             )
 
-            if (HypervisorManager.instance.isTracked(userId)) {
-                // actions.push(
-                //     new RemovePositionHypervisorAction(item.block, item.transaction!, {
-                //         hypervisor: ctx.store.defer(Hypervisor, userId, {basePosition: true, limitPosition: true}),
-                //         position: ctx.store.defer(LiquidityPosition, positionId),
-                //     })
-                // )
+            if (HypervisorManager.get(ctx).isTracked(userId)) {
+                actions.push(
+                    new RemovePositionHypervisorAction(item.block, item.transaction!, {
+                        hypervisor: ctx.store.defer(Hypervisor, userId, {basePosition: true, limitPosition: true}),
+                        position: ctx.store.defer(LiquidityPosition, positionId),
+                    })
+                )
             }
 
             break

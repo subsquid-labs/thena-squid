@@ -25,3 +25,9 @@ export function createLiquidityPositionId(pool: string, address: string, lowerTi
 export function createLiquidityPositionUpdateId(txId: string, index: number) {
     return `${txId}-${index.toString().padStart(5, '0')}`
 }
+
+export function createGaugeStakeId(gauge: string, address: string) {
+    let id = `${gauge}-${address}`
+
+    return id
+}

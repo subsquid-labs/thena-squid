@@ -13,36 +13,35 @@ import {
 import {ZERO_ADDRESS} from '../config'
 import {Hypervisor, LiquidityPosition, Pool, User} from '../model'
 import {Log} from '../processor'
-import {CallManager} from '../utils/callManager'
+import {CallCache} from '../utils/callQueue'
 import {WrappedValue} from '../utils/deferred'
-import {HypervisorManager} from '../utils/hypervisorManager'
+import {HypervisorManager} from '../utils/manager/hypervisorManager'
 import {createLiquidityPositionId} from '../utils/ids'
 import {StoreWithCache} from '../utils/store'
 
-export function isHypervisorItem(item: Log) {
-    return HypervisorManager.instance.isHypervisor(item.address)
+export function isHypervisorItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+    return HypervisorManager.get(ctx).isHypervisor(item.address)
 }
 
 export async function getHypervisorActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     const actions: Action[] = []
 
-    // if (!HypervisorManager.instance.isTracked(poolId)) {
     const hypervisorId = item.address
 
-    const callManager = CallManager.get(ctx)
-    const token0 = callManager.defer(item.block, hypervisor.functions.token0, {
+    const callCache = CallCache.get(ctx)
+    const token0 = callCache.defer(item.block, hypervisor.functions.token0, {
         address: hypervisorId,
         args: [],
         transform: (v) => v.toLowerCase(),
     })
 
-    const token1 = callManager.defer(item.block, hypervisor.functions.token1, {
+    const token1 = callCache.defer(item.block, hypervisor.functions.token1, {
         address: hypervisorId,
         args: [],
         transform: (v) => v.toLowerCase(),
     })
 
-    const hypervisorPool = callManager.defer(item.block, hypervisor.functions.pool, {
+    const hypervisorPool = callCache.defer(item.block, hypervisor.functions.pool, {
         address: hypervisorId,
         args: [],
         transform: (v) => v.toLowerCase(),

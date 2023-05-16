@@ -1,11 +1,12 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
 import {User} from "./user.model"
-import {Token} from "./token.model"
+import {VeToken} from "./veToken.model"
+import {Pool} from "./pool.model"
 
 @Entity_()
-export class Trade {
-    constructor(props?: Partial<Trade>) {
+export class Vote {
+    constructor(props?: Partial<Vote>) {
         Object.assign(this, props)
     }
 
@@ -26,25 +27,13 @@ export class Trade {
     user!: User
 
     @Index_()
-    @ManyToOne_(() => Token, {nullable: true})
-    tokenIn!: Token
-
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    amountIn!: bigint
-
-    @Column_("numeric", {transformer: marshal.floatTransformer, nullable: false})
-    amountInUSD!: number
+    @ManyToOne_(() => VeToken, {nullable: true})
+    token!: VeToken
 
     @Index_()
-    @ManyToOne_(() => Token, {nullable: true})
-    tokenOut!: Token
-
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    amountOut!: bigint
+    @ManyToOne_(() => Pool, {nullable: true})
+    pool!: Pool
 
     @Column_("numeric", {transformer: marshal.floatTransformer, nullable: false})
-    amountOutUSD!: number
-
-    @Column_("text", {array: true, nullable: false})
-    routes!: (string)[]
+    weight!: number
 }

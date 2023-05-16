@@ -13,32 +13,17 @@ export class LiquidityPosition {
     @PrimaryColumn_()
     id!: string
 
-    @Column_("text", {nullable: false})
-    userId!: string
-
-    @Column_("text", {nullable: false})
-    poolId!: string
-
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    value!: bigint
-
-    /**
-     * @private Use userId instead
-     */
     @Index_()
     @ManyToOne_(() => User, {nullable: true})
     user!: User
 
-    /**
-     * @private Use poolId instead
-     */
     @Index_()
     @ManyToOne_(() => Pool, {nullable: true})
     pool!: Pool
 
-    /**
-     * @private Don't use
-     */
+    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    value!: bigint
+
     @OneToMany_(() => LiquidityPositionUpdate, e => e.position)
     updates!: LiquidityPositionUpdate[]
 }

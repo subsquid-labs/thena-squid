@@ -22,8 +22,9 @@ export class Swap {
     @Column_("text", {nullable: false})
     txHash!: string
 
-    @Column_("text", {nullable: false})
-    tokenInId!: string
+    @Index_()
+    @ManyToOne_(() => Token, {nullable: true})
+    tokenIn!: Token
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     amountIn!: bigint
@@ -31,8 +32,9 @@ export class Swap {
     @Column_("numeric", {transformer: marshal.floatTransformer, nullable: false})
     amountInUSD!: number
 
-    @Column_("text", {nullable: false})
-    tokenOutId!: string
+    @Index_()
+    @ManyToOne_(() => Token, {nullable: true})
+    tokenOut!: Token
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     amountOut!: bigint
@@ -40,36 +42,10 @@ export class Swap {
     @Column_("numeric", {transformer: marshal.floatTransformer, nullable: false})
     amountOutUSD!: number
 
-    @Column_("text", {nullable: false})
-    tradeId!: string
-
-    @Column_("text", {nullable: false})
-    poolId!: string
-
-    /**
-     * @private Use tokenInId instead
-     */
-    @Index_()
-    @ManyToOne_(() => Token, {nullable: true})
-    tokenIn!: Token
-
-    /**
-     * @private Use tokenOutId instead
-     */
-    @Index_()
-    @ManyToOne_(() => Token, {nullable: true})
-    tokenOut!: Token
-
-    /**
-     * @private Use tradeId instead
-     */
     @Index_()
     @ManyToOne_(() => Trade, {nullable: true})
     trade!: Trade
 
-    /**
-     * @private Use poolId instead
-     */
     @Index_()
     @ManyToOne_(() => Pool, {nullable: true})
     pool!: Pool

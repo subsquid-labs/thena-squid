@@ -10,22 +10,17 @@ import {getHypervisorActions, isHypervisorItem} from './hypervisor'
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Fields, Log} from '../processor'
 import {StoreWithCache} from '../utils/store'
-import {HypervisorManager} from '../utils/hypervisorManager'
-import {PoolManager} from '../utils/pairManager'
+import {getVoterActions, isVoterItem} from './voter'
+import {getGaugeActions, isGaugeItem} from './gauge'
+import {GaugeManager, PoolManager, HypervisorManager} from '../utils/manager'
 
 export async function getActions(ctx: DataHandlerContext<StoreWithCache, Fields>): Promise<Action[]> {
-    const poolManager = PoolManager.instance
-    if (!poolManager.initialized) {
-        await poolManager.init(ctx.store)
-    }
-
-    const hypervisorManager = HypervisorManager.instance
-    if (!hypervisorManager.initialized) {
-        await hypervisorManager.init(ctx.store)
-    }
+    await GaugeManager.get(ctx).init()
+    await PoolManager.get(ctx).init()
+    await HypervisorManager.get(ctx).init()
 
     const actions: Action[] = []
-    for (let {header: block, logs, transactions} of ctx.blocks) {
+    for (let {header: block, logs, transactions, traces} of ctx.blocks) {
         for (let log of logs) {
             const result = await getItemActions(ctx, log)
             actions.push(...result)
@@ -56,7 +51,7 @@ export async function getItemActions(ctx: DataHandlerContext<StoreWithCache, Fie
         return getSolidlyFactoryActions(ctx, item)
     }
 
-    if (isSolidlyPairItem(item)) {
+    if (isSolidlyPairItem(ctx, item)) {
         ctx.log.debug(`processing Solidly Pair item...`)
         return getSolidlyPairActions(ctx, item)
     }
@@ -66,14 +61,22 @@ export async function getItemActions(ctx: DataHandlerContext<StoreWithCache, Fie
         return getAlgebraFactoryActions(ctx, item)
     }
 
-    if (isAlgebraPoolItem(item)) {
+    if (isAlgebraPoolItem(ctx, item)) {
         ctx.log.debug(`processing Algebra Pool item...`)
         return getAlgebraPoolActions(ctx, item)
     }
 
-    if (isHypervisorItem(item)) {
+    if (isHypervisorItem(ctx, item)) {
         ctx.log.debug(`processing Hypervisor item...`)
         return await getHypervisorActions(ctx, item)
+    }
+
+    if (isVoterItem(ctx, item)) {
+        return await getVoterActions(ctx, item)
+    }
+
+    if (isGaugeItem(ctx, item)) {
+        return await getGaugeActions(ctx, item)
     }
 
     return []

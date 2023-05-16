@@ -4,10 +4,10 @@ import {Log} from '../processor'
 import * as solidlyFactory from '../abi/solidlyFactory'
 import * as bep20 from '../abi/bep20'
 import {Action, CreatePoolAction, EnsureTokenAction} from '../action'
-import {PoolManager} from '../utils/pairManager'
+import {PoolManager} from '../utils/manager/poolManager'
 import {Pool, PoolType, Token} from '../model'
 import {StoreWithCache} from '../utils/store'
-import {CallManager} from '../utils/callManager'
+import {CallCache} from '../utils/callQueue'
 
 export function isSolidlyFactoryItem(item: Log) {
     return item.address === SOLIDLY_FACTORY
@@ -25,16 +25,16 @@ export function getSolidlyFactoryActions(ctx: DataHandlerContext<StoreWithCache>
             const token0 = event.token0.toLowerCase()
             const token1 = event.token1.toLowerCase()
 
-            const callManager = CallManager.get(ctx)
+            const callCache = CallCache.get(ctx)
             actions.push(
                 new EnsureTokenAction(item.block, item.transaction!, {
                     token: ctx.store.defer(Token, token0),
                     address: token0,
-                    decimals: callManager.defer(item.block, bep20.functions.decimals, {
+                    decimals: callCache.defer(item.block, bep20.functions.decimals, {
                         address: token0,
                         args: [],
                     }),
-                    symbol: callManager.defer(item.block, bep20.functions.symbol, {
+                    symbol: callCache.defer(item.block, bep20.functions.symbol, {
                         address: token0,
                         args: [],
                     }),
@@ -42,11 +42,11 @@ export function getSolidlyFactoryActions(ctx: DataHandlerContext<StoreWithCache>
                 new EnsureTokenAction(item.block, item.transaction!, {
                     token: ctx.store.defer(Token, token1),
                     address: token1,
-                    decimals: callManager.defer(item.block, bep20.functions.decimals, {
+                    decimals: callCache.defer(item.block, bep20.functions.decimals, {
                         address: token1,
                         args: [],
                     }),
-                    symbol: callManager.defer(item.block, bep20.functions.symbol, {
+                    symbol: callCache.defer(item.block, bep20.functions.symbol, {
                         address: token1,
                         args: [],
                     }),
@@ -62,7 +62,7 @@ export function getSolidlyFactoryActions(ctx: DataHandlerContext<StoreWithCache>
                 })
             )
 
-            PoolManager.instance.addPool(item.address, id)
+            PoolManager.get(ctx).addPool(item.address, id)
 
             break
         }

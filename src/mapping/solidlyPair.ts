@@ -2,7 +2,7 @@ import {DataHandlerContext} from '@subsquid/evm-processor'
 import * as solidlyPair from '../abi/solidlyPair'
 import {SOLIDLY_FACTORY, USD_ADDRESS, WHITELIST_TOKENS, ZERO_ADDRESS} from '../config'
 import {Log} from '../processor'
-import {PoolManager} from '../utils/pairManager'
+import {PoolManager} from '../utils/manager/poolManager'
 import {
     Action,
     ChangeLiquidityPoolAction,
@@ -24,8 +24,8 @@ import {DefferedFunction, WrappedValue} from '../utils/deferred'
 import {User, Pool, Token, LiquidityPosition} from '../model'
 import {StoreWithCache} from '../utils/store'
 
-export function isSolidlyPairItem(item: Log) {
-    return PoolManager.instance.isPool(SOLIDLY_FACTORY, item.address)
+export function isSolidlyPairItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+    return PoolManager.get(ctx).isPool(SOLIDLY_FACTORY, item.address)
 }
 
 export function getSolidlyPairActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {

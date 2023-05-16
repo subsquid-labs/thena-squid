@@ -10,13 +10,13 @@ type AnyFunction = Func<any, {}, any>
 type FuncReturnType<F> = F extends Func<any, {}, infer R> ? R : never
 type FuncArgs<F> = F extends Func<infer R, {}, any> ? R : never
 
-export class CallManager {
-    private static managers: WeakMap<Chain, CallManager> = new WeakMap()
+export class CallCache {
+    private static managers: WeakMap<Chain, CallCache> = new WeakMap()
 
-    static get(ctx: ChainContext): CallManager {
+    static get(ctx: ChainContext): CallCache {
         let manager = this.managers.get(ctx._chain)
         if (manager == null) {
-            manager = new CallManager(ctx._chain)
+            manager = new CallCache(ctx._chain)
         }
 
         return manager
@@ -98,7 +98,7 @@ export class CallManager {
 
 export class CallDeferredValue<F extends AnyFunction = AnyFunction, T = FuncReturnType<F>> implements DeferredValue<T> {
     constructor(
-        private manager: CallManager,
+        private manager: CallCache,
         private block: Block,
         private hash: string,
         private transform?: (v: FuncReturnType<F>) => T

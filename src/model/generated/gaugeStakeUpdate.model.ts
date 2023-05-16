@@ -1,10 +1,10 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
-import {LiquidityPosition} from "./liquidityPosition.model"
+import {GaugeStake} from "./gaugeStake.model"
 
 @Entity_()
-export class LiquidityPositionUpdate {
-    constructor(props?: Partial<LiquidityPositionUpdate>) {
+export class GaugeStakeUpdate {
+    constructor(props?: Partial<GaugeStakeUpdate>) {
         Object.assign(this, props)
     }
 
@@ -21,15 +21,9 @@ export class LiquidityPositionUpdate {
     txHash!: string
 
     @Index_()
-    @ManyToOne_(() => LiquidityPosition, {nullable: true})
-    position!: LiquidityPosition
+    @ManyToOne_(() => GaugeStake, {nullable: true})
+    stake!: GaugeStake
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     amount!: bigint
-
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    amount0!: bigint
-
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    amount1!: bigint
 }

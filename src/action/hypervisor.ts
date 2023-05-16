@@ -2,7 +2,7 @@ import assert from 'assert'
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import * as hypervisorAbi from '../abi/hypervisor'
 import {Hypervisor, LiquidityPosition, Pool, PoolType, Token} from '../model'
-import {CallManager} from '../utils/callManager'
+import {CallCache} from '../utils/callQueue'
 import {DeferredValue} from '../utils/deferred'
 import {StoreWithCache} from '../utils/store'
 import {Action} from './base'
@@ -30,17 +30,17 @@ export class EnsureHypervisorAction extends BaseHypervisorAction<EnsureHyperviso
         let hypervisor = await this.data.hypervisor.get()
         if (hypervisor != null) return
 
-        const callManager = CallManager.get(ctx)
+        const callCache = CallCache.get(ctx)
 
         const token0Address = await this.data.token0.get()
         const ensureToken0 = new EnsureTokenAction(this.block, this.transaction, {
             token: ctx.store.defer(Token, token0Address),
             address: token0Address,
-            decimals: callManager.defer(this.block, hypervisorAbi.functions.decimals, {
+            decimals: callCache.defer(this.block, hypervisorAbi.functions.decimals, {
                 address: token0Address,
                 args: [],
             }),
-            symbol: callManager.defer(this.block, hypervisorAbi.functions.symbol, {
+            symbol: callCache.defer(this.block, hypervisorAbi.functions.symbol, {
                 address: token0Address,
                 args: [],
             }),
@@ -50,11 +50,11 @@ export class EnsureHypervisorAction extends BaseHypervisorAction<EnsureHyperviso
         const ensureToken1 = new EnsureTokenAction(this.block, this.transaction, {
             token: ctx.store.defer(Token, token1Address),
             address: token0Address,
-            decimals: callManager.defer(this.block, hypervisorAbi.functions.decimals, {
+            decimals: callCache.defer(this.block, hypervisorAbi.functions.decimals, {
                 address: token1Address,
                 args: [],
             }),
-            symbol: callManager.defer(this.block, hypervisorAbi.functions.symbol, {
+            symbol: callCache.defer(this.block, hypervisorAbi.functions.symbol, {
                 address: token1Address,
                 args: [],
             }),
@@ -103,7 +103,7 @@ export class SetPositionHypervisorAction extends BaseHypervisorAction<SetPositio
         if (hypervisor.basePosition == null) {
             hypervisor.basePosition = position
             ctx.log.debug(`Base position of Hypervisor ${hypervisor.id} set to ${position.id}`)
-        } else if (hypervisor.limitPositionId == null) {
+        } else if (hypervisor.limitPosition == null) {
             hypervisor.limitPosition = position
             ctx.log.debug(`Limit position of Hypervisor ${hypervisor.id} set to ${position.id}`)
         } else {
@@ -127,10 +127,10 @@ export class RemovePositionHypervisorAction extends BaseHypervisorAction<RemoveP
         assert(position != null, 'Missing position')
 
         if (hypervisor.basePosition?.id === position.id) {
-            hypervisor.basePositionId = null
+            hypervisor.basePosition = null
             ctx.log.debug(`Base position of Hypervisor ${hypervisor.id} removed`)
         } else if (hypervisor.limitPosition?.id == position.id) {
-            hypervisor.limitPositionId = null
+            hypervisor.limitPosition = null
             ctx.log.debug(`Limit position of Hypervisor ${hypervisor.id} removed`)
         } else {
             throw new Error(`Unexpected case`)

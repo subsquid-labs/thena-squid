@@ -13,7 +13,18 @@ import * as thena from './abi/bep20'
 import * as hypervisor from './abi/hypervisor'
 import * as solidlyFactory from './abi/solidlyFactory'
 import * as solidlyPair from './abi/solidlyPair'
-import {ALGEBRA_FACTORY, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS, SOLIDLY_FACTORY, THENA_ADDRESS} from './config'
+import * as voter from './abi/voterV3'
+import * as gauge from './abi/gaugeV2'
+import {
+    ALGEBRA_FACTORY,
+    BRIBE_FACTORY,
+    GAUGE_FACTORIES,
+    ROUTER_V2_ADDRESS,
+    ROUTER_V3_ADDRESS,
+    SOLIDLY_FACTORY,
+    THENA_ADDRESS,
+    VOTER,
+} from './config'
 import {loadHypervisors, loadPreIndexedPools} from './utils/loaders'
 
 const poolMetadata = loadPreIndexedPools()
@@ -92,6 +103,15 @@ export const processor = new EvmBatchProcessor()
             hypervisor.events.Transfer.topic,
             hypervisor.events.Rebalance.topic,
         ],
+        transaction: true,
+    })
+    .addLog({
+        address: [VOTER],
+        topic0: [voter.events.GaugeCreated.topic, voter.events.GaugeKilled.topic, voter.events.GaugeKilled.topic],
+        transaction: true,
+    })
+    .addLog({
+        topic0: [gauge.events.Deposit.topic, gauge.events.Withdraw.topic, gauge.events.Harvest.topic],
         transaction: true,
     })
     .addTransaction({
