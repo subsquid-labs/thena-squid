@@ -110,6 +110,8 @@ export class SwapUserAction extends BaseUserAction<SwapUserActionData> {
             SwapUserAction.lastTrade.txHash === this.transaction.hash
         ) {
             trade = await ctx.store.getOrFail(Trade, SwapUserAction.lastTrade.id)
+        } else {
+            SwapUserAction.lastTrade = undefined
         }
 
         if (trade == null || trade.tokenOut !== tokenIn || trade.amountOut !== amountIn) {

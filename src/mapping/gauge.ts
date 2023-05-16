@@ -5,7 +5,12 @@ import {StoreWithCache} from '../utils/store'
 import * as gaugeAbi from '../abi/gaugeV2'
 import {Action, EnsureUserAction} from '../action'
 import {Gauge, GaugeStake, User} from '../model'
-import {EnsureStakeGaugeAction, RewardStakeGaugeAction, UpdateStakeGaugeAction} from '../action/gauge'
+import {
+    EnsureStakeGaugeAction,
+    RewardStakeGaugeAction,
+    UpdateStakeGaugeAction,
+    UpdateTotalSupplyGaugeAction,
+} from '../action/gauge'
 import {createGaugeStakeId} from '../utils/ids'
 
 export function isGaugeItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
@@ -21,6 +26,7 @@ export async function getGaugeActions(ctx: DataHandlerContext<StoreWithCache>, i
 
             const user = event.user.toLowerCase()
             const gauge = item.address
+            const amount = event.amount
 
             const stakeId = createGaugeStakeId(gauge, user)
             actions.push(
@@ -36,7 +42,11 @@ export async function getGaugeActions(ctx: DataHandlerContext<StoreWithCache>, i
                 }),
                 new UpdateStakeGaugeAction(item.block, item.transaction!, {
                     stake: ctx.store.defer(GaugeStake, stakeId),
-                    amount: event.amount,
+                    amount,
+                }),
+                new UpdateTotalSupplyGaugeAction(item.block, item.transaction!, {
+                    gauge: ctx.store.defer(Gauge, gauge),
+                    amount,
                 })
             )
 
@@ -47,12 +57,17 @@ export async function getGaugeActions(ctx: DataHandlerContext<StoreWithCache>, i
 
             const user = event.user.toLowerCase()
             const gauge = item.address
+            const amount = -event.amount
 
             const stakeId = createGaugeStakeId(gauge, user)
             actions.push(
                 new UpdateStakeGaugeAction(item.block, item.transaction!, {
                     stake: ctx.store.defer(GaugeStake, stakeId),
-                    amount: -event.amount,
+                    amount,
+                }),
+                new UpdateTotalSupplyGaugeAction(item.block, item.transaction!, {
+                    gauge: ctx.store.defer(Gauge, gauge),
+                    amount,
                 })
             )
 

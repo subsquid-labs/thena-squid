@@ -37,6 +37,22 @@ export class CreateGaugeAction extends Action<CreateGaugeData> {
     }
 }
 
+export interface UpdateTotalSupplyGaugeData {
+    gauge: DeferredValue<Gauge, true>
+    amount: bigint
+}
+
+export class UpdateTotalSupplyGaugeAction extends Action<UpdateTotalSupplyGaugeData> {
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const gauge = await this.data.gauge.get()
+        assert(gauge != null)
+
+        gauge.totalSupply += this.data.amount
+
+        await ctx.store.upsert(gauge)
+    }
+}
+
 export interface EnsureGaugeStakeData {
     stake: DeferredValue<GaugeStake, true>
     id: string

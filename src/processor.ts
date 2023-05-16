@@ -107,13 +107,13 @@ export const processor = new EvmBatchProcessor()
     })
     .addLog({
         address: [VOTER],
-        topic0: [voter.events.GaugeCreated.topic, voter.events.GaugeKilled.topic, voter.events.GaugeKilled.topic],
+        topic0: [voter.events.GaugeCreated.topic, voter.events.GaugeKilled.topic, voter.events.GaugeRevived.topic],
         transaction: true,
     })
-    .addLog({
-        topic0: [gauge.events.Deposit.topic, gauge.events.Withdraw.topic, gauge.events.Harvest.topic],
-        transaction: true,
-    })
+    // .addLog({
+    //     topic0: [gauge.events.Deposit.topic, gauge.events.Withdraw.topic, gauge.events.Harvest.topic],
+    //     transaction: true,
+    // })
     .addTransaction({
         to: [THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS],
     })
