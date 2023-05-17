@@ -1,4 +1,5 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import * as marshal from "./marshal"
 import {User} from "./user.model"
 
 @Entity_()
@@ -13,4 +14,13 @@ export class VeToken {
     @Index_()
     @ManyToOne_(() => User, {nullable: true})
     owner!: User
+
+    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    value!: bigint
+
+    @Column_("timestamp with time zone", {nullable: false})
+    lockedUntil!: Date
+
+    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    totalReward!: bigint
 }

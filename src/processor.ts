@@ -25,13 +25,13 @@ import {
     THENA_ADDRESS,
     VOTER,
 } from './config'
-import {loadHypervisors, loadPreIndexedPools} from './utils/loaders'
+import {loadHypervisors, loadPreindexedPools} from './utils/loaders'
 
-const poolMetadata = loadPreIndexedPools()
+const poolMetadata = loadPreindexedPools()
 const hypervisors = loadHypervisors()
 
 export const processor = new EvmBatchProcessor()
-    .setBlockRange({from: 25_000_000}) //24468802
+    .setBlockRange({from: 25_000_000}) //24_468_802
     .setDataSource({
         archive: 'https://v2.archive.subsquid.io/network/bsc-mainnet-25m',
         chain: 'https://rpc.ankr.com/bsc',

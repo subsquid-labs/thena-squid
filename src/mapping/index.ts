@@ -13,6 +13,8 @@ import {StoreWithCache} from '../utils/store'
 import {getVoterActions, isVoterItem} from './voter'
 import {getGaugeActions, isGaugeItem} from './gauge'
 import {GaugeManager, PoolManager, HypervisorManager} from '../utils/manager'
+import {getVeTokenActions, isVeTokenItem} from './veToken'
+import {getRebaseDistributorActions, isRebaseDistributorItem} from './rebaseDistributor'
 
 export async function getActions(ctx: DataHandlerContext<StoreWithCache, Fields>): Promise<Action[]> {
     await GaugeManager.get(ctx).init()
@@ -20,7 +22,7 @@ export async function getActions(ctx: DataHandlerContext<StoreWithCache, Fields>
     await HypervisorManager.get(ctx).init()
 
     const actions: Action[] = []
-    for (let {header: block, logs, transactions, traces} of ctx.blocks) {
+    for (let {logs, transactions, traces} of ctx.blocks) {
         for (let log of logs) {
             const result = await getItemActions(ctx, log)
             actions.push(...result)
@@ -32,42 +34,34 @@ export async function getActions(ctx: DataHandlerContext<StoreWithCache, Fields>
 
 export async function getItemActions(ctx: DataHandlerContext<StoreWithCache, Fields>, item: Log): Promise<Action[]> {
     if (isThenaItem(item)) {
-        ctx.log.debug(`processing Thena item...`)
         return getThenaActions(ctx, item)
     }
 
     if (isRouterV2Item(item)) {
-        ctx.log.debug(`processing RouterV2 item...`)
         return getRouterV2Actions(ctx, item)
     }
 
     if (isRouterV3Item(item)) {
-        ctx.log.debug(`processing RouterV3 item...`)
         return getRouterV3Actions(ctx, item)
     }
 
     if (isSolidlyFactoryItem(item)) {
-        ctx.log.debug(`processing Solidly Factory item...`)
         return getSolidlyFactoryActions(ctx, item)
     }
 
     if (isSolidlyPairItem(ctx, item)) {
-        ctx.log.debug(`processing Solidly Pair item...`)
         return getSolidlyPairActions(ctx, item)
     }
 
     if (isAlgebraFactoryItem(item)) {
-        ctx.log.debug(`processing Algebra Factory item...`)
         return getAlgebraFactoryActions(ctx, item)
     }
 
     if (isAlgebraPoolItem(ctx, item)) {
-        ctx.log.debug(`processing Algebra Pool item...`)
         return getAlgebraPoolActions(ctx, item)
     }
 
     if (isHypervisorItem(ctx, item)) {
-        ctx.log.debug(`processing Hypervisor item...`)
         return await getHypervisorActions(ctx, item)
     }
 
@@ -77,6 +71,14 @@ export async function getItemActions(ctx: DataHandlerContext<StoreWithCache, Fie
 
     if (isGaugeItem(ctx, item)) {
         return await getGaugeActions(ctx, item)
+    }
+
+    if (isVeTokenItem(ctx, item)) {
+        return await getVeTokenActions(ctx, item)
+    }
+
+    if (isRebaseDistributorItem(ctx, item)) {
+        return await getRebaseDistributorActions(ctx, item)
     }
 
     return []

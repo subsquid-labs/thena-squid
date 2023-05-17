@@ -24,5 +24,5 @@ export class GaugeStake {
     value!: bigint
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    collectedReward!: bigint
+    totalReward!: bigint
 }

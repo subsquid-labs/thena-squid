@@ -32,3 +32,5 @@ export const BNB_DECIMALS = 18n
 export const MULTICALL_ADDRESS = '0xca11bde05977b3631167028862be2a173976ca11'
 
 export const VOTER = '0x3a1d0952809f4948d15ebce8d345962a282c4fcb'
+export const VE_TOKEN = '0xfbbf371c9b0b994eebfcc977cef603f7f31c070d'
+export const REBASE_DISTRIBUTOR = '0xe9fe83aa430ace4b703c299701142f9dfdde730e'

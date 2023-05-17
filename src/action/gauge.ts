@@ -76,7 +76,7 @@ export class EnsureStakeGaugeAction extends Action<EnsureGaugeStakeData> {
             gauge,
             user,
             value: 0n,
-            collectedReward: 0n,
+            totalReward: 0n,
         })
 
         await ctx.store.insert(stake)
@@ -109,7 +109,7 @@ export class RewardStakeGaugeAction extends Action<RewardGaugeStakeData> {
         const stake = await this.data.stake.get()
         assert(stake != null)
 
-        stake.collectedReward += this.data.amount
+        stake.totalReward += this.data.amount
 
         await ctx.store.upsert(stake)
     }

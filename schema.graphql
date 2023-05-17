@@ -127,8 +127,12 @@ type Hypervisor @entity {
 
 type Bribe @entity {
     id: ID!
+    pool: Pool!
+}
 
-    totalSupply: BigInt!
+type BribeDeposit @entity {
+    id: ID!
+    pool: Pool!
 }
 
 type Gauge @entity {
@@ -150,42 +154,37 @@ type GaugeStake @entity {
     user: User!
 
     value: BigInt!
-    collectedReward: BigInt!
+    totalReward: BigInt!
 }
 
-type GaugeStakeUpdate @entity {
-    id: ID!
+# type GaugeStakeUpdate @entity {
+#     id: ID!
 
-    # meatadata
-    blockNumber: Int!
-    timestamp: DateTime!
-    txHash: String!
+#     # meatadata
+#     blockNumber: Int!
+#     timestamp: DateTime!
+#     txHash: String!
 
-    stake: GaugeStake!
+#     stake: GaugeStake!
 
-    amount: BigInt!
-}
+#     amount: BigInt!
+# }
 
-type GaugeStakeReward @entity {
-    id: ID!
+# type GaugeStakeReward @entity {
+#     id: ID!
 
-    # meatadata
-    blockNumber: Int!
-    timestamp: DateTime!
-    txHash: String!
+#     # meatadata
+#     blockNumber: Int!
+#     timestamp: DateTime!
+#     txHash: String!
 
-    stake: GaugeStake!
+#     stake: GaugeStake!
 
-    amount: BigInt!
-}
+#     amount: BigInt!
+# }
 
 type Vote @entity {
     id: ID!
-
-    # meatadata
-    blockNumber: Int!
-    timestamp: DateTime!
-    txHash: String!
 
     user: User!
     token: VeToken!
@@ -198,4 +197,9 @@ type VeToken @entity {
     id: ID!
 
     owner: User!
+
+    value: BigInt!
+    lockedUntil: DateTime!
+
+    totalReward: BigInt!
 }

@@ -6,7 +6,7 @@ type PoolsMetadata = {
 }
 
 let pools: PoolsMetadata | undefined
-export function loadPreIndexedPools(): PoolsMetadata {
+export function loadPreindexedPools(): PoolsMetadata {
     if (pools != null) return pools
 
     const file = fs.readFileSync('./assets/pools.json', 'utf-8')
