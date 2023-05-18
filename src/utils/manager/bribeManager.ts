@@ -15,7 +15,7 @@ export class BribeManager {
         return manager
     }
 
-    private gauges: Set<string> = new Set()
+    private bribes: Set<string> = new Set()
     private _initialized = false
 
     private constructor(private store: StoreWithCache) {}
@@ -23,18 +23,18 @@ export class BribeManager {
     async init() {
         if (this._initialized) return
 
-        const gauges = await this.store.find(Bribe, {})
-        for (const gauge of gauges) {
-            this.addBribe(gauge.id)
+        const bribes = await this.store.find(Bribe, {})
+        for (const bribe of bribes) {
+            this.addBribe(bribe.id)
         }
         this._initialized = true
     }
 
     isBribe(address: string): boolean {
-        return this.gauges.has(address) ?? false
+        return this.bribes.has(address)
     }
 
     addBribe(address: string) {
-        this.gauges.add(address)
+        this.bribes.add(address)
     }
 }

@@ -16,9 +16,11 @@ import {GaugeManager, PoolManager, HypervisorManager} from '../utils/manager'
 import {getVeTokenActions, isVeTokenItem} from './veToken'
 import {getRebaseDistributorActions, isRebaseDistributorItem} from './rebaseDistributor'
 import {getBribeActions, isBribeItem} from './bribe'
+import {BribeManager} from '../utils/manager/bribeManager'
 
 export async function getActions(ctx: DataHandlerContext<StoreWithCache, Fields>): Promise<Action[]> {
     await GaugeManager.get(ctx).init()
+    await BribeManager.get(ctx).init()
     await PoolManager.get(ctx).init()
     await HypervisorManager.get(ctx).init()
 

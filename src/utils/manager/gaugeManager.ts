@@ -31,7 +31,7 @@ export class GaugeManager {
     }
 
     isGauge(address: string): boolean {
-        return this.gauges.has(address) ?? false
+        return this.gauges.has(address)
     }
 
     addGauge(address: string) {
