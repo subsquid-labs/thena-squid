@@ -1,7 +1,8 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_, ManyToOne as ManyToOne_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {Pool} from "./pool.model"
 import {Bribe} from "./bribe.model"
+import {GaugeStake} from "./gaugeStake.model"
 
 @Entity_()
 export class Gauge {
@@ -12,8 +13,9 @@ export class Gauge {
     @PrimaryColumn_()
     id!: string
 
-    @Index_()
-    @ManyToOne_(() => Pool, {nullable: true})
+    @Index_({unique: true})
+    @OneToOne_(() => Pool, {nullable: false})
+    @JoinColumn_()
     pool!: Pool
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
@@ -29,4 +31,7 @@ export class Gauge {
 
     @Column_("bool", {nullable: false})
     isAlive!: boolean
+
+    @OneToMany_(() => GaugeStake, e => e.gauge)
+    stakes!: GaugeStake[]
 }

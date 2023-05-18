@@ -1,7 +1,10 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {PoolType} from "./_poolType"
 import {Token} from "./token.model"
+import {Gauge} from "./gauge.model"
+import {Bribe} from "./bribe.model"
+import {LiquidityPosition} from "./liquidityPosition.model"
 
 @Entity_()
 export class Pool {
@@ -46,4 +49,11 @@ export class Pool {
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
     sqrtPriceX96!: bigint | undefined | null
+
+
+    @OneToMany_(() => Bribe, e => e.pool)
+    bribes!: Bribe[]
+
+    @OneToMany_(() => LiquidityPosition, e => e.pool)
+    liquidityPositions!: LiquidityPosition[]
 }

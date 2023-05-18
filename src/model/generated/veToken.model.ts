@@ -1,6 +1,7 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {User} from "./user.model"
+import {Vote} from "./vote.model"
 
 @Entity_()
 export class VeToken {
@@ -23,4 +24,7 @@ export class VeToken {
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     totalReward!: bigint
+
+    @OneToMany_(() => Vote, e => e.token)
+    votes!: Vote[]
 }

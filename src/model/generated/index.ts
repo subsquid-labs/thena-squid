@@ -1,6 +1,5 @@
 export * from "./user.model"
 export * from "./trade.model"
-export * from "./swap.model"
 export * from "./pool.model"
 export * from "./_poolType"
 export * from "./liquidityPosition.model"

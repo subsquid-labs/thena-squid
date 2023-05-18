@@ -2,7 +2,12 @@ type User @entity {
     id: ID!
     balance: BigInt!
     firstInteractAt: DateTime!
+
     trades: [Trade!]! @derivedFrom(field: "user")
+
+    liquidityPositions: [LiquidityPosition!] @derivedFrom(field: "user")
+    veTokens: [VeToken!] @derivedFrom(field: "owner")
+    stakes: [GaugeStake!]! @derivedFrom(field: "user")
 }
 
 type Trade @entity {
@@ -53,6 +58,11 @@ type Pool @entity {
     liquidity: BigInt!
     stable: Boolean
     sqrtPriceX96: BigInt
+
+    gauge: Gauge @derivedFrom(field: "pool")
+    bribes: [Bribe!]! @derivedFrom(field: "pool")
+
+    liquidityPositions: [LiquidityPosition!] @derivedFrom(field: "pool")
 }
 
 type LiquidityPosition @entity {
@@ -111,13 +121,15 @@ type Bribe @entity {
 type Gauge @entity {
     id: ID!
 
-    pool: Pool!
+    pool: Pool! @unique
     totalSupply: BigInt!
 
     externalBribe: Bribe!
     internalBribe: Bribe!
 
     isAlive: Boolean!
+
+    stakes: [GaugeStake!]! @derivedFrom(field: "gauge")
 }
 
 type GaugeStake @entity {
@@ -148,4 +160,6 @@ type VeToken @entity {
     lockedUntil: DateTime!
 
     totalReward: BigInt!
+
+    votes: [Vote!]! @derivedFrom(field: "token")
 }
