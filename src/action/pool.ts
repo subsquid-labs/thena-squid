@@ -176,7 +176,7 @@ export function sqrtPriceX96ToTokenPrices(pool: Pool, token0: Token, token1: Tok
     let priceX96 = pool.sqrtPriceX96 ** 2n
     let price0 = priceX96 / Q192
 
-    let price1 = price0 * 10n ** BigInt(token1.decimals - token0.decimals)
+    let price1 = (price0 * 10n ** BigInt(token1.decimals)) / 10n ** BigInt(token0.decimals)
     return {price0, price1}
 }
 

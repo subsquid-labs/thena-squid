@@ -181,11 +181,10 @@ type GaugeStake @entity {
 type Vote @entity {
     id: ID!
 
-    user: User!
     token: VeToken!
     pool: Pool!
 
-    weight: Float!
+    weight: BigInt!
 }
 
 type VeToken @entity {

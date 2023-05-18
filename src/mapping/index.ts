@@ -26,7 +26,6 @@ export async function getActions(ctx: DataHandlerContext<StoreWithCache, Fields>
         for (let log of logs) {
             const result = await getItemActions(ctx, log)
             actions.push(...result)
-            // prevItem = item
         }
     }
     return actions

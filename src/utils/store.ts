@@ -385,7 +385,6 @@ function mergeRelataions<E extends Entity>(
 export class StoreDeferredValue<E extends Entity> implements DeferredValue<E, true> {
     constructor(private store: StoreWithCache, private entityClass: EntityClass<E>, private id: string) {}
 
-    @def
     async get(): Promise<E | undefined> {
         return await this.store.get(this.entityClass, this.id)
     }

@@ -1,7 +1,6 @@
 import {lookupArchive} from '@subsquid/archive-registry'
 import {
     BlockHeader,
-    DataHandlerContext,
     EvmBatchProcessor,
     EvmBatchProcessorFields,
     Log as _Log,
@@ -18,8 +17,6 @@ import * as veToken from './abi/votingEscrow'
 import * as gauge from './abi/gaugeV2'
 import {
     ALGEBRA_FACTORY,
-    BRIBE_FACTORY,
-    GAUGE_FACTORIES,
     ROUTER_V2_ADDRESS,
     ROUTER_V3_ADDRESS,
     SOLIDLY_FACTORY,

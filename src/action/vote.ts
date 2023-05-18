@@ -1,5 +1,5 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
-import {LiquidityPosition, Pool, Token, Vote} from '../model'
+import {LiquidityPosition, Pool, Token, VeToken, Vote} from '../model'
 import {StoreWithCache} from '../utils/store'
 import {Action} from './base'
 import {DeferredValue} from '../utils/deferred'
@@ -8,28 +8,43 @@ import assert from 'assert'
 export interface EnsureVoteData {
     vote: DeferredValue<Vote, true>
     id: string
-    token: DeferredValue<Token, true>
+    token: DeferredValue<VeToken, true>
     pool: DeferredValue<Pool, true>
 }
 
-// export class EnsureVoteAction extends Action<EnsureVoteData> {
-//     // async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-//     //     let position = await this.data.position.get()
-//     //     if (position != null) return
+export class EnsureVoteAction extends Action<EnsureVoteData> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        let vote = await this.data.vote.get()
+        if (vote != null) return
 
-//     //     const user = await this.data.user.get()
-//     //     assert(user != null)
-//     //     const pool = await this.data.pool.get()
-//     //     assert(pool != null)
+        const token = await this.data.token.get()
+        assert(token != null)
+        const pool = await this.data.pool.get()
+        assert(pool != null)
 
-//     //     position = new LiquidityPosition({
-//     //         id: this.data.id,
-//     //         user,
-//     //         pool,
-//     //         value: 0n,
-//     //     })
+        vote = new Vote({
+            id: this.data.id,
+            token,
+            pool,
+            weight: 0n,
+        })
+        await ctx.store.insert(vote)
+        ctx.log.debug(`created Vote ${vote.id}`)
+    }
+}
 
-//     //     await ctx.store.insert(position)
-//     //     ctx.log.debug(`Created LiquidityPosition ${position.id}`)
-//     // }
-// }
+export interface UpdateVoteData {
+    vote: DeferredValue<Vote, true>
+    value: bigint
+}
+
+export class UpdateVoteAction extends Action<UpdateVoteData> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        let vote = await this.data.vote.get()
+        assert(vote != null)
+
+        vote.weight += this.data.value
+
+        await ctx.store.upsert(vote)
+    }
+}

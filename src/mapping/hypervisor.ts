@@ -58,6 +58,8 @@ export async function getHypervisorActions(ctx: DataHandlerContext<StoreWithCach
         })
     )
 
+    HypervisorManager.get(ctx).addHypervisor(hypervisorId)
+
     switch (item.topics[0]) {
         case hypervisor.events.Transfer.topic: {
             const event = hypervisor.events.Transfer.decode(item)

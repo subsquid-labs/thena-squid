@@ -1,6 +1,5 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
-import {User} from "./user.model"
 import {VeToken} from "./veToken.model"
 import {Pool} from "./pool.model"
 
@@ -14,10 +13,6 @@ export class Vote {
     id!: string
 
     @Index_()
-    @ManyToOne_(() => User, {nullable: true})
-    user!: User
-
-    @Index_()
     @ManyToOne_(() => VeToken, {nullable: true})
     token!: VeToken
 
@@ -25,6 +20,6 @@ export class Vote {
     @ManyToOne_(() => Pool, {nullable: true})
     pool!: Pool
 
-    @Column_("numeric", {transformer: marshal.floatTransformer, nullable: false})
-    weight!: number
+    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    weight!: bigint
 }

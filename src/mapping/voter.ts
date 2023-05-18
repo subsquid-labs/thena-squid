@@ -1,13 +1,16 @@
+import assert from 'assert'
 import {DataHandlerContext} from '@subsquid/evm-processor'
-import {StoreWithCache} from '../utils/store'
-import {VOTER} from '../config'
 import * as voterAbi from '../abi/voterV3'
-import {Action} from '../action'
-import {Log} from '../processor'
-import {CreateBribeAction} from '../action/bribe'
+import {Action, LazyAction} from '../action'
+import {CreateBribeAction, UpdateStakeBribeAction} from '../action/bribe'
 import {CreateGaugeAction} from '../action/gauge'
-import {Bribe, Pool} from '../model'
+import {EnsureVoteAction, UpdateVoteAction} from '../action/vote'
+import {VOTER} from '../config'
+import {Bribe, Pool, VeToken, Vote} from '../model'
+import {Log} from '../processor'
+import {createVeTokenId, createVoteId} from '../utils/ids'
 import {GaugeManager} from '../utils/manager/gaugeManager'
+import {StoreWithCache} from '../utils/store'
 
 export function isVoterItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     return item.address === VOTER
@@ -43,6 +46,67 @@ export async function getVoterActions(ctx: DataHandlerContext<StoreWithCache>, i
             )
 
             GaugeManager.get(ctx).addGauge(gauge)
+
+            break
+        }
+        case voterAbi.events.Voted.topic: {
+            const event = voterAbi.events.Voted.decode(item)
+
+            const tokenId = createVeTokenId(event.tokenId)
+            const value = event.weight
+
+            const token = ctx.store.defer(VeToken, tokenId)
+            actions.push(
+                new LazyAction(item.block, item.transaction!, async (ctx) => {
+                    const bribeUpdate = UpdateStakeBribeAction.getLast(ctx)
+                    assert(bribeUpdate != null)
+                    assert(bribeUpdate.info.amount === value)
+                    assert(bribeUpdate.info.token === tokenId)
+
+                    const poolId = bribeUpdate.info.pool
+                    const voteId = createVoteId(tokenId, poolId)
+
+                    return [
+                        new EnsureVoteAction(item.block, item.transaction!, {
+                            vote: ctx.store.defer(Vote, voteId),
+                            id: voteId,
+                            token,
+                            pool: ctx.store.defer(Pool, poolId),
+                        }),
+                        new UpdateVoteAction(item.block, item.transaction!, {
+                            vote: ctx.store.defer(Vote, voteId),
+                            value: event.weight,
+                        }),
+                    ]
+                })
+            )
+
+            break
+        }
+        case voterAbi.events.Abstained.topic: {
+            const event = voterAbi.events.Abstained.decode(item)
+
+            const tokenId = createVeTokenId(event.tokenId)
+            const value = -event.weight
+
+            actions.push(
+                new LazyAction(item.block, item.transaction!, async (ctx) => {
+                    const bribeUpdate = UpdateStakeBribeAction.getLast(ctx)
+                    assert(bribeUpdate != null)
+                    assert(bribeUpdate.info.amount === value)
+                    assert(bribeUpdate.info.token === tokenId)
+
+                    const poolId = bribeUpdate.info.pool
+                    const voteId = createVoteId(tokenId, poolId)
+
+                    return [
+                        new UpdateVoteAction(item.block, item.transaction!, {
+                            vote: ctx.store.defer(Vote, voteId),
+                            value,
+                        }),
+                    ]
+                })
+            )
 
             break
         }

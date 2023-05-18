@@ -1,4 +1,5 @@
 import assert from 'assert'
+import {bigint} from '../model/generated/marshal'
 
 export function createTradeId(txId: string, index: number) {
     return `${txId}-${index.toString().padStart(5, '0')}`
@@ -30,4 +31,12 @@ export function createGaugeStakeId(gauge: string, address: string) {
     let id = `${gauge}-${address}`
 
     return id
+}
+
+export function createVeTokenId(tokenIndex: bigint) {
+    return tokenIndex.toString().padStart(10, '0')
+}
+
+export function createVoteId(tokenId: string, poolId: string) {
+    return `${tokenId}-${poolId}`
 }

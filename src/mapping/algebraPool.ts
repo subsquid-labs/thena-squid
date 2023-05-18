@@ -33,7 +33,7 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, i
         case algebraPool.events.Swap.topic: {
             const event = algebraPool.events.Swap.decode(item)
 
-            const id = event.recipient
+            const id = event.recipient.toLowerCase()
             const poolId = item.address
 
             const amount0 = event.amount0
