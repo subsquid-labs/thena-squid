@@ -12,12 +12,12 @@ export function createLiquidityPositionId(pool: string, address: string, lowerTi
 
     if (lowerTick != null) {
         assert(lowerTick >= -8388608 && lowerTick <= 8388607)
-        id += String(lowerTick + 8388608)
+        id += String(Number(lowerTick) + 8388608)
     }
 
     if (upperTick != null) {
         assert(upperTick >= -8388608 && upperTick <= 8388607)
-        id += String(upperTick + 8388608)
+        id += String(Number(upperTick) + 8388608)
     }
 
     return id
