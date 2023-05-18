@@ -28,28 +28,6 @@ type Trade @entity {
     routes: [String!]!
 }
 
-type Swap @entity {
-    id: ID!
-
-    # meatadata
-    blockNumber: Int!
-    timestamp: DateTime!
-    txHash: String!
-
-    # in
-    tokenIn: Token!
-    amountIn: BigInt!
-    amountInUSD: Float!
-
-    # out
-    tokenOut: Token!
-    amountOut: BigInt!
-    amountOutUSD: Float!
-
-    trade: Trade!
-    pool: Pool!
-}
-
 enum PoolType {
     Solidly
     Algebra
@@ -151,32 +129,6 @@ type GaugeStake @entity {
     value: BigInt!
     totalReward: BigInt!
 }
-
-# type GaugeStakeUpdate @entity {
-#     id: ID!
-
-#     # meatadata
-#     blockNumber: Int!
-#     timestamp: DateTime!
-#     txHash: String!
-
-#     stake: GaugeStake!
-
-#     amount: BigInt!
-# }
-
-# type GaugeStakeReward @entity {
-#     id: ID!
-
-#     # meatadata
-#     blockNumber: Int!
-#     timestamp: DateTime!
-#     txHash: String!
-
-#     stake: GaugeStake!
-
-#     amount: BigInt!
-# }
 
 type Vote @entity {
     id: ID!
