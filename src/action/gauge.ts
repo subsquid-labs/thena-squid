@@ -63,7 +63,7 @@ export interface EnsureGaugeStakeData {
 export class EnsureStakeGaugeAction extends Action<EnsureGaugeStakeData> {
     async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         let stake = await this.data.stake.get()
-        if (stake == null) return
+        if (stake != null) return
 
         const gauge = await this.data.gauge.get()
         assert(gauge != null)

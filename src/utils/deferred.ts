@@ -7,7 +7,7 @@ import {MULTICALL_ADDRESS} from '../config'
 
 
 
-export class DefferedFunction<T> implements DeferredValue<T> {
+export class DeferredFunction<T> implements DeferredValue<T> {
     constructor(private f: () => Promise<T>) {}
 
     async get(): Promise<T> {

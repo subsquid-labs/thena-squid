@@ -20,7 +20,7 @@ import {
     ValueUpdateLiquidityPositionAction,
 } from '../action/liquidityPosition'
 import {createLiquidityPositionId, createLiquidityPositionUpdateId} from '../utils/ids'
-import {DefferedFunction, WrappedValue} from '../utils/deferred'
+import {DeferredFunction, WrappedValue} from '../utils/deferred'
 import {User, Pool, Token, LiquidityPosition} from '../model'
 import {StoreWithCache} from '../utils/store'
 
