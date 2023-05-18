@@ -21,7 +21,7 @@ export interface EnsureLiquidityPositionActionData extends BaseLiquidityPosition
 }
 
 export class EnsureLiquidityPositionAction extends BaseLiquidityPositionAction<EnsureLiquidityPositionActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         let position = await this.data.position.get()
         if (position != null) return
 
@@ -58,7 +58,7 @@ export class ValueUpdateLiquidityPositionAction extends BaseLiquidityPositionAct
           }
         | undefined
 
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const position = await this.data.position.get()
         assert(position != null, `Missing position`)
 
@@ -103,7 +103,7 @@ export interface AdjustValueUpdateLiquidityPositionActionData extends BaseLiquid
 }
 
 export class AdjustValueUpdateLiquidityPositionAction extends BaseLiquidityPositionAction<AdjustValueUpdateLiquidityPositionActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         if (
             ValueUpdateLiquidityPositionAction.lastUpdate == null ||
             ValueUpdateLiquidityPositionAction.lastUpdate.blockNumber !== this.block.height ||

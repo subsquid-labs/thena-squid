@@ -14,6 +14,7 @@ import * as hypervisor from './abi/hypervisor'
 import * as solidlyFactory from './abi/solidlyFactory'
 import * as solidlyPair from './abi/solidlyPair'
 import * as voter from './abi/voterV3'
+import * as veToken from './abi/votingEscrow'
 import * as gauge from './abi/gaugeV2'
 import {
     ALGEBRA_FACTORY,
@@ -23,6 +24,7 @@ import {
     ROUTER_V3_ADDRESS,
     SOLIDLY_FACTORY,
     THENA_ADDRESS,
+    VE_TOKEN,
     VOTER,
 } from './config'
 import {loadHypervisors, loadPreindexedPools} from './utils/loaders'
@@ -31,9 +33,9 @@ const poolMetadata = loadPreindexedPools()
 const hypervisors = loadHypervisors()
 
 export const processor = new EvmBatchProcessor()
-    .setBlockRange({from: 25_000_000}) //24_468_802
+    .setBlockRange({from: 24_468_802}) //24_468_802
     .setDataSource({
-        archive: 'https://v2.archive.subsquid.io/network/bsc-mainnet-25m',
+        archive: 'https://v2.archive.subsquid.io/network/bsc-mainnet-24m',
         chain: 'https://rpc.ankr.com/bsc',
     })
     .setFields({
@@ -107,8 +109,18 @@ export const processor = new EvmBatchProcessor()
     })
     .addLog({
         address: [VOTER],
-        topic0: [voter.events.GaugeCreated.topic, voter.events.GaugeKilled.topic, voter.events.GaugeRevived.topic],
+        topic0: [
+            voter.events.GaugeCreated.topic,
+            voter.events.GaugeKilled.topic,
+            voter.events.GaugeRevived.topic,
+            voter.events.Voted.topic,
+            voter.events.Abstained.topic,
+        ],
         transaction: true,
+    })
+    .addLog({
+        address: [VE_TOKEN],
+        topic0: [veToken.events.Transfer.topic, veToken.events.Deposit.topic, veToken.events.Withdraw.topic],
     })
     // .addLog({
     //     topic0: [gauge.events.Deposit.topic, gauge.events.Withdraw.topic, gauge.events.Harvest.topic],

@@ -13,15 +13,6 @@ export class Vote {
     @PrimaryColumn_()
     id!: string
 
-    @Column_("int4", {nullable: false})
-    blockNumber!: number
-
-    @Column_("timestamp with time zone", {nullable: false})
-    timestamp!: Date
-
-    @Column_("text", {nullable: false})
-    txHash!: string
-
     @Index_()
     @ManyToOne_(() => User, {nullable: true})
     user!: User

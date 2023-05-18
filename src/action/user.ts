@@ -19,7 +19,7 @@ export interface EnsureUserActionData extends BaseUserActionData {
 }
 
 export class EnsureUserAction extends BaseUserAction<EnsureUserActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache>) {
+    async _perform(ctx: DataHandlerContext<StoreWithCache>) {
         let user = await this.data.user.get()
         if (user != null) return
 
@@ -39,7 +39,7 @@ export interface BalanceUserActionData extends BaseUserActionData {
 }
 
 export class BalanceUserAction extends BaseUserAction<BalanceUserActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache>): Promise<void> {
         const user = await this.data.user.get()
         assert(user != null)
 
@@ -68,7 +68,7 @@ export class SwapUserAction extends BaseUserAction<SwapUserActionData> {
           }
         | undefined
 
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const pool = await this.data.pool.get()
         assert(pool != null)
 

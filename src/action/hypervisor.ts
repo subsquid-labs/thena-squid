@@ -26,7 +26,7 @@ export interface EnsureHypervisorActionData extends BaseHypervisorActionData {
 }
 
 export class EnsureHypervisorAction extends BaseHypervisorAction<EnsureHypervisorActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         let hypervisor = await this.data.hypervisor.get()
         if (hypervisor != null) return
 
@@ -93,7 +93,7 @@ export interface SetPositionHypervisorActionData extends BaseHypervisorActionDat
 }
 
 export class SetPositionHypervisorAction extends BaseHypervisorAction<SetPositionHypervisorActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const hypervisor = await this.data.hypervisor.get()
         assert(hypervisor != null)
 
@@ -119,7 +119,7 @@ export interface RemovePositionHypervisorActionData extends BaseHypervisorAction
 }
 
 export class RemovePositionHypervisorAction extends BaseHypervisorAction<RemovePositionHypervisorActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const hypervisor = await this.data.hypervisor.get()
         assert(hypervisor != null)
 

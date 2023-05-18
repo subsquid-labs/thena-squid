@@ -13,7 +13,7 @@ export interface CreateGaugeData {
 }
 
 export class CreateGaugeAction extends Action<CreateGaugeData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         let pool = await this.data.pool.get()
         assert(pool != null)
 
@@ -43,7 +43,7 @@ export interface UpdateTotalSupplyGaugeData {
 }
 
 export class UpdateTotalSupplyGaugeAction extends Action<UpdateTotalSupplyGaugeData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const gauge = await this.data.gauge.get()
         assert(gauge != null)
 
@@ -61,7 +61,7 @@ export interface EnsureGaugeStakeData {
 }
 
 export class EnsureStakeGaugeAction extends Action<EnsureGaugeStakeData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         let stake = await this.data.stake.get()
         if (stake == null) return
 
@@ -89,7 +89,7 @@ export interface UpdateGaugeStakeData {
 }
 
 export class UpdateStakeGaugeAction extends Action<UpdateGaugeStakeData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const stake = await this.data.stake.get()
         assert(stake != null)
 
@@ -105,7 +105,7 @@ export interface RewardGaugeStakeData {
 }
 
 export class RewardStakeGaugeAction extends Action<RewardGaugeStakeData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const stake = await this.data.stake.get()
         assert(stake != null)
 

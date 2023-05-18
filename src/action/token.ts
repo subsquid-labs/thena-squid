@@ -19,7 +19,7 @@ export interface EnsureTokenActionData extends BaseTokenActionData {
 }
 
 export class EnsureTokenAction extends BaseTokenAction<EnsureTokenActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache>) {
+    async _perform(ctx: DataHandlerContext<StoreWithCache>) {
         let token = await this.data.token.get()
         if (token != null) return
 
@@ -46,7 +46,7 @@ export interface PriceUpdateTokenActionData extends BaseTokenActionData {
 }
 
 export class PriceUpdateTokenAction extends BaseTokenAction<PriceUpdateTokenActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache>) {
+    async _perform(ctx: DataHandlerContext<StoreWithCache>) {
         const token = await this.data.token.get()
         assert(token != null, `Missing token`)
 

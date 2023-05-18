@@ -28,9 +28,11 @@ export async function getVoterActions(ctx: DataHandlerContext<StoreWithCache>, i
             actions.push(
                 new CreateBribeAction(item.block, item.transaction!, {
                     address: externalBribe,
+                    pool: ctx.store.defer(Pool, pool),
                 }),
                 new CreateBribeAction(item.block, item.transaction!, {
                     address: internalBribe,
+                    pool: ctx.store.defer(Pool, pool),
                 }),
                 new CreateGaugeAction(item.block, item.transaction!, {
                     address: gauge,

@@ -21,7 +21,7 @@ export interface CreatePoolActionData extends BasePoolActionData {
 }
 
 export class CreatePoolAction extends BasePoolAction<CreatePoolActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         let pool = await this.data.pool.get()
         assert(pool == null, 'Pool already exists 0_o')
 
@@ -55,7 +55,7 @@ export interface SetBalancesPoolActionData extends BasePoolActionData {
 }
 
 export class SetBalancesPoolAction extends BasePoolAction<SetBalancesPoolActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const pool = await this.data.pool.get()
         assert(pool != null, `Missing pool`)
 
@@ -73,7 +73,7 @@ export interface ChangeBalancesPoolActionData extends BasePoolActionData {
 }
 
 export class ChangeBalancesPoolAction extends BasePoolAction<ChangeBalancesPoolActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const pool = await this.data.pool.get()
         assert(pool != null, `Missing pool`)
 
@@ -92,7 +92,7 @@ export interface ChangeLiquidityPoolActionData extends BasePoolActionData {
 }
 
 export class ChangeLiquidityPoolAction extends BasePoolAction<ChangeLiquidityPoolActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const pool = await this.data.pool.get()
         assert(pool != null, `Missing pool`)
 
@@ -108,7 +108,7 @@ export interface SetLiquidityPoolActionData extends BasePoolActionData {
 }
 
 export class SetLiquidityPoolAction extends BasePoolAction<SetLiquidityPoolActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const pool = await this.data.pool.get()
         assert(pool != null, `Missing pool`)
 
@@ -124,7 +124,7 @@ export interface SetSqrtPricePoolActionData extends BasePoolActionData {
 }
 
 export class SetSqrtPricePoolAction extends BasePoolAction<SetSqrtPricePoolActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const pool = await this.data.pool.get()
         assert(pool != null, `Missing pool`)
 
@@ -135,7 +135,7 @@ export class SetSqrtPricePoolAction extends BasePoolAction<SetSqrtPricePoolActio
 }
 
 export class RecalculatePricesPoolAction extends BasePoolAction {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const pool = await this.data.pool.get()
         assert(pool != null, `Missing pool`)
 

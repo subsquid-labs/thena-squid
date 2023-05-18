@@ -1,5 +1,5 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
-import * as marshal from "./marshal"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Pool} from "./pool.model"
 
 @Entity_()
 export class Bribe {
@@ -10,6 +10,7 @@ export class Bribe {
     @PrimaryColumn_()
     id!: string
 
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    totalSupply!: bigint
+    @Index_()
+    @ManyToOne_(() => Pool, {nullable: true})
+    pool!: Pool
 }

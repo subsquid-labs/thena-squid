@@ -130,11 +130,6 @@ type Bribe @entity {
     pool: Pool!
 }
 
-type BribeDeposit @entity {
-    id: ID!
-    pool: Pool!
-}
-
 type Gauge @entity {
     id: ID!
 

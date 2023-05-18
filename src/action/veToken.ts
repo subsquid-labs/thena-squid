@@ -12,7 +12,7 @@ export interface CreateVeTokenData {
 }
 
 export class CreateVeTokenAction extends Action<CreateVeTokenData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const owner = await this.data.zero.get()
         assert(owner != null)
 
@@ -35,7 +35,7 @@ export interface TransferVeTokenData {
 }
 
 export class TransferVeTokenAction extends Action<TransferVeTokenData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const veToken = await this.data.token.get()
         assert(veToken != null)
 
@@ -58,7 +58,7 @@ export interface UpdateValueVeTokenData {
 }
 
 export class UpdateValueVeTokenAction extends Action<UpdateValueVeTokenData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const veToken = await this.data.token.get()
         assert(veToken != null)
 
@@ -75,7 +75,7 @@ export interface UpdateLockTimeVeTokenData {
 }
 
 export class UpdateLockTimeVeTokenAction extends Action<UpdateLockTimeVeTokenData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const veToken = await this.data.token.get()
         assert(veToken != null)
 
@@ -91,7 +91,7 @@ export interface RewardVeTokenData {
 }
 
 export class RewardVeTokenAction extends Action<RewardVeTokenData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const veToken = await this.data.token.get()
         assert(veToken != null)
 
