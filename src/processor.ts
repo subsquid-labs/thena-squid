@@ -14,9 +14,12 @@ import * as solidlyFactory from './abi/solidlyFactory'
 import * as solidlyPair from './abi/solidlyPair'
 import * as voter from './abi/voterV3'
 import * as veToken from './abi/votingEscrow'
+import * as rebaseDistributor from './abi/rebaseDistributor'
 import * as gauge from './abi/gaugeV2'
+import * as bribe from './abi/bribe'
 import {
     ALGEBRA_FACTORY,
+    REBASE_DISTRIBUTOR,
     ROUTER_V2_ADDRESS,
     ROUTER_V3_ADDRESS,
     SOLIDLY_FACTORY,
@@ -24,9 +27,10 @@ import {
     VE_TOKEN,
     VOTER,
 } from './config'
-import {loadHypervisors, loadPreindexedPools} from './utils/loaders'
+import {loadGaugesAndBribes, loadHypervisors, loadPools} from './utils/loaders'
 
-const poolMetadata = loadPreindexedPools()
+const poolMetadata = loadPools()
+const gaugesAndBribes = loadGaugesAndBribes()
 const hypervisors = loadHypervisors()
 
 export const processor = new EvmBatchProcessor()
@@ -56,7 +60,7 @@ export const processor = new EvmBatchProcessor()
         transaction: true,
     })
     .addLog({
-        address: poolMetadata.pools[SOLIDLY_FACTORY],
+        address: poolMetadata.addresses[SOLIDLY_FACTORY],
         topic0: [
             solidlyPair.events.Swap.topic,
             solidlyPair.events.Sync.topic,
@@ -64,7 +68,7 @@ export const processor = new EvmBatchProcessor()
             solidlyPair.events.Mint.topic,
             solidlyPair.events.Burn.topic,
         ],
-        range: {from: 0, to: poolMetadata.block},
+        range: {from: 0, to: poolMetadata.height},
         transaction: true,
     })
     .addLog({
@@ -75,7 +79,7 @@ export const processor = new EvmBatchProcessor()
             solidlyPair.events.Mint.topic,
             solidlyPair.events.Burn.topic,
         ],
-        range: {from: poolMetadata.block + 1},
+        range: {from: poolMetadata.height + 1},
         transaction: true,
     })
     .addLog({
@@ -84,14 +88,14 @@ export const processor = new EvmBatchProcessor()
         transaction: true,
     })
     .addLog({
-        address: poolMetadata.pools[ALGEBRA_FACTORY],
+        address: poolMetadata.addresses[ALGEBRA_FACTORY],
         topic0: [algebraPool.events.Swap.topic],
-        range: {from: 0, to: poolMetadata.block},
+        range: {from: 0, to: poolMetadata.height},
         transaction: true,
     })
     .addLog({
         topic0: [algebraPool.events.Swap.topic],
-        range: {from: poolMetadata.block + 1},
+        range: {from: poolMetadata.height + 1},
         transaction: true,
     })
     .addLog({
@@ -116,13 +120,23 @@ export const processor = new EvmBatchProcessor()
         transaction: true,
     })
     .addLog({
+        address: gaugesAndBribes.addresses.gauges,
+        topic0: [gauge.events.Deposit.topic, gauge.events.Withdraw.topic, gauge.events.Harvest.topic],
+        transaction: true,
+    })
+    .addLog({
+        address: gaugesAndBribes.addresses.bribes,
+        topic0: [bribe.events.Staked.topic, bribe.events.Withdrawn.topic],
+        transaction: true,
+    })
+    .addLog({
         address: [VE_TOKEN],
         topic0: [veToken.events.Transfer.topic, veToken.events.Deposit.topic, veToken.events.Withdraw.topic],
     })
-    // .addLog({
-    //     topic0: [gauge.events.Deposit.topic, gauge.events.Withdraw.topic, gauge.events.Harvest.topic],
-    //     transaction: true,
-    // })
+    .addLog({
+        address: [REBASE_DISTRIBUTOR],
+        topic0: [rebaseDistributor.events.Claimed.topic],
+    })
     .addTransaction({
         to: [THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS],
     })

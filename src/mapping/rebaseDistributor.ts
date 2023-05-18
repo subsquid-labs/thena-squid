@@ -6,6 +6,7 @@ import {REBASE_DISTRIBUTOR} from '../config'
 import {VeToken} from '../model'
 import {Log} from '../processor'
 import {StoreWithCache} from '../utils/store'
+import {createVeTokenId} from '../utils/ids'
 
 export function isRebaseDistributorItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     return item.address === REBASE_DISTRIBUTOR
@@ -18,7 +19,7 @@ export async function getRebaseDistributorActions(ctx: DataHandlerContext<StoreW
         case rebaseDistributor.events.Claimed.topic: {
             const event = rebaseDistributor.events.Claimed.decode(item)
 
-            const tokenId = event.tokenId.toString()
+            const tokenId = createVeTokenId(event.tokenId)
             const amount = event.amount
 
             actions.push(

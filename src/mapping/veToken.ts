@@ -11,6 +11,7 @@ import {
     UpdateValueVeTokenAction,
 } from '../action/veToken'
 import {User, VeToken} from '../model'
+import {createVeTokenId} from '../utils/ids'
 
 export function isVeTokenItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     return item.address === VE_TOKEN
@@ -23,7 +24,7 @@ export async function getVeTokenActions(ctx: DataHandlerContext<StoreWithCache>,
         case veTokenAbi.events.Transfer.topic: {
             const event = veTokenAbi.events.Transfer.decode(item)
 
-            const tokenId = event.tokenId.toString()
+            const tokenId = createVeTokenId(event.tokenId)
             const from = event.from.toLowerCase()
             const to = event.to.toLowerCase()
 
@@ -35,7 +36,7 @@ export async function getVeTokenActions(ctx: DataHandlerContext<StoreWithCache>,
                     }),
                     new CreateVeTokenAction(item.block, item.transaction!, {
                         id: tokenId,
-                        index: Number(tokenId),
+                        index: Number(event.tokenId),
                         zero: ctx.store.defer(User, ZERO_ADDRESS),
                     })
                 )
@@ -62,7 +63,7 @@ export async function getVeTokenActions(ctx: DataHandlerContext<StoreWithCache>,
         case veTokenAbi.events.Deposit.topic: {
             const event = veTokenAbi.events.Deposit.decode(item)
 
-            const tokenId = event.tokenId.toString()
+            const tokenId = createVeTokenId(event.tokenId)
             const amount = event.value
             const lockTime = new Date(Number(event.locktime) * 1000)
 
@@ -82,7 +83,7 @@ export async function getVeTokenActions(ctx: DataHandlerContext<StoreWithCache>,
         case veTokenAbi.events.Withdraw.topic: {
             const event = veTokenAbi.events.Withdraw.decode(item)
 
-            const tokenId = event.tokenId.toString()
+            const tokenId = createVeTokenId(event.tokenId)
             const amount = -event.value
 
             actions.push(

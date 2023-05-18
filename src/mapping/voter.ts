@@ -11,6 +11,7 @@ import {Log} from '../processor'
 import {createVeTokenId, createVoteId} from '../utils/ids'
 import {GaugeManager} from '../utils/manager/gaugeManager'
 import {StoreWithCache} from '../utils/store'
+import {BribeManager} from '../utils/manager/bribeManager'
 
 export function isVoterItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     return item.address === VOTER
@@ -46,6 +47,8 @@ export async function getVoterActions(ctx: DataHandlerContext<StoreWithCache>, i
             )
 
             GaugeManager.get(ctx).addGauge(gauge)
+            BribeManager.get(ctx).addBribe(externalBribe)
+            BribeManager.get(ctx).addBribe(internalBribe)
 
             break
         }

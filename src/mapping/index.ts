@@ -15,6 +15,7 @@ import {getGaugeActions, isGaugeItem} from './gauge'
 import {GaugeManager, PoolManager, HypervisorManager} from '../utils/manager'
 import {getVeTokenActions, isVeTokenItem} from './veToken'
 import {getRebaseDistributorActions, isRebaseDistributorItem} from './rebaseDistributor'
+import {getBribeActions, isBribeItem} from './bribe'
 
 export async function getActions(ctx: DataHandlerContext<StoreWithCache, Fields>): Promise<Action[]> {
     await GaugeManager.get(ctx).init()
@@ -70,6 +71,10 @@ export async function getItemActions(ctx: DataHandlerContext<StoreWithCache, Fie
 
     if (isGaugeItem(ctx, item)) {
         return await getGaugeActions(ctx, item)
+    }
+
+    if (isBribeItem(ctx, item)) {
+        return await getBribeActions(ctx, item)
     }
 
     if (isVeTokenItem(ctx, item)) {

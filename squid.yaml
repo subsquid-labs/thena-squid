@@ -1,11 +1,11 @@
 manifestVersion: subsquid.io/v0.1
 name: thena-squid
 version: 1
-description: 'The very first evm squid from manifest  '
-build: 
+description: "The very first evm squid from manifest  "
+build:
 deploy:
   addons:
-    postgres: 
+    postgres:
   processor:
     cmd:
       - node
@@ -14,11 +14,15 @@ deploy:
     cmd:
       - npx
       - squid-graphql-server
-      - '--dumb-cache'
+      - "--dumb-cache"
       - in-memory
-      - '--dumb-cache-ttl'
-      - '1000'
-      - '--dumb-cache-size'
-      - '100'
-      - '--dumb-cache-max-age'
-      - '1000'
+      - "--dumb-cache-ttl"
+      - "1000"
+      - "--dumb-cache-size"
+      - "100"
+      - "--dumb-cache-max-age"
+      - "1000"
+scale:
+  dedicated: true
+  processor:
+    profile: medium
