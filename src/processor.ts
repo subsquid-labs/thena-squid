@@ -89,12 +89,12 @@ export const processor = new EvmBatchProcessor()
     })
     .addLog({
         address: poolMetadata.addresses[ALGEBRA_FACTORY],
-        topic0: [algebraPool.events.Swap.topic],
+        topic0: [algebraPool.events.Swap.topic, algebraPool.events.Mint.topic, algebraPool.events.Burn.topic],
         range: {from: 0, to: poolMetadata.height},
         transaction: true,
     })
     .addLog({
-        topic0: [algebraPool.events.Swap.topic],
+        topic0: [algebraPool.events.Swap.topic, algebraPool.events.Mint.topic, algebraPool.events.Burn.topic],
         range: {from: poolMetadata.height + 1},
         transaction: true,
     })
