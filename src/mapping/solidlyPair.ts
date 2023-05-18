@@ -74,14 +74,14 @@ export function getSolidlyPairActions(ctx: DataHandlerContext<StoreWithCache>, i
             const deferredPool = ctx.store.defer(Pool, item.address, {token0: true, token1: true})
             actions.push(
                 new PriceUpdateTokenAction(item.block, item.transaction!, {
-                    token: new DefferedFunction(async () => await deferredPool.get().then((p) => p?.token0)),
+                    token: new DeferredFunction(async () => await deferredPool.get().then((p) => p?.token0)),
                     pool: deferredPool,
                 })
             )
 
             actions.push(
                 new PriceUpdateTokenAction(item.block, item.transaction!, {
-                    token: new DefferedFunction(async () => await deferredPool.get().then((p) => p?.token1)),
+                    token: new DeferredFunction(async () => await deferredPool.get().then((p) => p?.token1)),
                     pool: deferredPool,
                 })
             )
