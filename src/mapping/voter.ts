@@ -62,9 +62,16 @@ export async function getVoterActions(ctx: DataHandlerContext<StoreWithCache>, i
             actions.push(
                 new LazyAction(item.block, item.transaction!, async (ctx) => {
                     const bribeUpdate = UpdateStakeBribeAction.getLast(ctx)
-                    assert(bribeUpdate != null)
-                    assert(bribeUpdate.info.amount === value)
-                    assert(bribeUpdate.info.token === tokenId)
+                    if (
+                        bribeUpdate == null ||
+                        bribeUpdate.transaction.hash != item.transaction?.hash ||
+                        bribeUpdate.info.amount !== value ||
+                        bribeUpdate.info.token !== tokenId
+                    )
+                        return []
+
+                    // assert(bribeUpdate.info.amount === value)
+                    // assert(bribeUpdate.info.token === tokenId)
 
                     const poolId = bribeUpdate.info.pool
                     const voteId = createVoteId(tokenId, poolId)
@@ -95,9 +102,16 @@ export async function getVoterActions(ctx: DataHandlerContext<StoreWithCache>, i
             actions.push(
                 new LazyAction(item.block, item.transaction!, async (ctx) => {
                     const bribeUpdate = UpdateStakeBribeAction.getLast(ctx)
-                    assert(bribeUpdate != null)
-                    assert(bribeUpdate.info.amount === value)
-                    assert(bribeUpdate.info.token === tokenId)
+                    if (
+                        bribeUpdate == null ||
+                        bribeUpdate.transaction.hash != item.transaction?.hash ||
+                        bribeUpdate.info.amount !== value ||
+                        bribeUpdate.info.token !== tokenId
+                    )
+                        return []
+
+                    // assert(bribeUpdate.info.amount === value)
+                    // assert(bribeUpdate.info.token === tokenId)
 
                     const poolId = bribeUpdate.info.pool
                     const voteId = createVoteId(tokenId, poolId)

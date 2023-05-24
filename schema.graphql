@@ -59,7 +59,7 @@ type Pool @entity {
     stable: Boolean
     sqrtPriceX96: BigInt
 
-    gauge: Gauge @derivedFrom(field: "pool")
+    gauge: [Gauge!]! @derivedFrom(field: "pool")
     bribes: [Bribe!]! @derivedFrom(field: "pool")
 
     liquidityPositions: [LiquidityPosition!] @derivedFrom(field: "pool")
@@ -121,7 +121,7 @@ type Bribe @entity {
 type Gauge @entity {
     id: ID!
 
-    pool: Pool! @unique
+    pool: Pool!
     totalSupply: BigInt!
 
     externalBribe: Bribe!

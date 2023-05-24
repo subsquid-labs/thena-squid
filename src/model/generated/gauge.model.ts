@@ -1,4 +1,4 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_, ManyToOne as ManyToOne_, OneToMany as OneToMany_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {Pool} from "./pool.model"
 import {Bribe} from "./bribe.model"
@@ -13,9 +13,8 @@ export class Gauge {
     @PrimaryColumn_()
     id!: string
 
-    @Index_({unique: true})
-    @OneToOne_(() => Pool, {nullable: false})
-    @JoinColumn_()
+    @Index_()
+    @ManyToOne_(() => Pool, {nullable: true})
     pool!: Pool
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})

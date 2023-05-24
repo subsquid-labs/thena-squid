@@ -98,8 +98,10 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, i
                     amount,
                 }),
                 new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-                    position: ctx.store.defer(LiquidityPosition, positionId),
+                    position: ctx.store.defer(LiquidityPosition, positionId, {pool: true}),
                     amount,
+                    amount0: event.amount0,
+                    amount1: event.amount1,
                 })
             )
 
@@ -144,8 +146,10 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, i
                     amount,
                 }),
                 new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-                    position: ctx.store.defer(LiquidityPosition, positionId),
+                    position: ctx.store.defer(LiquidityPosition, positionId, {pool: true}),
                     amount,
+                    amount0: -event.amount0,
+                    amount1: -event.amount1,
                 })
             )
 

@@ -107,7 +107,9 @@ export class SetPositionHypervisorAction extends BaseHypervisorAction<SetPositio
             hypervisor.limitPosition = position
             ctx.log.debug(`Limit position of Hypervisor ${hypervisor.id} set to ${position.id}`)
         } else {
-            throw new Error(`Unexpected case`)
+            // throw new Error(`Unexpected case`)
+            return
+
         }
 
         await ctx.store.upsert(hypervisor)
@@ -133,7 +135,8 @@ export class RemovePositionHypervisorAction extends BaseHypervisorAction<RemoveP
             hypervisor.limitPosition = null
             ctx.log.debug(`Limit position of Hypervisor ${hypervisor.id} removed`)
         } else {
-            throw new Error(`Unexpected case`)
+            // throw new Error(`Unexpected case`)
+            return
         }
 
         await ctx.store.upsert(hypervisor)

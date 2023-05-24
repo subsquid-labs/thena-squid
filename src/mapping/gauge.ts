@@ -74,7 +74,7 @@ export async function getGaugeActions(ctx: DataHandlerContext<StoreWithCache>, i
             break
         }
         case gaugeAbi.events.Harvest.topic: {
-            const event = gaugeAbi.events.Deposit.decode(item)
+            const event = gaugeAbi.events.Harvest.decode(item)
 
             const user = event.user.toLowerCase()
             const gauge = item.address
@@ -83,7 +83,7 @@ export async function getGaugeActions(ctx: DataHandlerContext<StoreWithCache>, i
             actions.push(
                 new RewardStakeGaugeAction(item.block, item.transaction!, {
                     stake: ctx.store.defer(GaugeStake, stakeId),
-                    amount: event.amount,
+                    amount: event.reward,
                 })
             )
 

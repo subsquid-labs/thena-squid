@@ -50,6 +50,8 @@ export class Pool {
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
     sqrtPriceX96!: bigint | undefined | null
 
+    @OneToMany_(() => Gauge, e => e.pool)
+    gauge!: Gauge[]
 
     @OneToMany_(() => Bribe, e => e.pool)
     bribes!: Bribe[]
