@@ -39,6 +39,7 @@ export const processor = new EvmBatchProcessor()
         archive: 'https://v2.archive.subsquid.io/network/binance-mainnet',
         chain: 'https://rpc.ankr.com/bsc',
     })
+    .setFinalityConfirmation(50)
     .setFields({
         log: {
             topics: true,
