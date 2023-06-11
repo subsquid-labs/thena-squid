@@ -9,9 +9,9 @@
     "@subsquid/archive-registry": "^2.1.14",
     "@subsquid/big-decimal": "^1.0.0",
     "@subsquid/evm-processor": "^1.0.1",
-    "@subsquid/graphql-server": "4.0.0",
-    "@subsquid/typeorm-migration": "1.0.0",
-    "@subsquid/typeorm-store": "1.0.0",
+    "@subsquid/graphql-server": "4.2.0",
+    "@subsquid/typeorm-migration": "1.2.0",
+    "@subsquid/typeorm-store": "1.2.0",
     "copy-anything": "^3.0.4",
     "dotenv": "^16.0.3",
     "ethers": "^6.3.0",
@@ -19,9 +19,9 @@
     "typeorm": "^0.3.15"
   },
   "devDependencies": {
-    "@subsquid/evm-typegen": "3.0.0",
+    "@subsquid/evm-typegen": "3.2.0",
     "@subsquid/file-store": "^1.0.0",
-    "@subsquid/typeorm-codegen": "1.0.0",
+    "@subsquid/typeorm-codegen": "1.2.0",
     "@types/node": "^18.15.5",
     "typescript": "~5.0.2"
   }
