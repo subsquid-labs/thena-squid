@@ -36,7 +36,7 @@ const hypervisors = loadHypervisors()
 export const processor = new EvmBatchProcessor()
     .setBlockRange({from: 24_468_802}) //24_468_802
     .setDataSource({
-        archive: 'https://v2.archive.subsquid.io/network/bsc-mainnet-24m',
+        archive: 'https://v2.archive.subsquid.io/network/binance-mainnet',
         chain: 'https://rpc.ankr.com/bsc',
     })
     .setFields({
@@ -51,7 +51,7 @@ export const processor = new EvmBatchProcessor()
     })
     .addLog({
         address: [THENA_ADDRESS],
-        topic0: [thena.events.Transfer.topic, thena.events.Approval.topic],
+        topic0: [thena.events.Transfer.topic],
         transaction: true,
     })
     .addLog({

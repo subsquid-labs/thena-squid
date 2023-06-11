@@ -6,7 +6,7 @@ import {exit} from 'process'
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Action} from './action'
 
-processor.run(new TypeormDatabase(), async (ctx) => {
+processor.run(new TypeormDatabase({supportHotBlocks: true}), async (ctx) => {
     const newCtx = {
         ...ctx,
         store: new StoreWithCache(ctx.store),

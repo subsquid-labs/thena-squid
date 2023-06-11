@@ -145,14 +145,14 @@ export class SwapUserAction extends BaseUserAction<SwapUserActionData> {
 function convertTokenValues(data: {token0Id: string; amount0: bigint; token1Id: string; amount1: bigint}) {
     const {token0Id, amount0, token1Id, amount1} = data
 
-    if (amount0 > 0 && amount1 < 0) {
+    if (amount0 > 0 && amount1 <= 0) {
         return {
             tokenInId: token0Id,
             amountIn: amount0,
             tokenOutId: token1Id,
             amountOut: -amount1,
         }
-    } else if (amount0 < 0 && amount1 > 0) {
+    } else if (amount0 <= 0 && amount1 > 0) {
         return {
             tokenInId: token1Id,
             amountIn: amount1,
