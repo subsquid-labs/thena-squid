@@ -99,6 +99,7 @@ export async function getVoterActions(ctx: DataHandlerContext<StoreWithCache>, i
             const tokenId = createVeTokenId(event.tokenId)
             const value = -event.weight
 
+            const token = ctx.store.defer(VeToken, tokenId)
             actions.push(
                 new LazyAction(item.block, item.transaction!, async (ctx) => {
                     const bribeUpdate = UpdateStakeBribeAction.getLast(ctx)
@@ -117,6 +118,12 @@ export async function getVoterActions(ctx: DataHandlerContext<StoreWithCache>, i
                     const voteId = createVoteId(tokenId, poolId)
 
                     return [
+                        new EnsureVoteAction(item.block, item.transaction!, {
+                            vote: ctx.store.defer(Vote, voteId),
+                            id: voteId,
+                            token,
+                            pool: ctx.store.defer(Pool, poolId),
+                        }),
                         new UpdateVoteAction(item.block, item.transaction!, {
                             vote: ctx.store.defer(Vote, voteId),
                             value,
