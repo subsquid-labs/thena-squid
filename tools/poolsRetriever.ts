@@ -10,7 +10,7 @@ const earliestPairFactoryDeploymentBlock = 24468802
 
 const processor = new EvmBatchProcessor()
     .setDataSource({
-        archive: 'https://v2.archive.subsquid.io/network/bsc-mainnet-24m',
+        archive: 'https://v2.archive.subsquid.io/network/binance-mainnet',
     })
     .setBlockRange({
         from: earliestPairFactoryDeploymentBlock,

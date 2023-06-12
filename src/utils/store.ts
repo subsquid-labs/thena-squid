@@ -28,9 +28,10 @@ export class StoreWithCache {
         this.em = (this.store as any).em
     }
 
-    async insert<E extends _Entity>(...entities: E[]): Promise<void>
+    async insert<E extends _Entity>(entity: E): Promise<void>
     async insert<E extends _Entity>(entities: E[]): Promise<void>
-    async insert<E extends _Entity>(entities: E[]): Promise<void> {
+    async insert<E extends _Entity>(e: E | E[]): Promise<void> {
+        let entities = Array.isArray(e) ? e : [e]
         if (entities.length == 0) return
 
         const entityName = entities[0].constructor.name
@@ -51,7 +52,8 @@ export class StoreWithCache {
 
     async upsert<E extends _Entity>(...entities: E[]): Promise<void>
     async upsert<E extends _Entity>(entities: E[]): Promise<void>
-    async upsert<E extends _Entity>(entities: E[]): Promise<void> {
+    async upsert<E extends _Entity>(e: E | E[]): Promise<void> {
+        let entities = Array.isArray(e) ? e : [e]
         if (entities.length == 0) return
 
         const entityName = entities[0].constructor.name
