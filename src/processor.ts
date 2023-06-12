@@ -124,11 +124,23 @@ export const processor = new EvmBatchProcessor()
         address: gaugesAndBribes.addresses.gauges,
         topic0: [gauge.events.Deposit.topic, gauge.events.Withdraw.topic, gauge.events.Harvest.topic],
         transaction: true,
+        range: {from: 0, to: gaugesAndBribes.height},
+    })
+    .addLog({
+        topic0: [gauge.events.Deposit.topic, gauge.events.Withdraw.topic, gauge.events.Harvest.topic],
+        transaction: true,
+        range: {from: gaugesAndBribes.height},
     })
     .addLog({
         address: gaugesAndBribes.addresses.bribes,
         topic0: [bribe.events.Staked.topic, bribe.events.Withdrawn.topic],
         transaction: true,
+        range: {from: 0, to: gaugesAndBribes.height},
+    })
+    .addLog({
+        topic0: [bribe.events.Staked.topic, bribe.events.Withdrawn.topic],
+        transaction: true,
+        range: {from: gaugesAndBribes.height},
     })
     .addLog({
         address: [VE_TOKEN],
