@@ -2,8 +2,8 @@ import assert from 'assert'
 import {lookupArchive} from '@subsquid/archive-registry'
 import {EvmBatchProcessor} from '@subsquid/evm-processor'
 import {Database, LocalDest} from '@subsquid/file-store'
-import * as voterAbi from '../abi/voterV3'
-import {ALGEBRA_FACTORY, SOLIDLY_FACTORY, VOTER} from '../config'
+import * as voterAbi from '../src/abi/voterV3'
+import {ALGEBRA_FACTORY, SOLIDLY_FACTORY, VOTER} from '../src/config'
 
 const earliestPairFactoryDeploymentBlock = 24468802
 
@@ -69,7 +69,6 @@ let db = new Database({
             await dest.writeFile('gaugesAndBribes.json', JSON.stringify(metadata))
 
             isReady = true
-            console.log('ready')
         },
     },
 })

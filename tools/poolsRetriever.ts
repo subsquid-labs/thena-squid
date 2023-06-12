@@ -55,8 +55,8 @@ let db = new Database({
             if (await dest.exists('pools.json')) {
                 let {height, hash, addresses}: Metadata = await dest.readFile('pools.json').then(JSON.parse)
 
-                solidlyPools.push(...addresses[SOLIDLY_FACTORY])
-                algebraPools.push(...addresses[ALGEBRA_FACTORY])
+                solidlyPools = addresses[SOLIDLY_FACTORY]
+                algebraPools = addresses[ALGEBRA_FACTORY]
 
                 return {height, hash}
             } else {
