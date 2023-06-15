@@ -107,7 +107,7 @@ export interface RewardGaugeStakeData {
 export class RewardStakeGaugeAction extends Action<RewardGaugeStakeData> {
     async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         const stake = await this.data.stake.get()
-        assert(stake != null)
+        if (stake == null) return // FIXME: rework rewards indexing
 
         stake.totalReward += this.data.amount
 
