@@ -68,9 +68,7 @@ export function getThenaActions(ctx: DataHandlerContext<StoreWithCache>, item: L
             )
             break
         }
-        default: {
-            ctx.log.error(`unknown event ${item.topics[0]}`)
-        }
+
     }
     // break
     // }

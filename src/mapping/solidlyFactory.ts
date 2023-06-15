@@ -66,9 +66,7 @@ export function getSolidlyFactoryActions(ctx: DataHandlerContext<StoreWithCache>
 
             break
         }
-        default: {
-            ctx.log.error(`unknown event ${item.topics[0]}`)
-        }
+
     }
 
     return actions

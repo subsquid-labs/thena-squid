@@ -164,9 +164,7 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, i
 
             break
         }
-        default: {
-            ctx.log.error(`unknown event ${item.topics[0]}`)
-        }
+
     }
 
     return actions

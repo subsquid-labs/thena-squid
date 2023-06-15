@@ -215,9 +215,7 @@ export async function getHypervisorActions(ctx: DataHandlerContext<StoreWithCach
 
             break
         }
-        default: {
-            ctx.log.error(`unknown event ${item.topics[0]}`)
-        }
+
     }
 
     return actions
