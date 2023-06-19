@@ -107,6 +107,17 @@ export class SwapUserAction extends BaseUserAction<SwapUserActionData> {
                   .toNumber()
             : 0
 
+        let amountUSD: number
+        if (WHITELIST_TOKENS.includes(tokenIn.id) && WHITELIST_TOKENS.includes(tokenOut.id)) {
+            amountUSD = (amountInUSD + amountOutUSD) / 2
+        } else if (!WHITELIST_TOKENS.includes(tokenIn.id) && WHITELIST_TOKENS.includes(tokenOut.id)) {
+            amountUSD = amountOutUSD
+        } else if (WHITELIST_TOKENS.includes(tokenIn.id) && !WHITELIST_TOKENS.includes(tokenOut.id)) {
+            amountUSD = amountInUSD
+        } else {
+            amountUSD = 0
+        }
+
         let trade: Trade | undefined
         if (
             SwapUserAction.lastTrade != null &&
@@ -132,6 +143,7 @@ export class SwapUserAction extends BaseUserAction<SwapUserActionData> {
                 tokenOut,
                 amountOut,
                 amountOutUSD,
+                amountUSD,
                 routes: [pool.id],
             })
             await ctx.store.insert(trade)

@@ -32,8 +32,8 @@ export class Trade {
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     amountIn!: bigint
 
-    @Column_("numeric", {transformer: marshal.floatTransformer, nullable: false})
-    amountInUSD!: number
+    @Column_("numeric", {transformer: marshal.floatTransformer, nullable: true})
+    amountInUSD!: number | undefined | null
 
     @Index_()
     @ManyToOne_(() => Token, {nullable: true})
@@ -42,8 +42,11 @@ export class Trade {
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     amountOut!: bigint
 
+    @Column_("numeric", {transformer: marshal.floatTransformer, nullable: true})
+    amountOutUSD!: number | undefined | null
+
     @Column_("numeric", {transformer: marshal.floatTransformer, nullable: false})
-    amountOutUSD!: number
+    amountUSD!: number
 
     @Column_("text", {array: true, nullable: false})
     routes!: (string)[]
