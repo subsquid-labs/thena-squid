@@ -21,6 +21,7 @@ import {WrappedValue} from '../utils/deferred'
 import {HypervisorManager} from '../utils/manager/hypervisorManager'
 import {StoreWithCache} from '../utils/store'
 import {Hypervisor, LiquidityPosition, Pool, Token, User} from '../model'
+import {ContractChecker} from '../utils/contractChecker'
 
 export function isAlgebraPoolItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     return PoolManager.get(ctx).isPool(ALGEBRA_FACTORY, item.address)
@@ -45,6 +46,7 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, i
                 new EnsureUserAction(item.block, item.transaction!, {
                     user: ctx.store.defer(User, id),
                     address: id,
+                    isContract: ContractChecker.get(ctx).defer(id),
                 }),
                 new SwapUserAction(item.block, item.transaction!, {
                     user: ctx.store.defer(User, id),
@@ -86,6 +88,7 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, i
                 new EnsureUserAction(item.block, item.transaction!, {
                     user: ctx.store.defer(User, userId),
                     address: userId,
+                    isContract: ContractChecker.get(ctx).defer(userId),
                 }),
                 new EnsureLiquidityPositionAction(item.block, item.transaction!, {
                     position: ctx.store.defer(LiquidityPosition, positionId),
@@ -134,6 +137,7 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, i
                 new EnsureUserAction(item.block, item.transaction!, {
                     user: ctx.store.defer(User, userId),
                     address: userId,
+                    isContract: ContractChecker.get(ctx).defer(userId),
                 }),
                 new EnsureLiquidityPositionAction(item.block, item.transaction!, {
                     position: ctx.store.defer(LiquidityPosition, positionId),
@@ -164,7 +168,6 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, i
 
             break
         }
-
     }
 
     return actions

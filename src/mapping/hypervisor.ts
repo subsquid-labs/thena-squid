@@ -18,6 +18,7 @@ import {WrappedValue} from '../utils/deferred'
 import {HypervisorManager} from '../utils/manager/hypervisorManager'
 import {createLiquidityPositionId} from '../utils/ids'
 import {StoreWithCache} from '../utils/store'
+import {ContractChecker} from '../utils/contractChecker'
 
 export function isHypervisorItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     return HypervisorManager.get(ctx).isHypervisor(item.address)
@@ -83,6 +84,7 @@ export async function getHypervisorActions(ctx: DataHandlerContext<StoreWithCach
                     new EnsureUserAction(item.block, item.transaction!, {
                         user: ctx.store.defer(User, from),
                         address: from,
+                        isContract: ContractChecker.get(ctx).defer(from),
                     }),
                     new EnsureLiquidityPositionAction(item.block, item.transaction!, {
                         position: ctx.store.defer(LiquidityPosition, positionId),
@@ -110,6 +112,7 @@ export async function getHypervisorActions(ctx: DataHandlerContext<StoreWithCach
                     new EnsureUserAction(item.block, item.transaction!, {
                         user: ctx.store.defer(User, to),
                         address: to,
+                        isContract: ContractChecker.get(ctx).defer(to),
                     }),
                     new EnsureLiquidityPositionAction(item.block, item.transaction!, {
                         position: ctx.store.defer(LiquidityPosition, positionId),
@@ -215,7 +218,6 @@ export async function getHypervisorActions(ctx: DataHandlerContext<StoreWithCach
 
             break
         }
-
     }
 
     return actions

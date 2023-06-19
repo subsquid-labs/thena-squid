@@ -12,6 +12,8 @@ import {
 } from '../action/veToken'
 import {User, VeToken} from '../model'
 import {createVeTokenId} from '../utils/ids'
+import {ContractChecker} from '../utils/contractChecker'
+import {WrappedValue} from '../utils/deferred'
 
 export function isVeTokenItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     return item.address === VE_TOKEN
@@ -33,6 +35,7 @@ export async function getVeTokenActions(ctx: DataHandlerContext<StoreWithCache>,
                     new EnsureUserAction(item.block, item.transaction!, {
                         user: ctx.store.defer(User, ZERO_ADDRESS),
                         address: ZERO_ADDRESS,
+                        isContract: new WrappedValue(true),
                     }),
                     new CreateVeTokenAction(item.block, item.transaction!, {
                         id: tokenId,
@@ -46,10 +49,12 @@ export async function getVeTokenActions(ctx: DataHandlerContext<StoreWithCache>,
                 new EnsureUserAction(item.block, item.transaction!, {
                     user: ctx.store.defer(User, from),
                     address: from,
+                    isContract: ContractChecker.get(ctx).defer(from),
                 }),
                 new EnsureUserAction(item.block, item.transaction!, {
                     user: ctx.store.defer(User, to),
                     address: to,
+                    isContract: ContractChecker.get(ctx).defer(to),
                 }),
                 new TransferVeTokenAction(item.block, item.transaction!, {
                     token: ctx.store.defer(VeToken, tokenId, {owner: true}),

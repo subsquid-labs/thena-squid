@@ -12,6 +12,7 @@ import {
     UpdateTotalSupplyGaugeAction,
 } from '../action/gauge'
 import {createGaugeStakeId} from '../utils/ids'
+import {ContractChecker} from '../utils/contractChecker'
 
 export function isGaugeItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     return GaugeManager.get(ctx).isGauge(item.address)
@@ -24,20 +25,21 @@ export async function getGaugeActions(ctx: DataHandlerContext<StoreWithCache>, i
         case gaugeAbi.events.Deposit.topic: {
             const event = gaugeAbi.events.Deposit.decode(item)
 
-            const user = event.user.toLowerCase()
+            const userId = event.user.toLowerCase()
             const gauge = item.address
             const amount = event.amount
 
-            const stakeId = createGaugeStakeId(gauge, user)
+            const stakeId = createGaugeStakeId(gauge, userId)
             actions.push(
                 new EnsureUserAction(item.block, item.transaction!, {
-                    user: ctx.store.defer(User, user),
-                    address: user,
+                    user: ctx.store.defer(User, userId),
+                    address: userId,
+                    isContract: ContractChecker.get(ctx).defer(userId),
                 }),
                 new EnsureStakeGaugeAction(item.block, item.transaction!, {
                     stake: ctx.store.defer(GaugeStake, stakeId),
                     gauge: ctx.store.defer(Gauge, gauge),
-                    user: ctx.store.defer(User, user),
+                    user: ctx.store.defer(User, userId),
                     id: stakeId,
                 }),
                 new UpdateStakeGaugeAction(item.block, item.transaction!, {

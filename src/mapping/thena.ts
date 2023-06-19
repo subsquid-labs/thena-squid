@@ -5,6 +5,7 @@ import {Log} from '../processor'
 import {Action, BalanceUserAction, EnsureUserAction} from '../action'
 import {StoreWithCache} from '../utils/store'
 import {User} from '../model'
+import {ContractChecker} from '../utils/contractChecker'
 
 export function isThenaItem(item: Log) {
     return item.address === THENA_ADDRESS
@@ -30,6 +31,7 @@ export function getThenaActions(ctx: DataHandlerContext<StoreWithCache>, item: L
                     new EnsureUserAction(item.block, item.transaction!, {
                         user: ctx.store.defer(User, from),
                         address: from,
+                        isContract: ContractChecker.get(ctx).defer(from),
                     }),
                     new BalanceUserAction(item.block, item.transaction!, {
                         user: ctx.store.defer(User, from),
@@ -43,6 +45,7 @@ export function getThenaActions(ctx: DataHandlerContext<StoreWithCache>, item: L
                     new EnsureUserAction(item.block, item.transaction!, {
                         user: ctx.store.defer(User, to),
                         address: to,
+                        isContract: ContractChecker.get(ctx).defer(to),
                     }),
                     new BalanceUserAction(item.block, item.transaction!, {
                         user: ctx.store.defer(User, to),
@@ -56,19 +59,23 @@ export function getThenaActions(ctx: DataHandlerContext<StoreWithCache>, item: L
         case thena.events.Approval.topic: {
             const event = thena.events.Approval.decode(item)
 
+            let owner = event.owner.toLowerCase()
+            let spender = event.spender.toLowerCase()
+
             actions.push(
                 new EnsureUserAction(item.block, item.transaction!, {
-                    user: ctx.store.defer(User, event.owner.toLowerCase()),
-                    address: event.owner.toLowerCase(),
+                    user: ctx.store.defer(User, owner),
+                    address: owner,
+                    isContract: ContractChecker.get(ctx).defer(owner),
                 }),
                 new EnsureUserAction(item.block, item.transaction!, {
-                    user: ctx.store.defer(User, event.spender.toLowerCase()),
-                    address: event.spender.toLowerCase(),
+                    user: ctx.store.defer(User, spender),
+                    address: spender,
+                    isContract: ContractChecker.get(ctx).defer(spender),
                 })
             )
             break
         }
-
     }
     // break
     // }

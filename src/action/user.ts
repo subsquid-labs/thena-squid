@@ -1,7 +1,7 @@
 import assert from 'assert'
 import {BigDecimal} from '@subsquid/big-decimal'
 import {DataHandlerContext} from '@subsquid/evm-processor'
-import {BNB_DECIMALS} from '../config'
+import {BNB_DECIMALS, WHITELIST_TOKENS, ZERO_ADDRESS} from '../config'
 import {Pool, Token, Trade, User} from '../model'
 import {DeferredValue} from '../utils/deferred'
 import {createTradeId} from '../utils/ids'
@@ -16,6 +16,7 @@ export abstract class BaseUserAction<T extends BaseUserActionData = BaseUserActi
 
 export interface EnsureUserActionData extends BaseUserActionData {
     address: string
+    isContract: DeferredValue<boolean>
 }
 
 export class EnsureUserAction extends BaseUserAction<EnsureUserActionData> {
@@ -23,10 +24,13 @@ export class EnsureUserAction extends BaseUserAction<EnsureUserActionData> {
         let user = await this.data.user.get()
         if (user != null) return
 
+        const isContract = this.data.address === ZERO_ADDRESS ? true : await this.data.isContract.get()
+
         user = new User({
             id: this.data.address,
             firstInteractAt: new Date(this.block.timestamp),
             balance: 0n,
+            isContract,
         })
 
         await ctx.store.insert(user)

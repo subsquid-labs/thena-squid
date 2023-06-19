@@ -20,6 +20,9 @@ export class User {
     @Column_("timestamp with time zone", {nullable: false})
     firstInteractAt!: Date
 
+    @Column_("bool", {nullable: false})
+    isContract!: boolean
+
     @OneToMany_(() => Trade, e => e.user)
     trades!: Trade[]
 

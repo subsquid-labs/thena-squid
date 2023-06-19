@@ -3,8 +3,9 @@ type User @entity {
     balance: BigInt!
     firstInteractAt: DateTime!
 
-    trades: [Trade!]! @derivedFrom(field: "user")
+    isContract: Boolean!
 
+    trades: [Trade!]! @derivedFrom(field: "user")
     liquidityPositions: [LiquidityPosition!] @derivedFrom(field: "user")
     veTokens: [VeToken!] @derivedFrom(field: "owner")
     stakes: [GaugeStake!]! @derivedFrom(field: "user")

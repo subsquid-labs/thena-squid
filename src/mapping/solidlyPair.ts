@@ -23,6 +23,7 @@ import {createLiquidityPositionId, createLiquidityPositionUpdateId} from '../uti
 import {DeferredFunction, WrappedValue} from '../utils/deferred'
 import {User, Pool, Token, LiquidityPosition} from '../model'
 import {StoreWithCache} from '../utils/store'
+import {ContractChecker} from '../utils/contractChecker'
 
 export function isSolidlyPairItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     return PoolManager.get(ctx).isPool(SOLIDLY_FACTORY, item.address)
@@ -45,6 +46,7 @@ export function getSolidlyPairActions(ctx: DataHandlerContext<StoreWithCache>, i
                 new EnsureUserAction(item.block, item.transaction!, {
                     user: ctx.store.defer(User, id),
                     address: id,
+                    isContract: ContractChecker.get(ctx).defer(id),
                 }),
                 new SwapUserAction(item.block, item.transaction!, {
                     user: ctx.store.defer(User, id),
@@ -110,6 +112,7 @@ export function getSolidlyPairActions(ctx: DataHandlerContext<StoreWithCache>, i
                     new EnsureUserAction(item.block, item.transaction!, {
                         user: ctx.store.defer(User, from),
                         address: from,
+                        isContract: ContractChecker.get(ctx).defer(from),
                     }),
                     new EnsureLiquidityPositionAction(item.block, item.transaction!, {
                         position: ctx.store.defer(LiquidityPosition, positionId),
@@ -137,6 +140,7 @@ export function getSolidlyPairActions(ctx: DataHandlerContext<StoreWithCache>, i
                     new EnsureUserAction(item.block, item.transaction!, {
                         user: ctx.store.defer(User, to),
                         address: to,
+                        isContract: ContractChecker.get(ctx).defer(to),
                     }),
                     new EnsureLiquidityPositionAction(item.block, item.transaction!, {
                         position: ctx.store.defer(LiquidityPosition, positionId),
@@ -191,7 +195,6 @@ export function getSolidlyPairActions(ctx: DataHandlerContext<StoreWithCache>, i
 
             break
         }
-
     }
 
     return actions
