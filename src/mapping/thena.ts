@@ -3,7 +3,7 @@ import * as thena from '../abi/bep20'
 import {THENA_ADDRESS, ZERO_ADDRESS} from '../config'
 import {Log} from '../processor'
 import {Action, BalanceUserAction, EnsureUserAction} from '../action'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
 import {User} from '../model'
 import {ContractChecker} from '../utils/contractChecker'
 

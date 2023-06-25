@@ -1,11 +1,11 @@
+import {Store} from '@subsquid/typeorm-store'
 import {Gauge} from '../../model'
-import {StoreWithCache} from '../store'
 import {DataHandlerContext} from '@subsquid/evm-processor'
 
 export class GaugeManager {
-    private static managers: WeakMap<StoreWithCache, GaugeManager> = new WeakMap()
+    private static managers: WeakMap<Store, GaugeManager> = new WeakMap()
 
-    static get(ctx: DataHandlerContext<StoreWithCache>) {
+    static get(ctx: DataHandlerContext<Store>) {
         let manager = this.managers.get(ctx.store)
         if (manager == null) {
             manager = new GaugeManager(ctx.store)
@@ -18,7 +18,7 @@ export class GaugeManager {
     private gauges: Set<string> = new Set()
     private _initialized = false
 
-    private constructor(private store: StoreWithCache) {}
+    private constructor(private store: Store) {}
 
     async init() {
         if (this._initialized) return

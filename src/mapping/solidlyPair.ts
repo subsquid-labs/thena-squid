@@ -22,7 +22,7 @@ import {
 import {createLiquidityPositionId, createLiquidityPositionUpdateId} from '../utils/ids'
 import {DeferredFunction, WrappedValue} from '../utils/deferred'
 import {User, Pool, Token, LiquidityPosition} from '../model'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
 import {ContractChecker} from '../utils/contractChecker'
 
 export function isSolidlyPairItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {

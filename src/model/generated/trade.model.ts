@@ -1,4 +1,4 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
 import * as marshal from "./marshal"
 import {User} from "./user.model"
 import {Token} from "./token.model"
@@ -12,9 +12,11 @@ export class Trade {
     @PrimaryColumn_()
     id!: string
 
+    @Index_()
     @Column_("int4", {nullable: false})
     blockNumber!: number
 
+    @Index_()
     @Column_("timestamp with time zone", {nullable: false})
     timestamp!: Date
 
@@ -32,8 +34,8 @@ export class Trade {
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     amountIn!: bigint
 
-    @Column_("numeric", {transformer: marshal.floatTransformer, nullable: true})
-    amountInUSD!: number | undefined | null
+    @Column_("numeric", {transformer: marshal.floatTransformer, nullable: false})
+    amountInUSD!: number
 
     @Index_()
     @ManyToOne_(() => Token, {nullable: true})
@@ -42,8 +44,8 @@ export class Trade {
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     amountOut!: bigint
 
-    @Column_("numeric", {transformer: marshal.floatTransformer, nullable: true})
-    amountOutUSD!: number | undefined | null
+    @Column_("numeric", {transformer: marshal.floatTransformer, nullable: false})
+    amountOutUSD!: number
 
     @Column_("numeric", {transformer: marshal.floatTransformer, nullable: false})
     amountUSD!: number

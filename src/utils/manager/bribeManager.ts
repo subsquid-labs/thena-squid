@@ -1,11 +1,11 @@
+import {Store} from '@subsquid/typeorm-store'
 import {Bribe} from '../../model'
-import {StoreWithCache} from '../store'
 import {DataHandlerContext} from '@subsquid/evm-processor'
 
 export class BribeManager {
-    private static managers: WeakMap<StoreWithCache, BribeManager> = new WeakMap()
+    private static managers: WeakMap<Store, BribeManager> = new WeakMap()
 
-    static get(ctx: DataHandlerContext<StoreWithCache>) {
+    static get(ctx: DataHandlerContext<Store>) {
         let manager = this.managers.get(ctx.store)
         if (manager == null) {
             manager = new BribeManager(ctx.store)
@@ -18,7 +18,7 @@ export class BribeManager {
     private bribes: Set<string> = new Set()
     private _initialized = false
 
-    private constructor(private store: StoreWithCache) {}
+    private constructor(private store: Store) {}
 
     async init() {
         if (this._initialized) return

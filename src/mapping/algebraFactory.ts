@@ -6,7 +6,7 @@ import * as bep20 from '../abi/bep20'
 import {Action, CreatePoolAction, EnsureTokenAction} from '../action'
 import {PoolManager} from '../utils/manager/poolManager'
 import {Pool, PoolType, Token} from '../model'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
 import {CallCache} from '../utils/callQueue'
 
 export function isAlgebraFactoryItem(item: Log) {

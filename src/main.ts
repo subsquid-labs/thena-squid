@@ -1,15 +1,13 @@
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import {getActions} from './mapping'
 import {processor} from './processor'
-import {StoreWithCache} from './utils/store'
-import {exit} from 'process'
-import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Action} from './action'
+import {StoreWithCache} from '@belopash/squid-tools'
 
 processor.run(new TypeormDatabase({supportHotBlocks: true}), async (ctx) => {
     const newCtx = {
         ...ctx,
-        store: new StoreWithCache(ctx.store),
+        store: StoreWithCache.create(ctx.store),
     }
 
     const actions = await getActions(newCtx)

@@ -1,5 +1,5 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
 import {Action} from './base'
 import {User, VeToken} from '../model'
 import {DeferredValue} from '../utils/deferred'

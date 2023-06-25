@@ -1,4 +1,4 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {Trade} from "./trade.model"
 import {LiquidityPosition} from "./liquidityPosition.model"
@@ -20,6 +20,7 @@ export class User {
     @Column_("timestamp with time zone", {nullable: false})
     firstInteractAt!: Date
 
+    @Index_()
     @Column_("bool", {nullable: false})
     isContract!: boolean
 

@@ -19,7 +19,7 @@ import {
 import {createLiquidityPositionId} from '../utils/ids'
 import {WrappedValue} from '../utils/deferred'
 import {HypervisorManager} from '../utils/manager/hypervisorManager'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
 import {Hypervisor, LiquidityPosition, Pool, Token, User} from '../model'
 import {ContractChecker} from '../utils/contractChecker'
 

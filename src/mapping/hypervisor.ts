@@ -17,7 +17,7 @@ import {CallCache} from '../utils/callQueue'
 import {WrappedValue} from '../utils/deferred'
 import {HypervisorManager} from '../utils/manager/hypervisorManager'
 import {createLiquidityPositionId} from '../utils/ids'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
 import {ContractChecker} from '../utils/contractChecker'
 
 export function isHypervisorItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {

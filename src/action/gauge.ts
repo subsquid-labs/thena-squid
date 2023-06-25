@@ -1,6 +1,6 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Action} from './base'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
 import {DeferredValue} from '../utils/deferred'
 import {Bribe, Gauge, GaugeStake, Pool, Token, User} from '../model'
 import assert from 'assert'

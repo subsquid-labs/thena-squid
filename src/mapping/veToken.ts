@@ -1,6 +1,6 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {VE_TOKEN, ZERO_ADDRESS} from '../config'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
 import {Action, EnsureUserAction} from '../action'
 import * as veTokenAbi from '../abi/votingEscrow'
 import {Log} from '../processor'

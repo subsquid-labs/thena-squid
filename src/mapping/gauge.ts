@@ -1,7 +1,7 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Log} from '../processor'
 import {GaugeManager} from '../utils/manager/gaugeManager'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
 import * as gaugeAbi from '../abi/gaugeV2'
 import {Action, EnsureUserAction} from '../action'
 import {Gauge, GaugeStake, User} from '../model'

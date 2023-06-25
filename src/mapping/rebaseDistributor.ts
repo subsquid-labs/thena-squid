@@ -5,7 +5,7 @@ import {RewardVeTokenAction} from '../action/veToken'
 import {REBASE_DISTRIBUTOR} from '../config'
 import {VeToken} from '../model'
 import {Log} from '../processor'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
 import {createVeTokenId} from '../utils/ids'
 
 export function isRebaseDistributorItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {

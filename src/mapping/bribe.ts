@@ -1,6 +1,6 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Log} from '../processor'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
 import * as bribeAbi from '../abi/bribe'
 import {Action} from '../action'
 import {Bribe, VeToken} from '../model'

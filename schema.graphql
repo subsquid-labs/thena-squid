@@ -3,7 +3,7 @@ type User @entity {
     balance: BigInt!
     firstInteractAt: DateTime!
 
-    isContract: Boolean!
+    isContract: Boolean! @index
 
     trades: [Trade!]! @derivedFrom(field: "user")
     liquidityPositions: [LiquidityPosition!] @derivedFrom(field: "user")
@@ -15,8 +15,8 @@ type Trade @entity {
     id: ID!
 
     # meatadata
-    blockNumber: Int!
-    timestamp: DateTime!
+    blockNumber: Int! @index
+    timestamp: DateTime! @index
     txHash: String!
 
     user: User!

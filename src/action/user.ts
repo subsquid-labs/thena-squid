@@ -5,7 +5,7 @@ import {BNB_DECIMALS, WHITELIST_TOKENS, ZERO_ADDRESS} from '../config'
 import {Pool, Token, Trade, User} from '../model'
 import {DeferredValue} from '../utils/deferred'
 import {createTradeId} from '../utils/ids'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
 import {Action} from './base'
 
 export interface BaseUserActionData {

@@ -10,7 +10,7 @@ import {Bribe, Pool, VeToken, Vote} from '../model'
 import {Log} from '../processor'
 import {createVeTokenId, createVoteId} from '../utils/ids'
 import {GaugeManager} from '../utils/manager/gaugeManager'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
 import {BribeManager} from '../utils/manager/bribeManager'
 
 export function isVoterItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {

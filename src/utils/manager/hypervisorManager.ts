@@ -1,13 +1,12 @@
 import {Hypervisor} from '../../model'
-import assert from 'assert'
 import {loadHypervisors} from '../loaders'
-import {StoreWithCache} from '../store'
 import {DataHandlerContext} from '@subsquid/evm-processor'
+import {Store} from '@subsquid/typeorm-store'
 
 export class HypervisorManager {
-    private static managers: WeakMap<StoreWithCache, HypervisorManager> = new WeakMap()
+    private static managers: WeakMap<Store, HypervisorManager> = new WeakMap()
 
-    static get(ctx: DataHandlerContext<StoreWithCache>) {
+    static get(ctx: DataHandlerContext<Store>) {
         let manager = this.managers.get(ctx.store)
         if (manager == null) {
             manager = new HypervisorManager(ctx.store)
@@ -21,7 +20,7 @@ export class HypervisorManager {
     private known = new Set<string>()
     private _initialized = false
 
-    private constructor(private store: StoreWithCache) {}
+    private constructor(private store: Store) {}
 
     async init() {
         if (this._initialized) return

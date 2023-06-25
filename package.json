@@ -6,6 +6,7 @@
   },
   "main": "lib/main.js",
   "dependencies": {
+    "@belopash/squid-tools": "^0.0.4",
     "@subsquid/archive-registry": "^3.0.0",
     "@subsquid/big-decimal": "^1.0.0",
     "@subsquid/evm-processor": "^1.5.0",

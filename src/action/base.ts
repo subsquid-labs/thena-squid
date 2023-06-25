@@ -1,5 +1,6 @@
 import {BlockHeader, DataHandlerContext, Transaction} from '@subsquid/evm-processor'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
+import {withErrorContext} from '@subsquid/util-internal'
 import assert from 'assert'
 
 export abstract class Action<T = unknown> {
@@ -13,12 +14,12 @@ export abstract class Action<T = unknown> {
                 }),
             }
 
-            try {
-                await action.perform(actionCtx)
-            } catch (err) {
-                ctx.log.fatal({err, block: action.block.height, txHash: action.transaction.hash})
-                throw err
-            }
+            await action.perform(actionCtx).catch(
+                withErrorContext({
+                    block: action.block.height,
+                    txHash: action.transaction.hash,
+                })
+            )
         }
     }
 

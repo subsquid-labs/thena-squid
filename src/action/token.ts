@@ -3,7 +3,7 @@ import {DataHandlerContext} from '@subsquid/evm-processor'
 import {BNB_DECIMALS, WBNB_ADDRESS, WHITELIST_TOKENS} from '../config'
 import {Pool, Token, TokenPriceMetadata} from '../model'
 import {DeferredValue} from '../utils/deferred'
-import {StoreWithCache} from '../utils/store'
+import {StoreWithCache} from '@belopash/squid-tools'
 import {Action} from './base'
 
 export interface BaseTokenActionData {
