@@ -11,6 +11,7 @@ export class ContractChecker {
         let checker = this.checkers.get(ctx._chain)
         if (checker == null) {
             checker = new ContractChecker(ctx._chain)
+            this.checkers.set(ctx._chain, checker)
         }
 
         return checker

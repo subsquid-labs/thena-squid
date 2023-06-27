@@ -2,7 +2,7 @@ import assert from 'assert'
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import * as hypervisorAbi from '../abi/hypervisor'
 import {Hypervisor, LiquidityPosition, Pool, PoolType, Token} from '../model'
-import {CallCache} from '../utils/callQueue'
+import {CallCache} from '../utils/callCache'
 import {DeferredValue} from '../utils/deferred'
 import {StoreWithCache} from '@belopash/squid-tools'
 import {Action} from './base'
@@ -19,10 +19,10 @@ export abstract class BaseHypervisorAction<
 
 export interface EnsureHypervisorActionData extends BaseHypervisorActionData {
     address: string
-    hypervisorPool: DeferredValue<string>
-    pool: DeferredValue<Pool, true>
-    token0: DeferredValue<string>
-    token1: DeferredValue<string>
+    pool: string
+    hypervisorPool: Promise<string>
+    token0: Promise<string>
+    token1: Promise<string>
 }
 
 export class EnsureHypervisorAction extends BaseHypervisorAction<EnsureHypervisorActionData> {
@@ -32,32 +32,32 @@ export class EnsureHypervisorAction extends BaseHypervisorAction<EnsureHyperviso
 
         const callCache = CallCache.get(ctx)
 
-        const token0Address = await this.data.token0.get()
+        const token0Address = await this.data.token0
+        const token0Decimals = callCache.defer(this.block, [hypervisorAbi.functions.decimals, token0Address, []])
+        const token0Symbol = callCache.defer(this.block, [hypervisorAbi.functions.symbol, token0Address, []])
         const ensureToken0 = new EnsureTokenAction(this.block, this.transaction, {
             token: ctx.store.defer(Token, token0Address),
             address: token0Address,
-            decimals: callCache.defer(this.block, hypervisorAbi.functions.decimals, {
-                address: token0Address,
-                args: [],
-            }),
-            symbol: callCache.defer(this.block, hypervisorAbi.functions.symbol, {
-                address: token0Address,
-                args: [],
-            }),
+            get decimals() {
+                return token0Decimals.get()
+            },
+            get symbol() {
+                return token0Symbol.get()
+            },
         })
 
-        const token1Address = await this.data.token1.get()
+        const token1Address = await this.data.token1
+        const token1Decimals = callCache.defer(this.block, [hypervisorAbi.functions.decimals, token1Address, []])
+        const token1Symbol = callCache.defer(this.block, [hypervisorAbi.functions.symbol, token1Address, []])
         const ensureToken1 = new EnsureTokenAction(this.block, this.transaction, {
             token: ctx.store.defer(Token, token1Address),
             address: token0Address,
-            decimals: callCache.defer(this.block, hypervisorAbi.functions.decimals, {
-                address: token1Address,
-                args: [],
-            }),
-            symbol: callCache.defer(this.block, hypervisorAbi.functions.symbol, {
-                address: token1Address,
-                args: [],
-            }),
+            get decimals() {
+                return token1Decimals.get()
+            },
+            get symbol() {
+                return token1Symbol.get()
+            },
         })
 
         const poolCreation = new CreatePoolAction(this.block, this.transaction, {
@@ -73,8 +73,7 @@ export class EnsureHypervisorAction extends BaseHypervisorAction<EnsureHyperviso
         await ensureToken1.perform(ctx)
         await poolCreation.perform(ctx)
 
-        const pool = await this.data.pool.get()
-        assert(pool != null)
+        const pool = await ctx.store.getOrFail(Pool, this.data.pool)
 
         hypervisor = new Hypervisor({
             id: this.data.address,
@@ -109,7 +108,6 @@ export class SetPositionHypervisorAction extends BaseHypervisorAction<SetPositio
         } else {
             // throw new Error(`Unexpected case`)
             return
-
         }
 
         await ctx.store.upsert(hypervisor)

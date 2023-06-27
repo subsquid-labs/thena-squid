@@ -18,7 +18,7 @@ export function isGaugeItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) 
     return GaugeManager.get(ctx).isGauge(item.address)
 }
 
-export async function getGaugeActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+export function getGaugeActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     const actions: Action[] = []
 
     switch (item.topics[0]) {

@@ -3,6 +3,12 @@ import {StoreWithCache} from '@belopash/squid-tools'
 import {withErrorContext} from '@subsquid/util-internal'
 import assert from 'assert'
 
+type Promised<T> = T extends Record<string, any>
+    ? {
+          [k in keyof T]: T[k] | Promise<T[k]>
+      }
+    : T | Promise<T>
+
 export abstract class Action<T = unknown> {
     static async process(ctx: DataHandlerContext<StoreWithCache>, actions: Action[]) {
         for (const action of actions) {

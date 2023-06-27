@@ -14,8 +14,8 @@ export abstract class BaseTokenAction<T extends BaseTokenActionData = BaseTokenA
 
 export interface EnsureTokenActionData extends BaseTokenActionData {
     address: string
-    decimals: DeferredValue<number>
-    symbol: DeferredValue<string>
+    decimals: Promise<number>
+    symbol: Promise<string>
 }
 
 export class EnsureTokenAction extends BaseTokenAction<EnsureTokenActionData> {
@@ -23,8 +23,8 @@ export class EnsureTokenAction extends BaseTokenAction<EnsureTokenActionData> {
         let token = await this.data.token.get()
         if (token != null) return
 
-        const decimals = await this.data.decimals.get()
-        const symbol = await this.data.symbol.get()
+        const decimals = await this.data.decimals
+        const symbol = await this.data.symbol
         token = new Token({
             id: this.data.address,
             decimals,

@@ -12,7 +12,7 @@ export function isBribeItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) 
     return BribeManager.get(ctx).isBribe(item.address)
 }
 
-export async function getBribeActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+export function getBribeActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     const actions: Action[] = []
 
     switch (item.topics[0]) {

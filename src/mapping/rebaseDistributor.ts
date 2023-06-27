@@ -12,7 +12,7 @@ export function isRebaseDistributorItem(ctx: DataHandlerContext<StoreWithCache>,
     return item.address === REBASE_DISTRIBUTOR
 }
 
-export async function getRebaseDistributorActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+export function getRebaseDistributorActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     const actions: Action[] = []
 
     switch (item.topics[0]) {

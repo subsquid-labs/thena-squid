@@ -13,7 +13,7 @@ import {
 import {ZERO_ADDRESS} from '../config'
 import {Hypervisor, LiquidityPosition, Pool, User} from '../model'
 import {Log} from '../processor'
-import {CallCache} from '../utils/callQueue'
+import {CallCache} from '../utils/callCache'
 import {WrappedValue} from '../utils/deferred'
 import {HypervisorManager} from '../utils/manager/hypervisorManager'
 import {createLiquidityPositionId} from '../utils/ids'
@@ -24,38 +24,33 @@ export function isHypervisorItem(ctx: DataHandlerContext<StoreWithCache>, item: 
     return HypervisorManager.get(ctx).isHypervisor(item.address)
 }
 
-export async function getHypervisorActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+export function getHypervisorActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     const actions: Action[] = []
 
     const hypervisorId = item.address
 
     const callCache = CallCache.get(ctx)
-    const token0 = callCache.defer(item.block, hypervisor.functions.token0, {
-        address: hypervisorId,
-        args: [],
-        transform: (v) => v.toLowerCase(),
-    })
 
-    const token1 = callCache.defer(item.block, hypervisor.functions.token1, {
-        address: hypervisorId,
-        args: [],
-        transform: (v) => v.toLowerCase(),
-    })
+    const token0 = callCache.defer(item.block, [hypervisor.functions.token0, hypervisorId, []])
+    const token1 = callCache.defer(item.block, [hypervisor.functions.token1, hypervisorId, []])
+    const hypervisorPool = callCache.defer(item.block, [hypervisor.functions.pool, hypervisorId, []])
 
-    const hypervisorPool = callCache.defer(item.block, hypervisor.functions.pool, {
-        address: hypervisorId,
-        args: [],
-        transform: (v) => v.toLowerCase(),
-    })
+    ctx.store.defer(Pool, hypervisorId)
 
     actions.push(
         new EnsureHypervisorAction(item.block, item.transaction!, {
             hypervisor: ctx.store.defer(Hypervisor, hypervisorId),
-            pool: ctx.store.defer(Pool, hypervisorId),
+            pool: hypervisorId,
             address: hypervisorId,
-            hypervisorPool,
-            token0,
-            token1,
+            get hypervisorPool() {
+                return hypervisorPool.get().then((v) => v.toLowerCase())
+            },
+            get token0() {
+                return token0.get().then((v) => v.toLowerCase())
+            },
+            get token1() {
+                return token1.get().then((v) => v.toLowerCase())
+            },
         })
     )
 

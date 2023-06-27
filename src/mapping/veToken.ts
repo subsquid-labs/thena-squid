@@ -19,7 +19,7 @@ export function isVeTokenItem(ctx: DataHandlerContext<StoreWithCache>, item: Log
     return item.address === VE_TOKEN
 }
 
-export async function getVeTokenActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+export function getVeTokenActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     const actions: Action[] = []
 
     switch (item.topics[0]) {

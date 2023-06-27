@@ -24,5 +24,6 @@ export class WrappedValue<T> implements DeferredValue<T> {
 }
 
 export interface DeferredValue<T, Nullable extends boolean = false> {
+
     get(): Promise<Nullable extends true ? T | undefined : T>
 }

@@ -17,7 +17,7 @@ export function isVoterItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) 
     return item.address === VOTER
 }
 
-export async function getVoterActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+export function getVoterActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
     const actions: Action[] = []
 
     switch (item.topics[0]) {

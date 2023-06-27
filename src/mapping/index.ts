@@ -27,14 +27,15 @@ export async function getActions(ctx: DataHandlerContext<StoreWithCache, Fields>
     const actions: Action[] = []
     for (let {logs, transactions, traces} of ctx.blocks) {
         for (let log of logs) {
-            const result = await getItemActions(ctx, log)
+            const result = getItemActions(ctx, log)
             actions.push(...result)
         }
     }
+
     return actions
 }
 
-export async function getItemActions(ctx: DataHandlerContext<StoreWithCache, Fields>, item: Log): Promise<Action[]> {
+export function getItemActions(ctx: DataHandlerContext<StoreWithCache, Fields>, item: Log): Action[] {
     if (isThenaItem(item)) {
         return getThenaActions(ctx, item)
     }
@@ -64,27 +65,27 @@ export async function getItemActions(ctx: DataHandlerContext<StoreWithCache, Fie
     }
 
     if (isHypervisorItem(ctx, item)) {
-        return await getHypervisorActions(ctx, item)
+        return getHypervisorActions(ctx, item)
     }
 
     if (isVoterItem(ctx, item)) {
-        return await getVoterActions(ctx, item)
+        return getVoterActions(ctx, item)
     }
 
     if (isGaugeItem(ctx, item)) {
-        return await getGaugeActions(ctx, item)
+        return getGaugeActions(ctx, item)
     }
 
     if (isBribeItem(ctx, item)) {
-        return await getBribeActions(ctx, item)
+        return getBribeActions(ctx, item)
     }
 
     if (isVeTokenItem(ctx, item)) {
-        return await getVeTokenActions(ctx, item)
+        return getVeTokenActions(ctx, item)
     }
 
     if (isRebaseDistributorItem(ctx, item)) {
-        return await getRebaseDistributorActions(ctx, item)
+        return getRebaseDistributorActions(ctx, item)
     }
 
     return []
