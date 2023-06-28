@@ -13,7 +13,7 @@ export interface CreateBribeData {
 export class CreateBribeAction extends Action<CreateBribeData> {
     async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         let pool = await this.data.pool.get()
-        assert(pool != null)
+        // assert(pool != null)
 
         const bribe = new Bribe({
             id: this.data.address,
@@ -33,7 +33,7 @@ export interface UpdateStakeBribeData {
 
 export interface UpdateStakeBribeInfo {
     bribe: string
-    pool: string
+    pool?: string
     token: string
     amount: bigint
 }
@@ -60,11 +60,10 @@ export class UpdateStakeBribeAction extends Action<UpdateStakeBribeData> {
         assert(bribe != null)
 
         const pool = bribe.pool
-        assert(pool != null)
 
         this._info = {
             bribe: bribe.id,
-            pool: pool.id,
+            pool: pool?.id,
             token: token.id,
             amount: this.data.amount,
         }

@@ -15,7 +15,7 @@ export class Gauge {
 
     @Index_()
     @ManyToOne_(() => Pool, {nullable: true})
-    pool!: Pool
+    pool!: Pool | undefined | null
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     totalSupply!: bigint

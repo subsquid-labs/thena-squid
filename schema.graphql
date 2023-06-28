@@ -118,13 +118,13 @@ type Hypervisor @entity {
 
 type Bribe @entity {
     id: ID!
-    pool: Pool!
+    pool: Pool
 }
 
 type Gauge @entity {
     id: ID!
 
-    pool: Pool!
+    pool: Pool
     totalSupply: BigInt!
 
     externalBribe: Bribe!

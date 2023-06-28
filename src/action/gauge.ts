@@ -15,7 +15,7 @@ export interface CreateGaugeData {
 export class CreateGaugeAction extends Action<CreateGaugeData> {
     async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         let pool = await this.data.pool.get()
-        assert(pool != null)
+        // assert(pool != null)
 
         const internalBribe = await this.data.internalBribe.get()
         assert(internalBribe != null)

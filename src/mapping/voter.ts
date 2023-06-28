@@ -74,6 +74,8 @@ export function getVoterActions(ctx: DataHandlerContext<StoreWithCache>, item: L
                     // assert(bribeUpdate.info.token === tokenId)
 
                     const poolId = bribeUpdate.info.pool
+                    if (poolId == null) return []
+                    
                     const voteId = createVoteId(tokenId, poolId)
 
                     return [
@@ -115,6 +117,8 @@ export function getVoterActions(ctx: DataHandlerContext<StoreWithCache>, item: L
                     // assert(bribeUpdate.info.token === tokenId)
 
                     const poolId = bribeUpdate.info.pool
+                    if (poolId == null) return []
+
                     const voteId = createVoteId(tokenId, poolId)
 
                     return [

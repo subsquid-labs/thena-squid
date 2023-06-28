@@ -12,5 +12,5 @@ export class Bribe {
 
     @Index_()
     @ManyToOne_(() => Pool, {nullable: true})
-    pool!: Pool
+    pool!: Pool | undefined | null
 }
