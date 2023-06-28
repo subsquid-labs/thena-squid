@@ -37,7 +37,7 @@ export const processor = new EvmBatchProcessor()
     .setBlockRange({from: 24_468_802}) //24_468_802
     .setDataSource({
         archive: 'https://v2.archive.subsquid.io/network/binance-mainnet',
-        chain: 'https://rpc.ankr.com/bsc',
+        chain: {url: 'https://rpc.ankr.com/bsc', maxBatchCallSize: 10},
     })
     .setFinalityConfirmation(50)
     .setFields({

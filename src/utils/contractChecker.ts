@@ -1,8 +1,11 @@
 import assert from 'assert'
 import {def} from '@subsquid/util-internal'
-import {Chain, ChainContext} from '../abi/abi.support'
 import {DeferredValue} from './deferred'
-import {splitIntoBatches} from './misc'
+import {Chain} from '@subsquid/evm-processor/lib/interfaces/chain'
+
+export interface ChainContext {
+    _chain: Chain
+}
 
 export class ContractChecker {
     private static checkers: WeakMap<Chain, ContractChecker> = new WeakMap()
@@ -41,13 +44,15 @@ export class ContractChecker {
     private async execute() {
         if (this.deferred.size == 0) return
 
-        for (let batch of splitIntoBatches([...this.deferred], 100)) {
-            await Promise.all(
-                batch.map(async (address) => {
-                    let res = await this.chain.client.call('eth_getCode', [address, 'latest'])
-                    this.results.set(address, res !== '0x')
-                })
-            )
+        const addresses = [...this.deferred]
+        const batch = addresses.map((address) => ({
+            method: 'eth_getCode',
+            params: [address, 'latest'],
+        }))
+        const results = await this.chain.client.batchCall(batch)
+
+        for (let i = 0; i < addresses.length; i++) {
+            this.results.set(addresses[i], results[i] !== '0x')
         }
 
         this.deferred.clear()
