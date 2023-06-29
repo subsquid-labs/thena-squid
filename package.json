@@ -11,7 +11,7 @@
     "@subsquid/evm-processor": "^1.7.0",
     "@subsquid/graphql-server": "4.2.0",
     "@subsquid/typeorm-migration": "1.2.0",
-    "@subsquid/typeorm-store": "1.2.0",
+    "@subsquid/typeorm-store": "1.2.1",
     "dotenv": "^16.0.3",
     "ethers": "^6.3.0",
     "typeorm": "^0.3.15"
