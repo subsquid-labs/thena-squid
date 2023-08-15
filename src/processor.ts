@@ -145,10 +145,12 @@ export const processor = new EvmBatchProcessor()
     .addLog({
         address: [VE_TOKEN],
         topic0: [veToken.events.Transfer.topic, veToken.events.Deposit.topic, veToken.events.Withdraw.topic],
+        transaction: true,
     })
     .addLog({
         address: [REBASE_DISTRIBUTOR],
         topic0: [rebaseDistributor.events.Claimed.topic],
+        transaction: true,
     })
     .addTransaction({
         to: [THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS],
