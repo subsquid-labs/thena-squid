@@ -5,7 +5,7 @@ import {DataHandlerContext} from '@subsquid/evm-processor'
 export class BribeManager {
     private static managers: WeakMap<Store, BribeManager> = new WeakMap()
 
-    static get(ctx: DataHandlerContext<Store>) {
+    static get(ctx: {store: Store}) {
         let manager = this.managers.get(ctx.store)
         if (manager == null) {
             manager = new BribeManager(ctx.store)

@@ -1,97 +1,100 @@
-import {DataHandlerContext} from '@subsquid/evm-processor'
-import {Log} from '../processor'
-import {GaugeManager} from '../utils/manager/gaugeManager'
 import {StoreWithCache} from '@belopash/squid-tools'
 import * as gaugeAbi from '../abi/gaugeV2'
-import {Action, EnsureUserAction} from '../action'
+import {MappingContext} from '../interfaces'
 import {Gauge, GaugeStake, User} from '../model'
-import {
-    EnsureStakeGaugeAction,
-    RewardStakeGaugeAction,
-    UpdateStakeGaugeAction,
-    UpdateTotalSupplyGaugeAction,
-} from '../action/gauge'
+import {Log} from '../processor'
 import {createGaugeStakeId} from '../utils/ids'
-import {ContractChecker} from '../utils/contractChecker'
+import {GaugeManager} from '../utils/manager/gaugeManager'
 
-export function isGaugeItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+export function isGaugeItem(ctx: MappingContext<StoreWithCache>, item: Log) {
     return GaugeManager.get(ctx).isGauge(item.address)
 }
 
-export function getGaugeActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
-    const actions: Action[] = []
-
+export function getGaugeActions(ctx: MappingContext<StoreWithCache>, item: Log) {
     switch (item.topics[0]) {
         case gaugeAbi.events.Deposit.topic: {
             const event = gaugeAbi.events.Deposit.decode(item)
 
             const userId = event.user.toLowerCase()
-            const gauge = item.address
+            const userDeferred = ctx.store.defer(User, userId)
+
+            const gaugeId = item.address
+            ctx.store.defer(Gauge, gaugeId)
+
+            const stakeId = createGaugeStakeId(gaugeId, userId)
+            const stakeDeferred = ctx.store.defer(GaugeStake, stakeId)
+
             const amount = event.amount
 
-            const stakeId = createGaugeStakeId(gauge, userId)
-            actions.push(
-                new EnsureUserAction(item.block, item.transaction!, {
-                    user: ctx.store.defer(User, userId),
-                    address: userId,
-                    isContract: ContractChecker.get(ctx).defer(userId),
-                }),
-                new EnsureStakeGaugeAction(item.block, item.transaction!, {
-                    stake: ctx.store.defer(GaugeStake, stakeId),
-                    gauge: ctx.store.defer(Gauge, gauge),
-                    user: ctx.store.defer(User, userId),
-                    id: stakeId,
-                }),
-                new UpdateStakeGaugeAction(item.block, item.transaction!, {
-                    stake: ctx.store.defer(GaugeStake, stakeId),
-                    amount,
-                }),
-                new UpdateTotalSupplyGaugeAction(item.block, item.transaction!, {
-                    gauge: ctx.store.defer(Gauge, gauge),
+            ctx.queue
+                .lazy(async () => {
+                    const stake = await stakeDeferred.get()
+                    if (stake == null) {
+                        const user = await userDeferred.get()
+                        if (user == null) {
+                            ctx.queue.add('user_create', {
+                                userId,
+                                address: userId,
+                            })
+                        }
+
+                        ctx.queue.add('gauge_createStake', {
+                            gaugeId,
+                            userId,
+                            stakeId,
+                        })
+                    }
+                })
+                .add('gauge_updateStake', {
+                    stakeId,
                     amount,
                 })
-            )
+                .add('gauge_updateTotalSupply', {
+                    gaugeId,
+                    amount,
+                })
 
             break
         }
         case gaugeAbi.events.Withdraw.topic: {
             const event = gaugeAbi.events.Withdraw.decode(item)
 
-            const user = event.user.toLowerCase()
-            const gauge = item.address
+            const userId = event.user.toLowerCase()
+
+            const gaugeId = item.address
+            ctx.store.defer(Gauge, gaugeId)
+
+            const stakeId = createGaugeStakeId(gaugeId, userId)
+            ctx.store.defer(GaugeStake, stakeId)
+
             const amount = -event.amount
 
-            const stakeId = createGaugeStakeId(gauge, user)
-            actions.push(
-                new UpdateStakeGaugeAction(item.block, item.transaction!, {
-                    stake: ctx.store.defer(GaugeStake, stakeId),
-                    amount,
-                }),
-                new UpdateTotalSupplyGaugeAction(item.block, item.transaction!, {
-                    gauge: ctx.store.defer(Gauge, gauge),
+            ctx.queue
+                .add('gauge_updateStake', {
+                    stakeId,
                     amount,
                 })
-            )
+                .add('gauge_updateTotalSupply', {
+                    gaugeId,
+                    amount,
+                })
 
             break
         }
         case gaugeAbi.events.Harvest.topic: {
             const event = gaugeAbi.events.Harvest.decode(item)
 
-            const user = event.user.toLowerCase()
-            const gauge = item.address
+            const userId = event.user.toLowerCase()
+            const gaugeId = item.address
 
-            const stakeId = createGaugeStakeId(gauge, user)
-            actions.push(
-                new RewardStakeGaugeAction(item.block, item.transaction!, {
-                    stake: ctx.store.defer(GaugeStake, stakeId),
-                    amount: event.reward,
-                })
-            )
+            const stakeId = createGaugeStakeId(gaugeId, userId)
+
+            ctx.queue.add('gauge_rewardStake', {
+                stakeId,
+                amount: event.reward,
+            })
 
             break
         }
     }
-
-    return actions
 }

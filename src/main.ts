@@ -1,17 +1,102 @@
-import {TypeormDatabase} from '@subsquid/typeorm-store'
-import {getActions} from './mapping'
-import {processor} from './processor'
-import {Action} from './action'
 import {StoreWithCache} from '@belopash/squid-tools'
+import {TypeormDatabase} from '@subsquid/typeorm-store'
+import {ActionQueue} from './action/actionQueue'
+import {MappingContext} from './interfaces'
+import {getAlgebraFactoryActions, isAlgebraFactoryItem} from './mapping/algebraFactory'
+import {getAlgebraPoolActions, isAlgebraPoolItem} from './mapping/algebraPool'
+import {getBribeActions, isBribeItem} from './mapping/bribe'
+import {getGaugeActions, isGaugeItem} from './mapping/gauge'
+import {getHypervisorActions, isHypervisorItem} from './mapping/hypervisor'
+import {getRebaseDistributorActions, isRebaseDistributorItem} from './mapping/rebaseDistributor'
+import {getRouterV2Actions, isRouterV2Item} from './mapping/routerV2'
+import {getRouterV3Actions, isRouterV3Item} from './mapping/routerV3'
+import {getSolidlyFactoryActions, isSolidlyFactoryItem} from './mapping/solidlyFactory'
+import {getSolidlyPairActions, isSolidlyPairItem} from './mapping/solidlyPair'
+import {getThenaActions, isThenaItem} from './mapping/thena'
+import {getVeTokenActions, isVeTokenItem} from './mapping/veToken'
+import {getVoterActions, isVoterItem} from './mapping/voter'
+import {Log, processor} from './processor'
+import {GaugeManager, HypervisorManager, PoolManager} from './utils/manager'
+import {BribeManager} from './utils/manager/bribeManager'
 
-processor.run(new TypeormDatabase({supportHotBlocks: true}), async (ctx) => {
-    const newCtx = {
-        ...ctx,
-        store: StoreWithCache.create(ctx.store),
+processor.run(new TypeormDatabase({supportHotBlocks: true}), async (_ctx) => {
+    const store = StoreWithCache.create(_ctx.store)
+    const queue = new ActionQueue()
+
+    const ctx = {
+        ..._ctx,
+        store,
+        queue,
     }
 
-    const actions = await getActions(newCtx)
-    await Action.process(newCtx, actions)
+    await GaugeManager.get(ctx).init()
+    await BribeManager.get(ctx).init()
+    await PoolManager.get(ctx).init()
+    await HypervisorManager.get(ctx).init()
 
-    await newCtx.store.flush()
+    for (let block of ctx.blocks) {
+        for (let log of block.logs) {
+            getItemActions(ctx, log)
+        }
+    }
+
+    await queue.process(ctx)
+
+    await ctx.store.flush()
 })
+
+export function getItemActions(ctx: MappingContext<StoreWithCache>, item: Log) {
+    ctx.queue.setBlock(item.block).setTransaction(item.transaction)
+
+    if (isThenaItem(item)) {
+        getThenaActions(ctx, item)
+    }
+
+    if (isRouterV2Item(item)) {
+        getRouterV2Actions(ctx, item)
+    }
+
+    if (isRouterV3Item(item)) {
+        getRouterV3Actions(ctx, item)
+    }
+
+    if (isSolidlyFactoryItem(item)) {
+        getSolidlyFactoryActions(ctx, item)
+    }
+
+    if (isSolidlyPairItem(ctx, item)) {
+        getSolidlyPairActions(ctx, item)
+    }
+
+    if (isAlgebraFactoryItem(item)) {
+        getAlgebraFactoryActions(ctx, item)
+    }
+
+    if (isAlgebraPoolItem(ctx, item)) {
+        getAlgebraPoolActions(ctx, item)
+    }
+
+    if (isHypervisorItem(ctx, item)) {
+        getHypervisorActions(ctx, item)
+    }
+
+    if (isVoterItem(ctx, item)) {
+        getVoterActions(ctx, item)
+    }
+
+    if (isGaugeItem(ctx, item)) {
+        getGaugeActions(ctx, item)
+    }
+
+    if (isBribeItem(ctx, item)) {
+        getBribeActions(ctx, item)
+    }
+
+    if (isVeTokenItem(ctx, item)) {
+        getVeTokenActions(ctx, item)
+    }
+
+    if (isRebaseDistributorItem(ctx, item)) {
+        getRebaseDistributorActions(ctx, item)
+    }
+}

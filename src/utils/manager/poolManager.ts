@@ -6,7 +6,7 @@ import {DataHandlerContext} from '@subsquid/evm-processor'
 export class PoolManager {
     private static managers: WeakMap<Store, PoolManager> = new WeakMap()
 
-    static get(ctx: DataHandlerContext<Store>) {
+    static get(ctx: {store: Store}) {
         let manager = this.managers.get(ctx.store)
         if (manager == null) {
             manager = new PoolManager(ctx.store)

@@ -1,4 +1,4 @@
-import {DataHandlerContext} from '@subsquid/evm-processor'
+import {MappingContext} from '../interfaces'
 import * as algebraPool from '../abi/algebraPool'
 import {Log} from '../processor'
 import {Action} from '../action'
@@ -8,7 +8,7 @@ export function isRouterV3Item(item: Log) {
     return item.address === ROUTER_V3_ADDRESS
 }
 
-export function getRouterV3Actions(ctx: DataHandlerContext<unknown>, item: Log) {
+export function getRouterV3Actions(ctx: MappingContext<unknown>, item: Log) {
     const actions: Action[] = []
 
     // switch (item.kind) {

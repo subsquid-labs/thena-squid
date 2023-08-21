@@ -7,7 +7,7 @@ import assert from 'assert'
 import {createLiquidityPositionUpdateId} from '../utils/ids'
 
 export interface BaseLiquidityPositionActionData {
-    position: DeferredValue<LiquidityPosition, true>
+    positionId: string
 }
 
 export abstract class BaseLiquidityPositionAction<
@@ -15,23 +15,17 @@ export abstract class BaseLiquidityPositionAction<
 > extends Action<T> {}
 
 export interface EnsureLiquidityPositionActionData extends BaseLiquidityPositionActionData {
-    id: string
-    user: DeferredValue<User, true>
-    pool: DeferredValue<Pool, true>
+    userId: string
+    poolId: string
 }
 
 export class EnsureLiquidityPositionAction extends BaseLiquidityPositionAction<EnsureLiquidityPositionActionData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        let position = await this.data.position.get()
-        if (position != null) return
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const user = await ctx.store.getOrFail(User, this.data.userId)
+        const pool = await ctx.store.getOrFail(Pool, this.data.poolId)
 
-        const user = await this.data.user.get()
-        assert(user != null)
-        const pool = await this.data.pool.get()
-        assert(pool != null)
-
-        position = new LiquidityPosition({
-            id: this.data.id,
+        const position = new LiquidityPosition({
+            id: this.data.positionId,
             user,
             pool,
             value: 0n,
@@ -58,12 +52,9 @@ export class ValueUpdateLiquidityPositionAction extends BaseLiquidityPositionAct
           }
         | undefined
 
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const position = await this.data.position.get()
-        assert(position != null, `Missing position`)
-
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const position = await ctx.store.getOrFail(LiquidityPosition, this.data.positionId, {pool: true})
         const pool = position.pool
-        assert(pool != null, `Missing pool`)
 
         position.value += this.data.amount
         // assert(position.value >= 0)
@@ -103,7 +94,7 @@ export interface AdjustValueUpdateLiquidityPositionActionData extends BaseLiquid
 }
 
 export class AdjustValueUpdateLiquidityPositionAction extends BaseLiquidityPositionAction<AdjustValueUpdateLiquidityPositionActionData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
         if (
             ValueUpdateLiquidityPositionAction.lastUpdate == null ||
             ValueUpdateLiquidityPositionAction.lastUpdate.blockNumber !== this.block.height ||
@@ -122,8 +113,3 @@ export class AdjustValueUpdateLiquidityPositionAction extends BaseLiquidityPosit
         await ctx.store.upsert(positionUpdate)
     }
 }
-
-export type LiquidityPositionAction =
-    | ValueUpdateLiquidityPositionAction
-    | AdjustValueUpdateLiquidityPositionAction
-    | EnsureLiquidityPositionAction

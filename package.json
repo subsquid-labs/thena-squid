@@ -5,7 +5,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@belopash/squid-tools": "^0.3.0",
+    "@belopash/squid-tools": "^0.4.0",
     "@subsquid/archive-registry": "^3.2.0",
     "@subsquid/big-decimal": "^1.0.0",
     "@subsquid/evm-processor": "^1.8.0",

@@ -1,19 +1,19 @@
-import {DataHandlerContext} from '@subsquid/evm-processor'
-import {ALGEBRA_FACTORY, SOLIDLY_FACTORY} from '../config'
-import {Log} from '../processor'
-import * as solidlyFactory from '../abi/solidlyFactory'
-import * as bep20 from '../abi/bep20'
-import {Action, CreatePoolAction, EnsureTokenAction} from '../action'
-import {PoolManager} from '../utils/manager/poolManager'
-import {Pool, PoolType, Token} from '../model'
 import {StoreWithCache} from '@belopash/squid-tools'
+import * as bep20 from '../abi/bep20'
+import * as solidlyFactory from '../abi/solidlyFactory'
+import {Action} from '../action'
+import {SOLIDLY_FACTORY} from '../config'
+import {MappingContext} from '../interfaces'
+import {PoolType, Token} from '../model'
+import {Log} from '../processor'
 import {CallCache} from '../utils/callCache'
+import {PoolManager} from '../utils/manager/poolManager'
 
 export function isSolidlyFactoryItem(item: Log) {
     return item.address === SOLIDLY_FACTORY
 }
 
-export function getSolidlyFactoryActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+export function getSolidlyFactoryActions(ctx: MappingContext<StoreWithCache>, item: Log) {
     const actions: Action[] = []
 
     switch (item.topics[0]) {
@@ -21,51 +21,57 @@ export function getSolidlyFactoryActions(ctx: DataHandlerContext<StoreWithCache>
             ctx.log.debug(`processing Pair creation event...`)
             const event = solidlyFactory.events.PairCreated.decode(item)
 
-            const id = event.pair.toLowerCase()
+            const poolId = event.pair.toLowerCase()
 
             const callCache = CallCache.get(ctx)
 
-            const token0 = event.token0.toLowerCase()
-            const token0Decimals = callCache.defer(item.block, [bep20.functions.decimals, token0, []])
-            const token0Symbol = callCache.defer(item.block, [bep20.functions.symbol, token0, []])
+            const token0Address = event.token0.toLowerCase()
+            const token0Id = token0Address
+            const token0Deferred = ctx.store.defer(Token, token0Id)
 
-            const token1 = event.token1.toLowerCase()
-            const token1Decimals = callCache.defer(item.block, [bep20.functions.decimals, token1, []])
-            const token1Symbol = callCache.defer(item.block, [bep20.functions.symbol, token1, []])
+            const token0DecimalsDeferred = callCache.defer(item.block, [bep20.functions.decimals, token0Address, []])
+            const token0SymbolDeferred = callCache.defer(item.block, [bep20.functions.symbol, token0Address, []])
 
-            actions.push(
-                new EnsureTokenAction(item.block, item.transaction!, {
-                    token: ctx.store.defer(Token, token0),
-                    address: token0,
-                    get decimals() {
-                        return token0Decimals.get()
-                    },
-                    get symbol() {
-                        return token0Symbol.get()
-                    },
-                }),
-                new EnsureTokenAction(item.block, item.transaction!, {
-                    token: ctx.store.defer(Token, token1),
-                    address: token1,
-                    get decimals() {
-                        return token1Decimals.get()
-                    },
-                    get symbol() {
-                        return token1Symbol.get()
-                    },
-                }),
-                new CreatePoolAction(item.block, item.transaction!, {
-                    pool: ctx.store.defer(Pool, id),
-                    address: id,
-                    token0: ctx.store.defer(Token, token0),
-                    token1: ctx.store.defer(Token, token1),
-                    stable: event.stable,
-                    factory: SOLIDLY_FACTORY,
-                    type: PoolType.Solidly,
+            const token1Address = event.token1.toLowerCase()
+            const token1Id = event.token1.toLowerCase()
+            const token1Deferred = ctx.store.defer(Token, token1Id)
+
+            const token1DecimalsDeferred = callCache.defer(item.block, [bep20.functions.decimals, token1Address, []])
+            const token1SymbolDeferred = callCache.defer(item.block, [bep20.functions.symbol, token1Address, []])
+
+            ctx.queue
+                .lazy(async () => {
+                    const token0 = await token0Deferred.get()
+                    if (token0 == null) {
+                        ctx.queue.add('token_create', {
+                            tokenId: token0Id,
+                            address: token0Address,
+                            decimals: await token0DecimalsDeferred.get(),
+                            symbol: await token0SymbolDeferred.get(),
+                        })
+                    }
                 })
-            )
+                .lazy(async () => {
+                    const token1 = await token1Deferred.get()
+                    if (token1 == null) {
+                        ctx.queue.add('token_create', {
+                            tokenId: token1Id,
+                            address: token0Address,
+                            decimals: await token1DecimalsDeferred.get(),
+                            symbol: await token1SymbolDeferred.get(),
+                        })
+                    }
+                })
+                .add('pool_create', {
+                    poolId,
+                    address: poolId,
+                    type: PoolType.Solidly,
+                    factory: item.address,
+                    token0Id,
+                    token1Id,
+                })
 
-            PoolManager.get(ctx).addPool(item.address, id)
+            PoolManager.get(ctx).addPool(item.address, poolId)
 
             break
         }

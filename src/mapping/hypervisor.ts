@@ -1,58 +1,46 @@
-import {DataHandlerContext} from '@subsquid/evm-processor'
+import {StoreWithCache} from '@belopash/squid-tools'
 import * as hypervisor from '../abi/hypervisor'
-import {
-    Action,
-    AdjustValueUpdateLiquidityPositionAction,
-    ChangeLiquidityPoolAction,
-    EnsureHypervisorAction,
-    EnsureLiquidityPositionAction,
-    EnsureUserAction,
-    SetBalancesPoolAction,
-    ValueUpdateLiquidityPositionAction,
-} from '../action'
 import {ZERO_ADDRESS} from '../config'
+import {MappingContext} from '../interfaces'
 import {Hypervisor, LiquidityPosition, Pool, User} from '../model'
 import {Log} from '../processor'
 import {CallCache} from '../utils/callCache'
-import {WrappedValue} from '../utils/deferred'
-import {HypervisorManager} from '../utils/manager/hypervisorManager'
 import {createLiquidityPositionId} from '../utils/ids'
-import {StoreWithCache} from '@belopash/squid-tools'
-import {ContractChecker} from '../utils/contractChecker'
+import {HypervisorManager} from '../utils/manager/hypervisorManager'
 
-export function isHypervisorItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+export function isHypervisorItem(ctx: MappingContext<StoreWithCache>, item: Log) {
     return HypervisorManager.get(ctx).isHypervisor(item.address)
 }
 
-export function getHypervisorActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
-    const actions: Action[] = []
+export function getHypervisorActions(ctx: MappingContext<StoreWithCache>, item: Log) {
+    ctx.queue.setBlock(item.block).setTransaction(item.transaction)
 
     const hypervisorId = item.address
+    const hypervisorDeferred = ctx.store.defer(Hypervisor, hypervisorId)
 
     const callCache = CallCache.get(ctx)
 
-    const token0 = callCache.defer(item.block, [hypervisor.functions.token0, hypervisorId, []])
-    const token1 = callCache.defer(item.block, [hypervisor.functions.token1, hypervisorId, []])
-    const hypervisorPool = callCache.defer(item.block, [hypervisor.functions.pool, hypervisorId, []])
+    const token0Deferred = callCache.defer(item.block, [hypervisor.functions.token0, hypervisorId, []])
+    const token1Deferred = callCache.defer(item.block, [hypervisor.functions.token1, hypervisorId, []])
+    const hypervisorPoolDeferred = callCache.defer(item.block, [hypervisor.functions.pool, hypervisorId, []])
 
-    ctx.store.defer(Pool, hypervisorId)
+    ctx.queue.lazy(async () => {
+        const hypervisor = await hypervisorDeferred.get()
+        if (hypervisor == null) {
+            const token0 = await token0Deferred.get()
+            const token1 = await token1Deferred.get()
+            const hypervisorPool = await hypervisorPoolDeferred.get()
 
-    actions.push(
-        new EnsureHypervisorAction(item.block, item.transaction!, {
-            hypervisor: ctx.store.defer(Hypervisor, hypervisorId),
-            pool: hypervisorId,
-            address: hypervisorId,
-            get hypervisorPool() {
-                return hypervisorPool.get().then((v) => v.toLowerCase())
-            },
-            get token0() {
-                return token0.get().then((v) => v.toLowerCase())
-            },
-            get token1() {
-                return token1.get().then((v) => v.toLowerCase())
-            },
-        })
-    )
+            ctx.queue.add('hypervisor_create', {
+                hypervisorId,
+                poolId: hypervisorId,
+                address: hypervisorId,
+                hypervisorPoolId: hypervisorPool.toLowerCase(),
+                token0Id: token0.toLowerCase(),
+                token1Id: token1.toLowerCase(),
+            })
+        }
+    })
 
     HypervisorManager.get(ctx).addHypervisor(hypervisorId)
 
@@ -61,65 +49,60 @@ export function getHypervisorActions(ctx: DataHandlerContext<StoreWithCache>, it
             const event = hypervisor.events.Transfer.decode(item)
 
             const amount = event.value
-            const from = event.from.toLowerCase()
-            const to = event.to.toLowerCase()
+            const fromId = event.from.toLowerCase()
+            ctx.store.defer(User, fromId)
+
+            const toId = event.to.toLowerCase()
+            ctx.store.defer(User, toId)
 
             const poolId = item.address
 
-            if (from === ZERO_ADDRESS) {
-                actions.push(
-                    new ChangeLiquidityPoolAction(item.block, item.transaction!, {
-                        pool: ctx.store.defer(Pool, poolId),
-                        amount,
-                    })
-                )
+            if (fromId === ZERO_ADDRESS) {
+                ctx.queue.add('pool_updateLiquidity', {
+                    poolId,
+                    amount,
+                })
             } else {
-                const positionId = createLiquidityPositionId(poolId, from)
-                actions.push(
-                    new EnsureUserAction(item.block, item.transaction!, {
-                        user: ctx.store.defer(User, from),
-                        address: from,
-                        isContract: ContractChecker.get(ctx).defer(from),
-                    }),
-                    new EnsureLiquidityPositionAction(item.block, item.transaction!, {
-                        position: ctx.store.defer(LiquidityPosition, positionId),
-                        id: positionId,
-                        user: ctx.store.defer(User, from),
-                        pool: ctx.store.defer(Pool, poolId),
-                    }),
-                    new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-                        position: ctx.store.defer(LiquidityPosition, positionId, {pool: true}),
-                        amount: -amount,
-                    })
-                )
+                const positionId = createLiquidityPositionId(poolId, fromId)
+                ctx.store.defer(LiquidityPosition, positionId, {pool: true})
+
+                ctx.queue.add('lp_updateValue', {
+                    positionId,
+                    amount: -amount,
+                })
             }
 
-            if (to === ZERO_ADDRESS && from !== ZERO_ADDRESS) {
-                actions.push(
-                    new ChangeLiquidityPoolAction(item.block, item.transaction!, {
-                        pool: ctx.store.defer(Pool, poolId),
+            if (toId === ZERO_ADDRESS && fromId !== ZERO_ADDRESS) {
+                ctx.queue.add('pool_updateLiquidity', {
+                    poolId,
+                    amount: -amount,
+                })
+            } else {
+                const positionId = createLiquidityPositionId(poolId, toId)
+                ctx.store.defer(LiquidityPosition, positionId, {pool: true})
+
+                ctx.queue
+                    .lazy(async () => {
+                        const position = await ctx.store.get(LiquidityPosition, positionId)
+                        if (position == null) {
+                            const user = await ctx.store.get(User, toId)
+                            if (user == null) {
+                                ctx.queue.add('user_create', {
+                                    userId: toId,
+                                    address: toId,
+                                })
+                            }
+                            ctx.queue.add('lp_create', {
+                                positionId,
+                                poolId,
+                                userId: toId,
+                            })
+                        }
+                    })
+                    .add('lp_updateValue', {
+                        positionId,
                         amount: -amount,
                     })
-                )
-            } else {
-                const positionId = createLiquidityPositionId(poolId, to)
-                actions.push(
-                    new EnsureUserAction(item.block, item.transaction!, {
-                        user: ctx.store.defer(User, to),
-                        address: to,
-                        isContract: ContractChecker.get(ctx).defer(to),
-                    }),
-                    new EnsureLiquidityPositionAction(item.block, item.transaction!, {
-                        position: ctx.store.defer(LiquidityPosition, positionId),
-                        id: positionId,
-                        user: ctx.store.defer(User, to),
-                        pool: ctx.store.defer(Pool, poolId),
-                    }),
-                    new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-                        position: ctx.store.defer(LiquidityPosition, positionId, {pool: true}),
-                        amount,
-                    })
-                )
             }
 
             break
@@ -129,35 +112,17 @@ export function getHypervisorActions(ctx: DataHandlerContext<StoreWithCache>, it
 
             const userId = event.to.toLowerCase()
             const poolId = item.address
+            const positionId = createLiquidityPositionId(poolId, userId)
+            ctx.store.defer(LiquidityPosition, positionId)
 
             const amount0 = event.amount0
             const amount1 = event.amount1
 
-            actions.push(
-                new AdjustValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-                    position: ctx.store.defer(LiquidityPosition, createLiquidityPositionId(poolId, userId)),
-                    amount0,
-                    amount1,
-                })
-            )
-
-            // actions.push(
-            //     new SetBalancesPoolAction(item.block, item.transaction!, {
-            //         id: poolId,
-            //         value0: new DeferredCall(item.block, {
-            //             address: PoolManager.instance.getTokens(poolId).token0,
-            //             func: bep20.functions.balanceOf,
-            //             args: [poolId],
-            //             transform: (v) => v,
-            //         }),
-            //         value1: new DeferredCall(item.block, {
-            //             address: PoolManager.instance.getTokens(poolId).token1,
-            //             func: bep20.functions.balanceOf,
-            //             args: [poolId],
-            //             transform: (v) => v,
-            //         }),
-            //     })
-            // )
+            ctx.queue.add('lp_adjustLastUpdate', {
+                positionId,
+                amount0,
+                amount1,
+            })
 
             break
         }
@@ -166,35 +131,17 @@ export function getHypervisorActions(ctx: DataHandlerContext<StoreWithCache>, it
 
             const userId = event.to.toLowerCase()
             const poolId = item.address
+            const positionId = createLiquidityPositionId(poolId, userId)
+            ctx.store.defer(LiquidityPosition, positionId)
 
             const amount0 = -event.amount0
             const amount1 = -event.amount1
 
-            actions.push(
-                new AdjustValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-                    position: ctx.store.defer(LiquidityPosition, createLiquidityPositionId(poolId, userId)),
-                    amount0,
-                    amount1,
-                })
-            )
-
-            // actions.push(
-            //     new SetBalancesPoolAction(item.block, item.transaction!, {
-            //         id: poolId,
-            //         value0: new DeferredCall(item.block, {
-            //             address: PoolManager.instance.getTokens(poolId).token0,
-            //             func: bep20.functions.balanceOf,
-            //             args: [poolId],
-            //             transform: (v) => v,
-            //         }),
-            //         value1: new DeferredCall(item.block, {
-            //             address: PoolManager.instance.getTokens(poolId).token1,
-            //             func: bep20.functions.balanceOf,
-            //             args: [poolId],
-            //             transform: (v) => v,
-            //         }),
-            //     })
-            // )
+            ctx.queue.add('lp_adjustLastUpdate', {
+                positionId,
+                amount0,
+                amount1,
+            })
 
             break
         }
@@ -202,18 +149,15 @@ export function getHypervisorActions(ctx: DataHandlerContext<StoreWithCache>, it
             const event = hypervisor.events.Rebalance.decode(item)
 
             const poolId = item.address
+            ctx.store.defer(Pool, poolId)
 
-            actions.push(
-                new SetBalancesPoolAction(item.block, item.transaction!, {
-                    pool: ctx.store.defer(Pool, poolId),
-                    value0: new WrappedValue(event.totalAmount0),
-                    value1: new WrappedValue(event.totalAmount1),
-                })
-            )
+            ctx.queue.add('pool_setReserves', {
+                poolId,
+                value0: event.totalAmount0,
+                value1: event.totalAmount1,
+            })
 
             break
         }
     }
-
-    return actions
 }

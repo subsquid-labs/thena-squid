@@ -1,36 +1,30 @@
-import assert from 'assert'
-import {DataHandlerContext} from '@subsquid/evm-processor'
-import {Pool, PoolType, Token} from '../model'
-import {DeferredValue} from '../utils/deferred'
 import {StoreWithCache} from '@belopash/squid-tools'
+import {DataHandlerContext} from '@subsquid/evm-processor'
+import assert from 'assert'
+import {Pool, PoolType, Token} from '../model'
 import {Action} from './base'
 
 export interface BasePoolActionData {
-    pool: DeferredValue<Pool, true>
+    poolId: string
 }
 
 export abstract class BasePoolAction<T extends BasePoolActionData = BasePoolActionData> extends Action<T> {}
 
 export interface CreatePoolActionData extends BasePoolActionData {
     address: string
-    token0: DeferredValue<Token, true>
-    token1: DeferredValue<Token, true>
+    token0Id: string
+    token1Id: string
     stable?: boolean
     factory: string
     type: PoolType
 }
 
 export class CreatePoolAction extends BasePoolAction<CreatePoolActionData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        let pool = await this.data.pool.get()
-        assert(pool == null, 'Pool already exists 0_o')
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const token0 = await ctx.store.getOrFail(Token, this.data.token0Id)
+        const token1 = await ctx.store.getOrFail(Token, this.data.token1Id)
 
-        const token0 = await this.data.token0.get()
-        assert(token0 != null)
-        const token1 = await this.data.token1.get()
-        assert(token1 != null)
-
-        pool = new Pool({
+        const pool = new Pool({
             id: this.data.address,
             token0,
             token1,
@@ -50,17 +44,16 @@ export class CreatePoolAction extends BasePoolAction<CreatePoolActionData> {
 }
 
 export interface SetBalancesPoolActionData extends BasePoolActionData {
-    value0: DeferredValue<bigint>
-    value1: DeferredValue<bigint>
+    value0: bigint
+    value1: bigint
 }
 
 export class SetBalancesPoolAction extends BasePoolAction<SetBalancesPoolActionData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const pool = await this.data.pool.get()
-        assert(pool != null, `Missing pool`)
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const pool = await ctx.store.getOrFail(Pool, this.data.poolId)
 
-        pool.reserve0 = await this.data.value0.get()
-        pool.reserve1 = await this.data.value1.get()
+        pool.reserve0 = this.data.value0
+        pool.reserve1 = this.data.value1
 
         await ctx.store.upsert(pool)
         ctx.log.debug(`Balances of pool ${pool.id} updated to ${this.data.value0}, ${this.data.value1}`)
@@ -73,9 +66,8 @@ export interface ChangeBalancesPoolActionData extends BasePoolActionData {
 }
 
 export class ChangeBalancesPoolAction extends BasePoolAction<ChangeBalancesPoolActionData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const pool = await this.data.pool.get()
-        assert(pool != null, `Missing pool`)
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const pool = await ctx.store.getOrFail(Pool, this.data.poolId)
 
         pool.reserve0 += this.data.value0
         pool.reserve1 += this.data.value1
@@ -92,9 +84,8 @@ export interface ChangeLiquidityPoolActionData extends BasePoolActionData {
 }
 
 export class ChangeLiquidityPoolAction extends BasePoolAction<ChangeLiquidityPoolActionData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const pool = await this.data.pool.get()
-        assert(pool != null, `Missing pool`)
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const pool = await ctx.store.getOrFail(Pool, this.data.poolId)
 
         pool.liquidity += this.data.amount
 
@@ -104,15 +95,14 @@ export class ChangeLiquidityPoolAction extends BasePoolAction<ChangeLiquidityPoo
 }
 
 export interface SetLiquidityPoolActionData extends BasePoolActionData {
-    value: DeferredValue<bigint>
+    value: bigint
 }
 
 export class SetLiquidityPoolAction extends BasePoolAction<SetLiquidityPoolActionData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const pool = await this.data.pool.get()
-        assert(pool != null, `Missing pool`)
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const pool = await ctx.store.getOrFail(Pool, this.data.poolId)
 
-        pool.liquidity = await this.data.value.get()
+        pool.liquidity = this.data.value
 
         await ctx.store.upsert(pool)
         ctx.log.debug(`Liquidity of pool ${pool.id} set to ${pool.liquidity}`)
@@ -124,9 +114,8 @@ export interface SetSqrtPricePoolActionData extends BasePoolActionData {
 }
 
 export class SetSqrtPricePoolAction extends BasePoolAction<SetSqrtPricePoolActionData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const pool = await this.data.pool.get()
-        assert(pool != null, `Missing pool`)
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const pool = await ctx.store.getOrFail(Pool, this.data.poolId)
 
         pool.sqrtPriceX96 = this.data.value
 
@@ -135,14 +124,10 @@ export class SetSqrtPricePoolAction extends BasePoolAction<SetSqrtPricePoolActio
 }
 
 export class RecalculatePricesPoolAction extends BasePoolAction {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const pool = await this.data.pool.get()
-        assert(pool != null, `Missing pool`)
-
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const pool = await ctx.store.getOrFail(Pool, this.data.poolId, {token0: true, token1: true})
         const token0 = pool.token0
-        assert(token0 != null)
         const token1 = pool.token1
-        assert(token1 != null)
 
         switch (pool.type) {
             case PoolType.Solidly:

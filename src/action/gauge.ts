@@ -1,27 +1,24 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Action} from './base'
 import {StoreWithCache} from '@belopash/squid-tools'
-import {DeferredValue} from '../utils/deferred'
 import {Bribe, Gauge, GaugeStake, Pool, Token, User} from '../model'
 import assert from 'assert'
 
 export interface CreateGaugeData {
+    gaugeId: string
     address: string
-    pool: DeferredValue<Pool, true>
-    internalBribe: DeferredValue<Bribe, true>
-    externalBribe: DeferredValue<Bribe, true>
+    poolId: string
+    internalBribeId: string
+    externalBribeId: string
 }
 
 export class CreateGaugeAction extends Action<CreateGaugeData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        let pool = await this.data.pool.get()
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        let pool = await ctx.store.getOrFail(Pool, this.data.poolId)
         // assert(pool != null)
 
-        const internalBribe = await this.data.internalBribe.get()
-        assert(internalBribe != null)
-
-        const externalBribe = await this.data.externalBribe.get()
-        assert(externalBribe != null)
+        const internalBribe = await ctx.store.getOrFail(Bribe, this.data.internalBribeId)
+        const externalBribe = await ctx.store.getOrFail(Bribe, this.data.externalBribeId)
 
         const gauge = new Gauge({
             id: this.data.address,
@@ -38,14 +35,13 @@ export class CreateGaugeAction extends Action<CreateGaugeData> {
 }
 
 export interface UpdateTotalSupplyGaugeData {
-    gauge: DeferredValue<Gauge, true>
+    gaugeId: string
     amount: bigint
 }
 
 export class UpdateTotalSupplyGaugeAction extends Action<UpdateTotalSupplyGaugeData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const gauge = await this.data.gauge.get()
-        assert(gauge != null)
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const gauge = await ctx.store.getOrFail(Gauge, this.data.gaugeId)
 
         gauge.totalSupply += this.data.amount
 
@@ -53,26 +49,19 @@ export class UpdateTotalSupplyGaugeAction extends Action<UpdateTotalSupplyGaugeD
     }
 }
 
-export interface EnsureGaugeStakeData {
-    stake: DeferredValue<GaugeStake, true>
-    id: string
-    user: DeferredValue<User, true>
-    gauge: DeferredValue<Gauge, true>
+export interface CreateGaugeStakeData {
+    stakeId: string
+    userId: string
+    gaugeId: string
 }
 
-export class EnsureStakeGaugeAction extends Action<EnsureGaugeStakeData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        let stake = await this.data.stake.get()
-        if (stake != null) return
+export class CreateStakeGaugeAction extends Action<CreateGaugeStakeData> {
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const gauge = await ctx.store.getOrFail(Gauge, this.data.gaugeId)
+        const user = await ctx.store.getOrFail(User, this.data.userId)
 
-        const gauge = await this.data.gauge.get()
-        assert(gauge != null)
-
-        const user = await this.data.user.get()
-        assert(user != null)
-
-        stake = new GaugeStake({
-            id: this.data.id,
+        const stake = new GaugeStake({
+            id: this.data.stakeId,
             gauge,
             user,
             value: 0n,
@@ -84,14 +73,13 @@ export class EnsureStakeGaugeAction extends Action<EnsureGaugeStakeData> {
 }
 
 export interface UpdateGaugeStakeData {
-    stake: DeferredValue<GaugeStake, true>
+    stakeId: string
     amount: bigint
 }
 
 export class UpdateStakeGaugeAction extends Action<UpdateGaugeStakeData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const stake = await this.data.stake.get()
-        assert(stake != null)
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const stake = await ctx.store.getOrFail(GaugeStake, this.data.stakeId)
 
         stake.value += this.data.amount
 
@@ -100,13 +88,13 @@ export class UpdateStakeGaugeAction extends Action<UpdateGaugeStakeData> {
 }
 
 export interface RewardGaugeStakeData {
-    stake: DeferredValue<GaugeStake, true>
+    stakeId: string
     amount: bigint
 }
 
 export class RewardStakeGaugeAction extends Action<RewardGaugeStakeData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const stake = await this.data.stake.get()
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const stake = await ctx.store.get(GaugeStake, this.data.stakeId)
         if (stake == null) return // FIXME: rework rewards indexing
 
         stake.totalReward += this.data.amount

@@ -6,7 +6,7 @@ import {Store} from '@subsquid/typeorm-store'
 export class HypervisorManager {
     private static managers: WeakMap<Store, HypervisorManager> = new WeakMap()
 
-    static get(ctx: DataHandlerContext<Store>) {
+    static get(ctx: {store: Store}) {
         let manager = this.managers.get(ctx.store)
         if (manager == null) {
             manager = new HypervisorManager(ctx.store)

@@ -1,67 +1,63 @@
-import {DataHandlerContext} from '@subsquid/evm-processor'
-import {VE_TOKEN, ZERO_ADDRESS} from '../config'
 import {StoreWithCache} from '@belopash/squid-tools'
-import {Action, EnsureUserAction} from '../action'
+import assert from 'assert'
 import * as veTokenAbi from '../abi/votingEscrow'
-import {Log} from '../processor'
-import {
-    CreateVeTokenAction,
-    TransferVeTokenAction,
-    UpdateLockTimeVeTokenAction,
-    UpdateValueVeTokenAction,
-} from '../action/veToken'
+import {VE_TOKEN, ZERO_ADDRESS} from '../config'
+import {MappingContext} from '../interfaces'
 import {User, VeToken} from '../model'
+import {Log} from '../processor'
 import {createVeTokenId} from '../utils/ids'
-import {ContractChecker} from '../utils/contractChecker'
-import {WrappedValue} from '../utils/deferred'
 
-export function isVeTokenItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+export function isVeTokenItem(ctx: MappingContext<StoreWithCache>, item: Log) {
     return item.address === VE_TOKEN
 }
 
-export function getVeTokenActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
-    const actions: Action[] = []
-
+export function getVeTokenActions(ctx: MappingContext<StoreWithCache>, item: Log) {
     switch (item.topics[0]) {
         case veTokenAbi.events.Transfer.topic: {
             const event = veTokenAbi.events.Transfer.decode(item)
 
             const tokenId = createVeTokenId(event.tokenId)
-            const from = event.from.toLowerCase()
-            const to = event.to.toLowerCase()
+            ctx.store.defer(VeToken, tokenId, {owner: true})
 
-            if (from === ZERO_ADDRESS) {
-                actions.push(
-                    new EnsureUserAction(item.block, item.transaction!, {
-                        user: ctx.store.defer(User, ZERO_ADDRESS),
-                        address: ZERO_ADDRESS,
-                        isContract: new WrappedValue(true),
-                    }),
-                    new CreateVeTokenAction(item.block, item.transaction!, {
-                        id: tokenId,
-                        index: Number(event.tokenId),
-                        zero: ctx.store.defer(User, ZERO_ADDRESS),
+            const fromId = event.from.toLowerCase()
+            const fromDeferred = ctx.store.defer(User, fromId)
+
+            const toId = event.to.toLowerCase()
+            const toDeferred = ctx.store.defer(User, toId)
+
+            if (fromId === ZERO_ADDRESS) {
+                ctx.queue
+                    .lazy(async () => {
+                        const from = await fromDeferred.get()
+                        if (from == null) {
+                            ctx.queue.add('user_create', {
+                                userId: fromId,
+                                address: ZERO_ADDRESS,
+                            })
+                        }
                     })
-                )
+                    .add('veToken_create', {
+                        tokenId,
+                        index: Number(event.tokenId),
+                        ownerId: fromId,
+                    })
             }
 
-            actions.push(
-                new EnsureUserAction(item.block, item.transaction!, {
-                    user: ctx.store.defer(User, from),
-                    address: from,
-                    isContract: ContractChecker.get(ctx).defer(from),
-                }),
-                new EnsureUserAction(item.block, item.transaction!, {
-                    user: ctx.store.defer(User, to),
-                    address: to,
-                    isContract: ContractChecker.get(ctx).defer(to),
-                }),
-                new TransferVeTokenAction(item.block, item.transaction!, {
-                    token: ctx.store.defer(VeToken, tokenId, {owner: true}),
-                    from: ctx.store.defer(User, from),
-                    to: ctx.store.defer(User, to),
+            ctx.queue
+                .lazy(async () => {
+                    const owner = await toDeferred.get()
+                    if (owner == null) {
+                        ctx.queue.add('user_create', {
+                            userId: toId,
+                            address: toId,
+                        })
+                    }
                 })
-            )
+                .add('veToken_transfer', {
+                    tokenId,
+                    fromId,
+                    toId,
+                })
 
             break
         }
@@ -69,19 +65,20 @@ export function getVeTokenActions(ctx: DataHandlerContext<StoreWithCache>, item:
             const event = veTokenAbi.events.Deposit.decode(item)
 
             const tokenId = createVeTokenId(event.tokenId)
+            ctx.store.defer(VeToken, tokenId)
+
             const amount = event.value
             const lockTime = new Date(Number(event.locktime) * 1000)
 
-            actions.push(
-                new UpdateValueVeTokenAction(item.block, item.transaction!, {
-                    token: ctx.store.defer(VeToken, tokenId, {owner: true}),
+            ctx.queue
+                .add('veToken_updateValue', {
+                    tokenId,
                     amount,
-                }),
-                new UpdateLockTimeVeTokenAction(item.block, item.transaction!, {
-                    token: ctx.store.defer(VeToken, tokenId, {owner: true}),
+                })
+                .add('veToken_setLockTime', {
+                    tokenId,
                     lockTime,
                 })
-            )
 
             break
         }
@@ -89,18 +86,16 @@ export function getVeTokenActions(ctx: DataHandlerContext<StoreWithCache>, item:
             const event = veTokenAbi.events.Withdraw.decode(item)
 
             const tokenId = createVeTokenId(event.tokenId)
+            ctx.store.defer(VeToken, tokenId)
+
             const amount = -event.value
 
-            actions.push(
-                new UpdateValueVeTokenAction(item.block, item.transaction!, {
-                    token: ctx.store.defer(VeToken, tokenId, {owner: true}),
-                    amount,
-                })
-            )
+            ctx.queue.add('veToken_updateValue', {
+                tokenId,
+                amount,
+            })
 
             break
         }
     }
-
-    return actions
 }

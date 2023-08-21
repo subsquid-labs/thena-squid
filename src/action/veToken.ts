@@ -2,22 +2,21 @@ import {DataHandlerContext} from '@subsquid/evm-processor'
 import {StoreWithCache} from '@belopash/squid-tools'
 import {Action} from './base'
 import {User, VeToken} from '../model'
-import {DeferredValue} from '../utils/deferred'
 import assert from 'assert'
 
 export interface CreateVeTokenData {
-    id: string
+    tokenId: string
     index: number
-    zero: DeferredValue<User, true>
+    ownerId: string
 }
 
 export class CreateVeTokenAction extends Action<CreateVeTokenData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const owner = await this.data.zero.get()
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const owner = await ctx.store.getOrFail(User, this.data.ownerId)
         assert(owner != null)
 
         const veToken = new VeToken({
-            id: this.data.id,
+            id: this.data.tokenId,
             owner,
             lockedUntil: new Date(this.block.timestamp),
             value: 0n,
@@ -29,21 +28,17 @@ export class CreateVeTokenAction extends Action<CreateVeTokenData> {
 }
 
 export interface TransferVeTokenData {
-    token: DeferredValue<VeToken, true>
-    from: DeferredValue<User, true>
-    to: DeferredValue<User, true>
+    tokenId: string
+    fromId: string
+    toId: string
 }
 
 export class TransferVeTokenAction extends Action<TransferVeTokenData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const veToken = await this.data.token.get()
-        assert(veToken != null)
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const veToken = await ctx.store.getOrFail(VeToken, this.data.tokenId, {owner: true})
+        assert(veToken.owner.id === this.data.fromId)
 
-        const from = await this.data.from.get()
-        assert(from != null)
-        assert(veToken.owner.id === from.id)
-
-        const to = await this.data.to.get()
+        const to = await ctx.store.getOrFail(User, this.data.toId)
         assert(to != null)
 
         veToken.owner = to
@@ -53,14 +48,13 @@ export class TransferVeTokenAction extends Action<TransferVeTokenData> {
 }
 
 export interface UpdateValueVeTokenData {
-    token: DeferredValue<VeToken, true>
+    tokenId: string
     amount: bigint
 }
 
 export class UpdateValueVeTokenAction extends Action<UpdateValueVeTokenData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const veToken = await this.data.token.get()
-        assert(veToken != null)
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const veToken = await ctx.store.getOrFail(VeToken, this.data.tokenId)
 
         veToken.value += this.data.amount
         assert(veToken.value >= 0n)
@@ -70,14 +64,13 @@ export class UpdateValueVeTokenAction extends Action<UpdateValueVeTokenData> {
 }
 
 export interface UpdateLockTimeVeTokenData {
-    token: DeferredValue<VeToken, true>
+    tokenId: string
     lockTime: Date
 }
 
 export class UpdateLockTimeVeTokenAction extends Action<UpdateLockTimeVeTokenData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const veToken = await this.data.token.get()
-        assert(veToken != null)
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const veToken = await ctx.store.getOrFail(VeToken, this.data.tokenId)
 
         veToken.lockedUntil = this.data.lockTime
 
@@ -86,14 +79,13 @@ export class UpdateLockTimeVeTokenAction extends Action<UpdateLockTimeVeTokenDat
 }
 
 export interface RewardVeTokenData {
-    token: DeferredValue<VeToken, true>
+    tokenId: string
     amount: bigint
 }
 
 export class RewardVeTokenAction extends Action<RewardVeTokenData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const veToken = await this.data.token.get()
-        assert(veToken != null)
+    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+        const veToken = await ctx.store.getOrFail(VeToken, this.data.tokenId)
 
         veToken.totalReward += this.data.amount
 

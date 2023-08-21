@@ -1,11 +1,10 @@
 import {Store} from '@subsquid/typeorm-store'
 import {Gauge} from '../../model'
-import {DataHandlerContext} from '@subsquid/evm-processor'
 
 export class GaugeManager {
     private static managers: WeakMap<Store, GaugeManager> = new WeakMap()
 
-    static get(ctx: DataHandlerContext<Store>) {
+    static get(ctx: {store: Store}) {
         let manager = this.managers.get(ctx.store)
         if (manager == null) {
             manager = new GaugeManager(ctx.store)
