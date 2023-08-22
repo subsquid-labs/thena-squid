@@ -12,8 +12,7 @@ export interface CreateBribeData {
 
 export class CreateBribeAction extends Action<CreateBribeData> {
     async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        let pool = await ctx.store.getOrFail(Pool, this.data.poolId)
-        // assert(pool != null)
+        let pool = await ctx.store.get(Pool, this.data.poolId)
 
         const bribe = new Bribe({
             id: this.data.address,
