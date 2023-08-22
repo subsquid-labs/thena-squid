@@ -1,5 +1,4 @@
 import assert from 'assert'
-import {bigint} from '../model/generated/marshal'
 
 export function createTradeId(txId: string, index: number) {
     return `${txId}-${index.toString().padStart(5, '0')}`
@@ -12,12 +11,12 @@ export function createLiquidityPositionId(pool: string, address: string, lowerTi
 
     if (lowerTick != null) {
         assert(lowerTick >= -8388608 && lowerTick <= 8388607)
-        id += String(Number(lowerTick) + 8388608)
+        id += `-${Number(lowerTick) + 8388608}`
     }
 
     if (upperTick != null) {
         assert(upperTick >= -8388608 && upperTick <= 8388607)
-        id += String(Number(upperTick) + 8388608)
+        id += `-${Number(upperTick) + 8388608}`
     }
 
     return id

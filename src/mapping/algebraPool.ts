@@ -59,19 +59,6 @@ export function getAlgebraPoolActions(ctx: MappingContext<StoreWithCache>, item:
                 .add('pool_recalcPrices', {
                     poolId,
                 })
-                .lazy(async () => {
-                    const pool = await poolDefered.getOrFail()
-
-                    ctx.queue
-                        .add('token_recalcPrice', {
-                            tokenId: pool.token0.id,
-                            poolId,
-                        })
-                        .add('token_recalcPrice', {
-                            tokenId: pool.token1.id,
-                            poolId,
-                        })
-                })
 
             break
         }
@@ -85,7 +72,9 @@ export function getAlgebraPoolActions(ctx: MappingContext<StoreWithCache>, item:
             ctx.store.defer(Pool, poolId)
 
             const amount = event.liquidityAmount
-            if (amount === 0n) break
+            const amount0 = event.amount0
+            const amount1 = event.amount1
+            if (amount === 0n && amount0 === 0n && amount1 === 0n) break
 
             const positionId = createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick)
             const positionDeferred = ctx.store.defer(LiquidityPosition, positionId, {pool: true})
@@ -116,8 +105,8 @@ export function getAlgebraPoolActions(ctx: MappingContext<StoreWithCache>, item:
                 .add('lp_updateValue', {
                     positionId,
                     amount,
-                    amount0: event.amount0,
-                    amount1: event.amount1,
+                    amount0,
+                    amount1,
                 })
 
             if (HypervisorManager.get(ctx).isTracked(userId)) {
@@ -135,16 +124,18 @@ export function getAlgebraPoolActions(ctx: MappingContext<StoreWithCache>, item:
             const event = algebraPool.events.Burn.decode(item)
 
             const userId = event.owner.toLowerCase()
-            ctx.store.defer(User, userId)
+            const userDeffered = ctx.store.defer(User, userId)
 
             const poolId = item.address
             ctx.store.defer(Pool, poolId)
 
             const amount = -event.liquidityAmount
-            if (amount === 0n) break
+            const amount0 = -event.amount0
+            const amount1 = -event.amount1
+            if (amount === 0n && amount0 === 0n && amount1 === 0n) break
 
             const positionId = createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick)
-            ctx.store.defer(LiquidityPosition, positionId, {pool: true})
+            const positionDeferred = ctx.store.defer(LiquidityPosition, positionId, {pool: true})
 
             ctx.queue
                 .add('pool_updateLiquidity', {
@@ -154,8 +145,8 @@ export function getAlgebraPoolActions(ctx: MappingContext<StoreWithCache>, item:
                 .add('lp_updateValue', {
                     positionId,
                     amount,
-                    amount0: -event.amount0,
-                    amount1: -event.amount1,
+                    amount0,
+                    amount1,
                 })
 
             if (HypervisorManager.get(ctx).isTracked(userId)) {

@@ -56,7 +56,7 @@ export function getSolidlyFactoryActions(ctx: MappingContext<StoreWithCache>, it
                     if (token1 == null) {
                         ctx.queue.add('token_create', {
                             tokenId: token1Id,
-                            address: token0Address,
+                            address: token1Address,
                             decimals: await token1DecimalsDeferred.get(),
                             symbol: await token1SymbolDeferred.get(),
                         })
