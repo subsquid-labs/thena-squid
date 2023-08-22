@@ -83,7 +83,7 @@ export function getSolidlyPairActions(ctx: MappingContext<StoreWithCache>, item:
             const event = solidlyPair.events.Transfer.decode(item)
 
             const amount = event.amount
-            if (amount === 0n) return
+            if (amount === 0n) break
 
             const fromId = event.from.toLowerCase()
             ctx.store.defer(User, fromId)

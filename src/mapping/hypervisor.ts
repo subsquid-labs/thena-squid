@@ -49,6 +49,8 @@ export function getHypervisorActions(ctx: MappingContext<StoreWithCache>, item: 
             const event = hypervisor.events.Transfer.decode(item)
 
             const amount = event.value
+            if (amount === 0n) break
+
             const fromId = event.from.toLowerCase()
             ctx.store.defer(User, fromId)
 
