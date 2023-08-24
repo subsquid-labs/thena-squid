@@ -36,7 +36,7 @@ const hypervisors = loadHypervisors()
 export const processor = new EvmBatchProcessor()
     .setBlockRange({from: 24_468_802}) //24_468_802
     .setDataSource({
-        archive: 'https://v2.archive.subsquid.io/network/binance-mainnet',
+        archive: lookupArchive('binance'),
         chain: {url: 'https://rpc.ankr.com/bsc', maxBatchCallSize: 10},
     })
     .setFinalityConfirmation(50)

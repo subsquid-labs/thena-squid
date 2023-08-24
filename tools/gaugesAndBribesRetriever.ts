@@ -38,6 +38,7 @@ type Metadata = {
     addresses: Record<'gauges' | 'bribes', string[]>
 }
 
+let isInit = false
 let isReady = false
 
 let db = new Database({
@@ -50,8 +51,11 @@ let db = new Database({
             if (await dest.exists('gaugesAndBribes.json')) {
                 let {height, hash, addresses}: Metadata = await dest.readFile('gaugesAndBribes.json').then(JSON.parse)
 
-                gauges = addresses.gauges
-                bribes = addresses.bribes
+                if (!isInit) {
+                    gauges = addresses.gauges
+                    bribes = addresses.bribes
+                    isInit = true
+                }
 
                 return {height, hash}
             } else {
@@ -67,14 +71,13 @@ let db = new Database({
                 },
             }
             await dest.writeFile('gaugesAndBribes.json', JSON.stringify(metadata))
-
-            isReady = true
         },
     },
 })
 
 processor.run(db, async (ctx) => {
     if (isReady) process.exit()
+    if (ctx.isHead) isReady = true
 
     for (let c of ctx.blocks) {
         for (let i of c.logs) {
