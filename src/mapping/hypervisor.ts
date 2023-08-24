@@ -103,7 +103,7 @@ export function getHypervisorActions(ctx: MappingContext<StoreWithCache>, item: 
                     })
                     .add('lp_updateValue', {
                         positionId,
-                        amount: -amount,
+                        amount,
                     })
             }
 
