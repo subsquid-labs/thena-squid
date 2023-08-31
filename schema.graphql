@@ -166,3 +166,47 @@ type VeToken @entity {
 
     votes: [Vote!]! @derivedFrom(field: "token")
 }
+
+type TimestampInfo {
+    startTimestamp: BigInt!
+    endTimestamp: BigInt!
+    registrationStart: BigInt!
+    registrationEnd: BigInt!
+}
+
+type CompetitionRules {
+    startingBalance: BigInt!
+    winningToken: String!
+    tradingTokens: [String!]!
+}
+
+enum MarketType {
+    SPOT
+    PERPETUALS
+}
+
+type Prize {
+    winType: Boolean!
+    weights: [BigInt!]!
+    totalPrize: [BigInt!]!
+    ownerFee: BigInt!
+    token: [String!]!
+}
+
+type TradingCompetition @entity {
+    id: ID!
+
+    entryFee: BigInt!
+    maxParticipants: BigInt!
+
+    owner: String!
+    tradingCompetition: String!
+
+    name: String!
+    description: String!
+
+    timestamp: TimestampInfo!
+    market: MarketType!
+    prize: Prize!
+    competitionRules: CompetitionRules!
+}

@@ -14,6 +14,7 @@ import {getSolidlyPairActions, isSolidlyPairItem} from './mapping/solidlyPair'
 import {getThenaActions, isThenaItem} from './mapping/thena'
 import {getVeTokenActions, isVeTokenItem} from './mapping/veToken'
 import {getVoterActions, isVoterItem} from './mapping/voter'
+import { getTradingCompetitionManagerActions, isTradingCompetitionManagerItem } from './mapping/tradingCompetitionManager'
 import {Log, processor} from './processor'
 import {GaugeManager, HypervisorManager, PoolManager} from './utils/manager'
 import {BribeManager} from './utils/manager/bribeManager'
@@ -94,4 +95,9 @@ export function getItemActions(ctx: MappingContext<StoreWithCache>, item: Log) {
     if (isRebaseDistributorItem(ctx, item)) {
         getRebaseDistributorActions(ctx, item)
     }
+
+    if (isTradingCompetitionManagerItem(item)) {
+        return getTradingCompetitionManagerActions(ctx, item)
+    }
+
 }

@@ -13,6 +13,7 @@ import * as Token from './token'
 import * as User from './user'
 import * as VeToken from './veToken'
 import * as Vote from './vote'
+import * as TC from './tradingCompetition'
 
 const Actions = {
     user_create: User.CreateUserAction,
@@ -56,6 +57,8 @@ const Actions = {
 
     vote_create: Vote.EnsureVoteAction,
     vote_updateWeigth: Vote.UpdateVoteAction,
+
+    tc_create: TC.CreateTradingCompetitionAction
 } satisfies BaseActionRegistry
 
 type ActionRegistry = typeof Actions
