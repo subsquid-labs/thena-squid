@@ -1,4 +1,4 @@
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import * as gaugeAbi from '../abi/gaugeV2'
 import {MappingContext} from '../interfaces'
 import {Gauge, GaugeStake, User} from '../model'

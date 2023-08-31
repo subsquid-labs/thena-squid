@@ -1,4 +1,4 @@
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import assert from 'assert'
 import {Pool, PoolType, Token} from '../model'
@@ -20,9 +20,9 @@ export interface CreatePoolActionData extends BasePoolActionData {
 }
 
 export class CreatePoolAction extends BasePoolAction<CreatePoolActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const token0 = await ctx.store.getOrFail(Token, this.data.token0Id)
-        const token1 = await ctx.store.getOrFail(Token, this.data.token1Id)
+    async perform(): Promise<void> {
+        const token0 = await this.store.getOrFail(Token, this.data.token0Id)
+        const token1 = await this.store.getOrFail(Token, this.data.token1Id)
 
         const pool = new Pool({
             id: this.data.address,
@@ -38,8 +38,8 @@ export class CreatePoolAction extends BasePoolAction<CreatePoolActionData> {
             type: this.data.type,
         })
 
-        await ctx.store.insert(pool)
-        ctx.log.debug(`Created pool ${pool.id}`)
+        await this.store.insert(pool)
+        this.log.debug(`Created pool ${pool.id}`)
     }
 }
 
@@ -49,14 +49,14 @@ export interface SetBalancesPoolActionData extends BasePoolActionData {
 }
 
 export class SetBalancesPoolAction extends BasePoolAction<SetBalancesPoolActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const pool = await ctx.store.getOrFail(Pool, this.data.poolId)
+    async perform(): Promise<void> {
+        const pool = await this.store.getOrFail(Pool, this.data.poolId)
 
         pool.reserve0 = this.data.value0
         pool.reserve1 = this.data.value1
 
-        await ctx.store.upsert(pool)
-        ctx.log.debug(`Balances of pool ${pool.id} updated to ${this.data.value0}, ${this.data.value1}`)
+        await this.store.upsert(pool)
+        this.log.debug(`Balances of pool ${pool.id} updated to ${this.data.value0}, ${this.data.value1}`)
     }
 }
 
@@ -66,14 +66,14 @@ export interface ChangeBalancesPoolActionData extends BasePoolActionData {
 }
 
 export class ChangeBalancesPoolAction extends BasePoolAction<ChangeBalancesPoolActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const pool = await ctx.store.getOrFail(Pool, this.data.poolId)
+    async perform(): Promise<void> {
+        const pool = await this.store.getOrFail(Pool, this.data.poolId)
 
         pool.reserve0 += this.data.value0
         pool.reserve1 += this.data.value1
 
-        await ctx.store.upsert(pool)
-        ctx.log.debug(
+        await this.store.upsert(pool)
+        this.log.debug(
             `Balances of pool ${pool.id} updated to ${pool.reserve0} (${this.data.value0}), ${pool.reserve1} (${this.data.value1})`
         )
     }
@@ -84,13 +84,13 @@ export interface ChangeLiquidityPoolActionData extends BasePoolActionData {
 }
 
 export class ChangeLiquidityPoolAction extends BasePoolAction<ChangeLiquidityPoolActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const pool = await ctx.store.getOrFail(Pool, this.data.poolId)
+    async perform(): Promise<void> {
+        const pool = await this.store.getOrFail(Pool, this.data.poolId)
 
         pool.liquidity += this.data.amount
 
-        await ctx.store.upsert(pool)
-        ctx.log.debug(`Liquidity of pool ${pool.id} changed by ${this.data.amount}`)
+        await this.store.upsert(pool)
+        this.log.debug(`Liquidity of pool ${pool.id} changed by ${this.data.amount}`)
     }
 }
 
@@ -99,13 +99,13 @@ export interface SetLiquidityPoolActionData extends BasePoolActionData {
 }
 
 export class SetLiquidityPoolAction extends BasePoolAction<SetLiquidityPoolActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const pool = await ctx.store.getOrFail(Pool, this.data.poolId)
+    async perform(): Promise<void> {
+        const pool = await this.store.getOrFail(Pool, this.data.poolId)
 
         pool.liquidity = this.data.value
 
-        await ctx.store.upsert(pool)
-        ctx.log.debug(`Liquidity of pool ${pool.id} set to ${pool.liquidity}`)
+        await this.store.upsert(pool)
+        this.log.debug(`Liquidity of pool ${pool.id} set to ${pool.liquidity}`)
     }
 }
 
@@ -114,18 +114,18 @@ export interface SetSqrtPricePoolActionData extends BasePoolActionData {
 }
 
 export class SetSqrtPricePoolAction extends BasePoolAction<SetSqrtPricePoolActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const pool = await ctx.store.getOrFail(Pool, this.data.poolId)
+    async perform(): Promise<void> {
+        const pool = await this.store.getOrFail(Pool, this.data.poolId)
 
         pool.sqrtPriceX96 = this.data.value
 
-        await ctx.store.upsert(pool)
+        await this.store.upsert(pool)
     }
 }
 
 export class RecalculatePricesPoolAction extends BasePoolAction {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const pool = await ctx.store.getOrFail(Pool, this.data.poolId, {token0: true, token1: true})
+    async perform(): Promise<void> {
+        const pool = await this.store.getOrFail(Pool, this.data.poolId, {token0: true, token1: true})
         const token0 = pool.token0
         const token1 = pool.token1
 
@@ -142,8 +142,8 @@ export class RecalculatePricesPoolAction extends BasePoolAction {
                 break
         }
 
-        await ctx.store.upsert(pool)
-        ctx.log.debug(`Prices of pool ${pool.id} updated to ${pool.price0}, ${pool.price1}`)
+        await this.store.upsert(pool)
+        this.log.debug(`Prices of pool ${pool.id} updated to ${pool.price0}, ${pool.price1}`)
     }
 }
 

@@ -1,4 +1,4 @@
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import * as rebaseDistributor from '../abi/rebaseDistributor'
 import {REBASE_DISTRIBUTOR} from '../config'
 import {MappingContext} from '../interfaces'

@@ -1,4 +1,4 @@
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import assert from 'assert'
 import * as veTokenAbi from '../abi/votingEscrow'
 import {VE_TOKEN, ZERO_ADDRESS} from '../config'

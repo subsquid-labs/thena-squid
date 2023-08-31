@@ -1,4 +1,4 @@
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import * as hypervisor from '../abi/hypervisor'
 import {ZERO_ADDRESS} from '../config'
 import {MappingContext} from '../interfaces'

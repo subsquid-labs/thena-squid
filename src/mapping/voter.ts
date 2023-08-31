@@ -1,4 +1,4 @@
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import * as voterAbi from '../abi/voterV3'
 import {Action} from '../action'
 import {UpdateStakeBribeAction} from '../action/bribe'
@@ -61,7 +61,7 @@ export function getVoterActions(ctx: MappingContext<StoreWithCache>, item: Log) 
                 const bribeUpdate = UpdateStakeBribeAction.getLast(ctx)
                 if (
                     bribeUpdate == null ||
-                    bribeUpdate.transaction.hash != item.transaction?.hash ||
+                    bribeUpdate.transaction?.hash != item.transaction?.hash ||
                     bribeUpdate.data.amount !== value ||
                     bribeUpdate.data.tokenId !== tokenId ||
                     bribeUpdate.data.poolId == null
@@ -108,7 +108,7 @@ export function getVoterActions(ctx: MappingContext<StoreWithCache>, item: Log) 
                 const bribeUpdate = UpdateStakeBribeAction.getLast(ctx)
                 if (
                     bribeUpdate == null ||
-                    bribeUpdate.transaction.hash != item.transaction?.hash ||
+                    bribeUpdate.transaction?.hash != item.transaction?.hash ||
                     bribeUpdate.data.amount !== value ||
                     bribeUpdate.data.tokenId !== tokenId ||
                     bribeUpdate.data.poolId == null

@@ -1,12 +1,10 @@
-import {Store} from '@subsquid/typeorm-store'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import {Pool} from '../../model'
-import assert from 'assert'
-import {DataHandlerContext} from '@subsquid/evm-processor'
 
 export class PoolManager {
-    private static managers: WeakMap<Store, PoolManager> = new WeakMap()
+    private static managers: WeakMap<StoreWithCache, PoolManager> = new WeakMap()
 
-    static get(ctx: {store: Store}) {
+    static get(ctx: {store: StoreWithCache}) {
         let manager = this.managers.get(ctx.store)
         if (manager == null) {
             manager = new PoolManager(ctx.store)
@@ -19,7 +17,7 @@ export class PoolManager {
     private pairs: Map<string, Set<string>> = new Map()
     private _initialized = false
 
-    private constructor(private store: Store) {}
+    private constructor(private store: StoreWithCache) {}
 
     async init() {
         if (this._initialized) return

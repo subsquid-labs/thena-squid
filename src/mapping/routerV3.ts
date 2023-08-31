@@ -9,8 +9,6 @@ export function isRouterV3Item(item: Log) {
 }
 
 export function getRouterV3Actions(ctx: MappingContext<unknown>, item: Log) {
-    const actions: Action[] = []
-
     // switch (item.kind) {
     //     case 'transaction': {
     //         if (item.transaction.from != null) {
@@ -19,6 +17,4 @@ export function getRouterV3Actions(ctx: MappingContext<unknown>, item: Log) {
     //         break
     //     }
     // }
-
-    return actions
 }

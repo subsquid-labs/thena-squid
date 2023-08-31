@@ -1,4 +1,4 @@
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import {BigDecimal} from '@subsquid/big-decimal'
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import assert from 'assert'
@@ -6,7 +6,7 @@ import {BNB_DECIMALS, WHITELIST_TOKENS, ZERO_ADDRESS} from '../config'
 import {Pool, Token, Trade, User} from '../model'
 import {CheckerDeferredValue, ContractChecker} from '../utils/contractChecker'
 import {createTradeId} from '../utils/ids'
-import {Action, ActionContext} from './base'
+import {Action, ActionConfig} from './base'
 
 export interface EnsureUserActionData {
     userId: string
@@ -16,12 +16,14 @@ export interface EnsureUserActionData {
 export class CreateUserAction extends Action<EnsureUserActionData> {
     private isContract!: CheckerDeferredValue
 
-    prepare(ctx: ActionContext): void {
-        const checker = ContractChecker.get(ctx)
+    constructor(config: ActionConfig, data: EnsureUserActionData) {
+        super(config, data)
+
+        const checker = ContractChecker.get(config)
         this.isContract = checker.defer(this.data.address)
     }
 
-    async perform(ctx: DataHandlerContext<StoreWithCache>) {
+    async perform() {
         const isContract = this.data.address === ZERO_ADDRESS ? true : await this.isContract.get()
 
         let user = new User({
@@ -31,8 +33,8 @@ export class CreateUserAction extends Action<EnsureUserActionData> {
             isContract,
         })
 
-        await ctx.store.insert(user)
-        ctx.log.debug(`User ${user.id} created`)
+        await this.store.insert(user)
+        this.log.debug(`User ${user.id} created`)
     }
 }
 
@@ -42,14 +44,14 @@ export interface BalanceUserActionData {
 }
 
 export class BalanceUserAction extends Action<BalanceUserActionData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache>): Promise<void> {
-        const user = await ctx.store.getOrFail(User, this.data.userId)
+    async perform(): Promise<void> {
+        const user = await this.store.getOrFail(User, this.data.userId)
 
         user.balance += this.data.amount
         // assert(user.balance >= 0)
 
-        ctx.store.upsert(user)
-        ctx.log.debug(`Balance of user ${user.id} updated to ${user.balance} (${this.data.amount})`)
+        this.store.upsert(user)
+        this.log.debug(`Balance of user ${user.id} updated to ${user.balance} (${this.data.amount})`)
     }
 }
 
@@ -71,9 +73,11 @@ export class SwapAction extends Action<SwapUserActionData> {
           }
         | undefined
 
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const pool = await ctx.store.getOrFail(Pool, this.data.poolId, {token0: true, token1: true})
-        const user = await ctx.store.getOrFail(User, this.data.userId)
+    async perform(): Promise<void> {
+        assert(this.transaction != null)
+
+        const pool = await this.store.getOrFail(Pool, this.data.poolId, {token0: true, token1: true})
+        const user = await this.store.getOrFail(User, this.data.userId)
 
         const {tokenInId, tokenOutId, amountIn, amountOut} = convertTokenValues({
             token0Id: pool.token0.id,
@@ -86,7 +90,7 @@ export class SwapAction extends Action<SwapUserActionData> {
             tokenInId == pool.token0.id ? [pool.token0, pool.token1] : [pool.token1, pool.token0]
         assert(tokenIn != null)
         assert(tokenOut != null)
-        const usdToken = await ctx.store.get(Token, this.data.usdTokenId)
+        const usdToken = await this.store.get(Token, this.data.usdTokenId)
         // assert(usdToken != null)
 
         const usdBnbPrice = BigDecimal(usdToken ? usdToken.bnbPrice : 0n, BNB_DECIMALS)
@@ -120,7 +124,7 @@ export class SwapAction extends Action<SwapUserActionData> {
             SwapAction.lastTrade.blockNumber === this.block.height &&
             SwapAction.lastTrade.txHash === this.transaction.hash
         ) {
-            trade = await ctx.store.getOrFail(Trade, SwapAction.lastTrade.id)
+            trade = await this.store.getOrFail(Trade, SwapAction.lastTrade.id)
         } else {
             SwapAction.lastTrade = undefined
         }
@@ -142,14 +146,14 @@ export class SwapAction extends Action<SwapUserActionData> {
                 amountUSD,
                 routes: [pool.id],
             })
-            await ctx.store.insert(trade)
+            await this.store.insert(trade)
             SwapAction.lastTrade = {...trade, index}
         } else {
             trade.amountOut = amountOut
             trade.tokenOut = tokenOut
             trade.user = user
             trade.routes.push(pool.id)
-            await ctx.store.upsert(trade)
+            await this.store.upsert(trade)
         }
     }
 }

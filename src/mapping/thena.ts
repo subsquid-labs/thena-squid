@@ -1,4 +1,4 @@
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import * as thena from '../abi/bep20'
 import {Action} from '../action'
 import {THENA_ADDRESS, ZERO_ADDRESS} from '../config'

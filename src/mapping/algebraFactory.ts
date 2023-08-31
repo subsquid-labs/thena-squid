@@ -1,4 +1,4 @@
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import * as algebraFactory from '../abi/algebraFactory'
 import * as bep20 from '../abi/bep20'
 import {ALGEBRA_FACTORY} from '../config'

@@ -1,6 +1,6 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Action} from './base'
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import {Bribe, Gauge, GaugeStake, Pool, Token, User} from '../model'
 import assert from 'assert'
 
@@ -13,12 +13,12 @@ export interface CreateGaugeData {
 }
 
 export class CreateGaugeAction extends Action<CreateGaugeData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        let pool = await ctx.store.get(Pool, this.data.poolId)
+    async perform(): Promise<void> {
+        let pool = await this.store.get(Pool, this.data.poolId)
         // assert(pool != null)
 
-        const internalBribe = await ctx.store.getOrFail(Bribe, this.data.internalBribeId)
-        const externalBribe = await ctx.store.getOrFail(Bribe, this.data.externalBribeId)
+        const internalBribe = await this.store.getOrFail(Bribe, this.data.internalBribeId)
+        const externalBribe = await this.store.getOrFail(Bribe, this.data.externalBribeId)
 
         const gauge = new Gauge({
             id: this.data.address,
@@ -29,8 +29,8 @@ export class CreateGaugeAction extends Action<CreateGaugeData> {
             isAlive: true,
         })
 
-        await ctx.store.insert(gauge)
-        ctx.log.debug(`created Gauge ${gauge.id}`)
+        await this.store.insert(gauge)
+        this.log.debug(`created Gauge ${gauge.id}`)
     }
 }
 
@@ -40,12 +40,12 @@ export interface UpdateTotalSupplyGaugeData {
 }
 
 export class UpdateTotalSupplyGaugeAction extends Action<UpdateTotalSupplyGaugeData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const gauge = await ctx.store.getOrFail(Gauge, this.data.gaugeId)
+    async perform(): Promise<void> {
+        const gauge = await this.store.getOrFail(Gauge, this.data.gaugeId)
 
         gauge.totalSupply += this.data.amount
 
-        await ctx.store.upsert(gauge)
+        await this.store.upsert(gauge)
     }
 }
 
@@ -56,9 +56,9 @@ export interface CreateGaugeStakeData {
 }
 
 export class CreateStakeGaugeAction extends Action<CreateGaugeStakeData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const gauge = await ctx.store.getOrFail(Gauge, this.data.gaugeId)
-        const user = await ctx.store.getOrFail(User, this.data.userId)
+    async perform(): Promise<void> {
+        const gauge = await this.store.getOrFail(Gauge, this.data.gaugeId)
+        const user = await this.store.getOrFail(User, this.data.userId)
 
         const stake = new GaugeStake({
             id: this.data.stakeId,
@@ -68,7 +68,7 @@ export class CreateStakeGaugeAction extends Action<CreateGaugeStakeData> {
             totalReward: 0n,
         })
 
-        await ctx.store.insert(stake)
+        await this.store.insert(stake)
     }
 }
 
@@ -78,12 +78,12 @@ export interface UpdateGaugeStakeData {
 }
 
 export class UpdateStakeGaugeAction extends Action<UpdateGaugeStakeData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const stake = await ctx.store.getOrFail(GaugeStake, this.data.stakeId)
+    async perform(): Promise<void> {
+        const stake = await this.store.getOrFail(GaugeStake, this.data.stakeId)
 
         stake.value += this.data.amount
 
-        await ctx.store.upsert(stake)
+        await this.store.upsert(stake)
     }
 }
 
@@ -93,12 +93,12 @@ export interface RewardGaugeStakeData {
 }
 
 export class RewardStakeGaugeAction extends Action<RewardGaugeStakeData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const stake = await ctx.store.get(GaugeStake, this.data.stakeId)
+    async perform(): Promise<void> {
+        const stake = await this.store.get(GaugeStake, this.data.stakeId)
         if (stake == null) return // FIXME: rework rewards indexing
 
         stake.totalReward += this.data.amount
 
-        await ctx.store.upsert(stake)
+        await this.store.upsert(stake)
     }
 }

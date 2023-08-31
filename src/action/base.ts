@@ -1,20 +1,43 @@
-import {DataHandlerContext, BlockHeader, Transaction} from '@subsquid/evm-processor'
-import {StoreWithCache} from '@belopash/squid-tools'
+import {BlockHeader, Transaction} from '@subsquid/evm-processor'
+import {StoreWithCache} from '@belopash/typeorm-store'
+import {Logger} from '@subsquid/logger'
+import {Chain} from '@subsquid/evm-processor/lib/interfaces/chain'
 
-export type ActionContext = DataHandlerContext<StoreWithCache, {}>
 export type ActionBlock = Pick<BlockHeader, 'hash' | 'height' | 'timestamp'>
 export type ActionTransaction = Pick<Transaction, 'id' | 'hash'>
 
-export type ActionData<A> = A extends Action<infer D> ? D : never
-
-export interface ActionConstructor<A extends Action> {
-    new (block: ActionBlock, transaction: ActionTransaction, data: A extends Action<infer R> ? R : never): A
+export interface ActionConfig {
+    _chain: Chain
+    store: StoreWithCache
+    log: Logger
+    block: ActionBlock
+    transaction?: ActionTransaction
 }
 
-export abstract class Action<T = any> {
-    constructor(readonly block: ActionBlock, readonly transaction: ActionTransaction, readonly data: T) {}
+export abstract class Action<T> {
+    constructor(protected config: ActionConfig, readonly data: T) {}
 
-    prepare(ctx: ActionContext): void {}
+    protected get log() {
+        return this.config.log
+    }
 
-    abstract perform(ctx: ActionContext): Promise<void>
+    protected get store() {
+        return this.config.store
+    }
+
+    get block() {
+        return this.config.block
+    }
+
+    get transaction() {
+        return this.config.transaction
+    }
+
+    abstract perform(): Promise<void>
 }
+
+export interface ActionConstructor<T = any> {
+    new (...args: ConstructorParameters<typeof Action<T>>): Action<T>
+}
+
+export type BaseActionRegistry = {[k: string]: ActionConstructor}

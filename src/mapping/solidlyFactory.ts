@@ -1,4 +1,4 @@
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import * as bep20 from '../abi/bep20'
 import * as solidlyFactory from '../abi/solidlyFactory'
 import {Action} from '../action'
@@ -14,8 +14,6 @@ export function isSolidlyFactoryItem(item: Log) {
 }
 
 export function getSolidlyFactoryActions(ctx: MappingContext<StoreWithCache>, item: Log) {
-    const actions: Action[] = []
-
     switch (item.topics[0]) {
         case solidlyFactory.events.PairCreated.topic: {
             ctx.log.debug(`processing Pair creation event...`)
@@ -76,6 +74,4 @@ export function getSolidlyFactoryActions(ctx: MappingContext<StoreWithCache>, it
             break
         }
     }
-
-    return actions
 }

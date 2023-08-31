@@ -8,8 +8,6 @@ export function isRouterV2Item(item: Log) {
 }
 
 export function getRouterV2Actions(ctx: MappingContext<unknown>, item: Log) {
-    const actions: Action[] = []
-
     // switch (item.kind) {
     //     case 'transaction': {
     //         if (item.transaction.from != null) {
@@ -18,6 +16,4 @@ export function getRouterV2Actions(ctx: MappingContext<unknown>, item: Log) {
     //         break
     //     }
     // }
-
-    return actions
 }

@@ -1,4 +1,4 @@
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import * as solidlyPair from '../abi/solidlyPair'
 import {SOLIDLY_FACTORY, USD_ADDRESS, ZERO_ADDRESS} from '../config'
 import {MappingContext} from '../interfaces'

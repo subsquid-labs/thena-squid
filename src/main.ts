@@ -1,5 +1,4 @@
-import {StoreWithCache} from '@belopash/squid-tools'
-import {TypeormDatabase} from '@subsquid/typeorm-store'
+import {StoreWithCache, TypeormDatabaseWithCache} from '@belopash/typeorm-store'
 import {ActionQueue} from './action/actionQueue'
 import {MappingContext} from './interfaces'
 import {getAlgebraFactoryActions, isAlgebraFactoryItem} from './mapping/algebraFactory'
@@ -19,15 +18,12 @@ import {Log, processor} from './processor'
 import {GaugeManager, HypervisorManager, PoolManager} from './utils/manager'
 import {BribeManager} from './utils/manager/bribeManager'
 
-processor.run(new TypeormDatabase({supportHotBlocks: true}), async (_ctx) => {
-    const store = StoreWithCache.create(_ctx.store)
-    const queue = new ActionQueue()
-
-    const ctx = {
-        ..._ctx,
-        store,
-        queue,
-    }
+processor.run(new TypeormDatabaseWithCache({supportHotBlocks: true}), async (ctx) => {
+    const queue = new ActionQueue({
+        _chain: ctx._chain,
+        log: ctx.log,
+        store: ctx.store,
+    })
 
     await GaugeManager.get(ctx).init()
     await BribeManager.get(ctx).init()
@@ -36,12 +32,11 @@ processor.run(new TypeormDatabase({supportHotBlocks: true}), async (_ctx) => {
 
     for (let block of ctx.blocks) {
         for (let log of block.logs) {
-            getItemActions(ctx, log)
+            getItemActions({...ctx, queue}, log)
         }
     }
 
-    await queue.process(ctx)
-
+    await queue.process()
     await ctx.store.flush()
 })
 

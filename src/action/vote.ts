@@ -1,6 +1,4 @@
-import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Pool, VeToken, Vote} from '../model'
-import {StoreWithCache} from '@belopash/squid-tools'
 import {Action} from './base'
 
 export interface EnsureVoteData {
@@ -10,9 +8,9 @@ export interface EnsureVoteData {
 }
 
 export class EnsureVoteAction extends Action<EnsureVoteData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const token = await ctx.store.getOrFail(VeToken, this.data.tokenId)
-        const pool = await ctx.store.getOrFail(Pool, this.data.poolId)
+    async perform(): Promise<void> {
+        const token = await this.store.getOrFail(VeToken, this.data.tokenId)
+        const pool = await this.store.getOrFail(Pool, this.data.poolId)
 
         const vote = new Vote({
             id: this.data.voteId,
@@ -20,8 +18,8 @@ export class EnsureVoteAction extends Action<EnsureVoteData> {
             pool,
             weight: 0n,
         })
-        await ctx.store.insert(vote)
-        ctx.log.debug(`created Vote ${vote.id}`)
+        await this.store.insert(vote)
+        this.log.debug(`created Vote ${vote.id}`)
     }
 }
 
@@ -31,11 +29,11 @@ export interface UpdateVoteData {
 }
 
 export class UpdateVoteAction extends Action<UpdateVoteData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        let vote = await ctx.store.getOrFail(Vote, this.data.voteId)
+    async perform(): Promise<void> {
+        let vote = await this.store.getOrFail(Vote, this.data.voteId)
 
         vote.weight += this.data.value
 
-        await ctx.store.upsert(vote)
+        await this.store.upsert(vote)
     }
 }

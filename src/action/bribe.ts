@@ -1,7 +1,7 @@
 import assert from 'assert'
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Bribe, Pool, Token, User, VeToken} from '../model'
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import {Action} from './base'
 
 export interface CreateBribeData {
@@ -11,16 +11,16 @@ export interface CreateBribeData {
 }
 
 export class CreateBribeAction extends Action<CreateBribeData> {
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        let pool = await ctx.store.get(Pool, this.data.poolId)
+    async perform(): Promise<void> {
+        let pool = await this.store.get(Pool, this.data.poolId)
 
         const bribe = new Bribe({
             id: this.data.address,
             pool,
         })
 
-        await ctx.store.insert(bribe)
-        ctx.log.debug(`created Bribe ${bribe.id}`)
+        await this.store.insert(bribe)
+        this.log.debug(`created Bribe ${bribe.id}`)
     }
 }
 
@@ -43,7 +43,7 @@ export class UpdateStakeBribeAction extends Action<UpdateStakeBribeData> {
     //     return this._info
     // }
 
-    async perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        UpdateStakeBribeAction.lasts.set(ctx.store, this)
+    async perform(): Promise<void> {
+        UpdateStakeBribeAction.lasts.set(this.store, this)
     }
 }

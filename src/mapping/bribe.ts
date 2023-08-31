@@ -1,4 +1,4 @@
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import * as bribeAbi from '../abi/bribe'
 import {MappingContext} from '../interfaces'
 import {Bribe, Token} from '../model'

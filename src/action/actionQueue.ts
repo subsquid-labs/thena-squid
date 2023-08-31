@@ -1,6 +1,9 @@
+import {StoreWithCache} from '@belopash/typeorm-store'
+import {Chain} from '@subsquid/evm-processor/lib/interfaces/chain'
+import {Logger} from '@subsquid/logger'
 import {withErrorContext} from '@subsquid/util-internal'
 import assert from 'assert'
-import {Action, ActionBlock, ActionConstructor, ActionContext, ActionData, ActionTransaction} from './base'
+import {Action, ActionBlock, ActionConfig, ActionConstructor, ActionTransaction, BaseActionRegistry} from './base'
 import * as Bribe from './bribe'
 import * as Gauge from './gauge'
 import * as Hypervisor from './hypervisor'
@@ -53,18 +56,21 @@ const Actions = {
 
     vote_create: Vote.EnsureVoteAction,
     vote_updateWeigth: Vote.UpdateVoteAction,
-}
+} satisfies BaseActionRegistry
 
-type CreateActionRegistry<T extends {[k: string]: ActionConstructor<Action<any>>}> = {
-    [K in keyof T]: T[K] extends ActionConstructor<infer A> ? A : never
-}
-type ActionRegistry = CreateActionRegistry<typeof Actions>
+type ActionRegistry = typeof Actions
 
 export class ActionQueue {
-    private actions: Action[] = []
+    private actions: Action<any>[] = []
 
     private block: ActionBlock | undefined
     private transaction: ActionTransaction | undefined
+
+    constructor(private config: {_chain: Chain; store: StoreWithCache; log: Logger}) {}
+
+    get size() {
+        return this.actions.length
+    }
 
     setBlock(block: ActionBlock) {
         this.block = block
@@ -78,11 +84,20 @@ export class ActionQueue {
         return this
     }
 
-    add<A extends keyof ActionRegistry>(action: A, data: ActionData<ActionRegistry[A]>): this {
+    add<A extends keyof ActionRegistry>(
+        action: A,
+        data: ActionRegistry[A] extends ActionConstructor<infer R> ? R : never
+    ): this {
         assert(this.block != null)
-        assert(this.transaction != null)
 
-        const a = new Actions[action](this.block, this.transaction, data as any) // TODO: find if there is a proper way to pass typed parameter
+        const a = new Actions[action](
+            {
+                ...this.config,
+                block: this.block,
+                transaction: this.transaction,
+            },
+            data as any // FIXME: find if there is a proper way to pass typed parameter
+        )
         this.actions.push(a)
 
         return this
@@ -90,33 +105,28 @@ export class ActionQueue {
 
     lazy(cb: () => void | PromiseLike<void>) {
         assert(this.block != null)
-        assert(this.transaction != null)
 
-        const a = new LazyAction(this.block, this.transaction, cb)
+        const a = new LazyAction(
+            {
+                ...this.config,
+                block: this.block,
+                transaction: this.transaction,
+            },
+            cb
+        )
         this.actions.push(a)
 
         return this
     }
 
-    async process(ctx: ActionContext) {
-        return await this.processActions(ctx, this.actions)
+    async process() {
+        await this.processActions(this.actions)
+        this.actions = []
     }
 
-    private async processActions(ctx: ActionContext, actions: Action[]) {
+    private async processActions(actions: Action<any>[]) {
         for (const action of actions) {
-            action.prepare(ctx)
-        }
-
-        for (const action of actions) {
-            const actionCtx = {
-                ...ctx,
-                log: ctx.log.child('action', {
-                    block: action.block.height,
-                    transaction: action.transaction?.hash,
-                }),
-            }
-
-            await this.processAction(actionCtx, action).catch(
+            await this.processAction(action).catch(
                 withErrorContext({
                     block: action.block.height,
                     extrinsicHash: action.transaction?.hash,
@@ -125,22 +135,22 @@ export class ActionQueue {
         }
     }
 
-    private async processAction(ctx: ActionContext, action: Action) {
+    private async processAction(action: Action<any>) {
         if (action instanceof LazyAction) {
-            await this.processLazyAction(ctx, action)
+            await this.processLazyAction(action)
         } else {
-            await action.perform(ctx)
+            await action.perform()
         }
     }
 
-    private async processLazyAction(ctx: ActionContext, action: LazyAction) {
+    private async processLazyAction(action: LazyAction) {
         const saved = {block: this.block, transaction: this.transaction, actions: this.actions}
         try {
             this.block = action.block
             this.transaction = action.transaction
             this.actions = []
             await action.perform()
-            await this.processActions(ctx, this.actions)
+            await this.processActions(this.actions)
         } finally {
             this.block = saved.block
             this.transaction = saved.transaction
@@ -150,12 +160,8 @@ export class ActionQueue {
 }
 
 class LazyAction extends Action<unknown> {
-    constructor(
-        readonly block: ActionBlock,
-        readonly transaction: ActionTransaction,
-        readonly cb: () => void | PromiseLike<void>
-    ) {
-        super(block, transaction, {})
+    constructor(protected config: ActionConfig, readonly cb: () => void | PromiseLike<void>) {
+        super(config, {})
     }
 
     async perform(): Promise<void> {
