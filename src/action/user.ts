@@ -1,68 +1,69 @@
-import assert from 'assert'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import {BigDecimal} from '@subsquid/big-decimal'
 import {DataHandlerContext} from '@subsquid/evm-processor'
+import assert from 'assert'
 import {BNB_DECIMALS, WHITELIST_TOKENS, ZERO_ADDRESS} from '../config'
 import {Pool, Token, Trade, User} from '../model'
-import {DeferredValue} from '../utils/deferred'
+import {CheckerDeferredValue, ContractChecker} from '../utils/contractChecker'
 import {createTradeId} from '../utils/ids'
-import {StoreWithCache} from '@belopash/squid-tools'
-import {Action} from './base'
+import {Action, ActionConfig} from './base'
 
-export interface BaseUserActionData {
-    user: DeferredValue<User, true>
-}
-
-export abstract class BaseUserAction<T extends BaseUserActionData = BaseUserActionData> extends Action<T> {}
-
-export interface EnsureUserActionData extends BaseUserActionData {
+export interface EnsureUserActionData {
+    userId: string
     address: string
-    isContract: DeferredValue<boolean>
 }
 
-export class EnsureUserAction extends BaseUserAction<EnsureUserActionData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache>) {
-        let user = await this.data.user.get()
-        if (user != null) return
+export class CreateUserAction extends Action<EnsureUserActionData> {
+    private isContract!: CheckerDeferredValue
 
-        const isContract = this.data.address === ZERO_ADDRESS ? true : await this.data.isContract.get()
+    constructor(config: ActionConfig, data: EnsureUserActionData) {
+        super(config, data)
 
-        user = new User({
-            id: this.data.address,
+        const checker = ContractChecker.get(config)
+        this.isContract = checker.defer(this.data.address)
+    }
+
+    async perform() {
+        const isContract = this.data.address === ZERO_ADDRESS ? true : await this.isContract.get()
+
+        let user = new User({
+            id: this.data.userId,
             firstInteractAt: new Date(this.block.timestamp),
             balance: 0n,
             isContract,
         })
 
-        await ctx.store.insert(user)
-        ctx.log.debug(`User ${user.id} created`)
+        await this.store.insert(user)
+        this.log.debug(`User ${user.id} created`)
     }
 }
 
-export interface BalanceUserActionData extends BaseUserActionData {
+export interface BalanceUserActionData {
+    userId: string
     amount: bigint
 }
 
-export class BalanceUserAction extends BaseUserAction<BalanceUserActionData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache>): Promise<void> {
-        const user = await this.data.user.get()
-        assert(user != null)
+export class BalanceUserAction extends Action<BalanceUserActionData> {
+    async perform(): Promise<void> {
+        const user = await this.store.getOrFail(User, this.data.userId)
 
         user.balance += this.data.amount
         // assert(user.balance >= 0)
 
-        ctx.store.upsert(user)
-        ctx.log.debug(`Balance of user ${user.id} updated to ${user.balance} (${this.data.amount})`)
+        this.store.upsert(user)
+        this.log.debug(`Balance of user ${user.id} updated to ${user.balance} (${this.data.amount})`)
     }
 }
 
-export interface SwapUserActionData extends BaseUserActionData {
+export interface SwapUserActionData {
+    userId: string
     amount0: bigint
     amount1: bigint
-    pool: DeferredValue<Pool, true>
-    usdToken: DeferredValue<Token, true>
+    poolId: string
+    usdTokenId: string
 }
 
-export class SwapUserAction extends BaseUserAction<SwapUserActionData> {
+export class SwapAction extends Action<SwapUserActionData> {
     static lastTrade:
         | {
               id: string
@@ -72,12 +73,11 @@ export class SwapUserAction extends BaseUserAction<SwapUserActionData> {
           }
         | undefined
 
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const pool = await this.data.pool.get()
-        assert(pool != null)
+    async perform(): Promise<void> {
+        assert(this.transaction != null)
 
-        const user = await this.data.user.get()
-        assert(user != null)
+        const pool = await this.store.getOrFail(Pool, this.data.poolId, {token0: true, token1: true})
+        const user = await this.store.getOrFail(User, this.data.userId)
 
         const {tokenInId, tokenOutId, amountIn, amountOut} = convertTokenValues({
             token0Id: pool.token0.id,
@@ -90,7 +90,7 @@ export class SwapUserAction extends BaseUserAction<SwapUserActionData> {
             tokenInId == pool.token0.id ? [pool.token0, pool.token1] : [pool.token1, pool.token0]
         assert(tokenIn != null)
         assert(tokenOut != null)
-        const usdToken = await this.data.usdToken.get()
+        const usdToken = await this.store.get(Token, this.data.usdTokenId)
         // assert(usdToken != null)
 
         const usdBnbPrice = BigDecimal(usdToken ? usdToken.bnbPrice : 0n, BNB_DECIMALS)
@@ -120,17 +120,17 @@ export class SwapUserAction extends BaseUserAction<SwapUserActionData> {
 
         let trade: Trade | undefined
         if (
-            SwapUserAction.lastTrade != null &&
-            SwapUserAction.lastTrade.blockNumber === this.block.height &&
-            SwapUserAction.lastTrade.txHash === this.transaction.hash
+            SwapAction.lastTrade != null &&
+            SwapAction.lastTrade.blockNumber === this.block.height &&
+            SwapAction.lastTrade.txHash === this.transaction.hash
         ) {
-            trade = await ctx.store.getOrFail(Trade, SwapUserAction.lastTrade.id)
+            trade = await this.store.getOrFail(Trade, SwapAction.lastTrade.id)
         } else {
-            SwapUserAction.lastTrade = undefined
+            SwapAction.lastTrade = undefined
         }
 
         if (trade == null || trade.tokenOut !== tokenIn || trade.amountOut !== amountIn) {
-            const index = SwapUserAction.lastTrade != null ? SwapUserAction.lastTrade.index + 1 : 0
+            const index = SwapAction.lastTrade != null ? SwapAction.lastTrade.index + 1 : 0
             trade = new Trade({
                 id: createTradeId(this.transaction.id, index),
                 blockNumber: this.block.height,
@@ -146,14 +146,14 @@ export class SwapUserAction extends BaseUserAction<SwapUserActionData> {
                 amountUSD,
                 routes: [pool.id],
             })
-            await ctx.store.insert(trade)
-            SwapUserAction.lastTrade = {...trade, index}
+            await this.store.insert(trade)
+            SwapAction.lastTrade = {...trade, index}
         } else {
             trade.amountOut = amountOut
             trade.tokenOut = tokenOut
             trade.user = user
             trade.routes.push(pool.id)
-            await ctx.store.upsert(trade)
+            await this.store.upsert(trade)
         }
     }
 }
@@ -179,5 +179,3 @@ function convertTokenValues(data: {token0Id: string; amount0: bigint; token1Id: 
         throw new Error(`Unexpected case: amount0: ${amount0}, amount1: ${amount1}`)
     }
 }
-
-export type UserAction = BalanceUserAction | SwapUserAction | EnsureUserAction

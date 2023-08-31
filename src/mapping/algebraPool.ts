@@ -1,72 +1,63 @@
-import {DataHandlerContext} from '@subsquid/evm-processor'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import * as algebraPool from '../abi/algebraPool'
 import {ALGEBRA_FACTORY, USD_ADDRESS} from '../config'
-import {Log} from '../processor'
-import {PoolManager} from '../utils/manager/poolManager'
-import {
-    Action,
-    ChangeLiquidityPoolAction,
-    EnsureLiquidityPositionAction,
-    EnsureUserAction,
-    RecalculatePricesPoolAction,
-    RemovePositionHypervisorAction,
-    SetLiquidityPoolAction,
-    SetPositionHypervisorAction,
-    SetSqrtPricePoolAction,
-    SwapUserAction,
-    ValueUpdateLiquidityPositionAction,
-} from '../action'
-import {createLiquidityPositionId} from '../utils/ids'
-import {WrappedValue} from '../utils/deferred'
-import {HypervisorManager} from '../utils/manager/hypervisorManager'
-import {StoreWithCache} from '@belopash/squid-tools'
+import {MappingContext} from '../interfaces'
 import {Hypervisor, LiquidityPosition, Pool, Token, User} from '../model'
-import {ContractChecker} from '../utils/contractChecker'
+import {Log} from '../processor'
+import {createLiquidityPositionId} from '../utils/ids'
+import {HypervisorManager} from '../utils/manager/hypervisorManager'
+import {PoolManager} from '../utils/manager/poolManager'
 
-export function isAlgebraPoolItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+export function isAlgebraPoolItem(ctx: MappingContext<StoreWithCache>, item: Log) {
     return PoolManager.get(ctx).isPool(ALGEBRA_FACTORY, item.address)
 }
 
-export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
-    const actions: Action[] = []
-
+export function getAlgebraPoolActions(ctx: MappingContext<StoreWithCache>, item: Log) {
     switch (item.topics[0]) {
         case algebraPool.events.Swap.topic: {
             const event = algebraPool.events.Swap.decode(item)
 
-            const id = event.recipient.toLowerCase()
+            const userId = event.recipient.toLowerCase()
+            ctx.store.defer(User, userId)
+
             const poolId = item.address
+            const poolDefered = ctx.store.defer(Pool, poolId, {token0: true, token1: true})
 
             const amount0 = event.amount0
             const amount1 = event.amount1
 
             const liquidity = event.liquidity
 
-            actions.push(
-                new EnsureUserAction(item.block, item.transaction!, {
-                    user: ctx.store.defer(User, id),
-                    address: id,
-                    isContract: ContractChecker.get(ctx).defer(id),
-                }),
-                new SwapUserAction(item.block, item.transaction!, {
-                    user: ctx.store.defer(User, id),
+            ctx.store.defer(Token, USD_ADDRESS)
+
+            ctx.queue
+                .lazy(async () => {
+                    const user = await ctx.store.get(User, userId)
+                    if (user == null) {
+                        ctx.queue.add('user_create', {
+                            userId,
+                            address: userId,
+                        })
+                    }
+                })
+                .add('swap', {
+                    userId,
+                    poolId,
+                    usdTokenId: USD_ADDRESS,
                     amount0,
                     amount1,
-                    pool: ctx.store.defer(Pool, item.address, {token0: true, token1: true}),
-                    usdToken: ctx.store.defer(Token, USD_ADDRESS),
-                }),
-                new SetLiquidityPoolAction(item.block, item.transaction!, {
-                    pool: ctx.store.defer(Pool, item.address),
-                    value: new WrappedValue(liquidity),
-                }),
-                new SetSqrtPricePoolAction(item.block, item.transaction!, {
-                    pool: ctx.store.defer(Pool, item.address),
-                    value: event.price,
-                }),
-                new RecalculatePricesPoolAction(item.block, item.transaction!, {
-                    pool: ctx.store.defer(Pool, item.address, {token0: true, token1: true}),
                 })
-            )
+                .add('pool_setLiquidity', {
+                    poolId,
+                    value: liquidity,
+                })
+                .add('pool_setSqrtPrice', {
+                    poolId,
+                    value: event.price,
+                })
+                .add('pool_recalcPrices', {
+                    poolId,
+                })
 
             break
         }
@@ -74,47 +65,56 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, i
             const event = algebraPool.events.Mint.decode(item)
 
             const userId = event.owner.toLowerCase()
+            const userDeffered = ctx.store.defer(User, userId)
+
             const poolId = item.address
+            ctx.store.defer(Pool, poolId)
 
             const amount = event.liquidityAmount
-            if (amount === 0n) break
+            const amount0 = event.amount0
+            const amount1 = event.amount1
+            if (amount === 0n && amount0 === 0n && amount1 === 0n) break
 
             const positionId = createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick)
-            actions.push(
-                new ChangeLiquidityPoolAction(item.block, item.transaction!, {
-                    pool: ctx.store.defer(Pool, item.address),
+            const positionDeferred = ctx.store.defer(LiquidityPosition, positionId, {pool: true})
+
+            ctx.queue
+                .add('pool_updateLiquidity', {
+                    poolId,
                     amount,
-                }),
-                new EnsureUserAction(item.block, item.transaction!, {
-                    user: ctx.store.defer(User, userId),
-                    address: userId,
-                    isContract: ContractChecker.get(ctx).defer(userId),
-                }),
-                new EnsureLiquidityPositionAction(item.block, item.transaction!, {
-                    position: ctx.store.defer(LiquidityPosition, positionId),
-                    id: positionId,
-                    user: ctx.store.defer(User, userId),
-                    pool: ctx.store.defer(Pool, item.address),
-                }),
-                new ChangeLiquidityPoolAction(item.block, item.transaction!, {
-                    pool: ctx.store.defer(Pool, item.address),
-                    amount,
-                }),
-                new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-                    position: ctx.store.defer(LiquidityPosition, positionId, {pool: true}),
-                    amount,
-                    amount0: event.amount0,
-                    amount1: event.amount1,
                 })
-            )
+                .lazy(async () => {
+                    const position = await positionDeferred.get()
+                    if (position == null) {
+                        const user = await userDeffered.get()
+                        if (user == null) {
+                            ctx.queue.add('user_create', {
+                                userId,
+                                address: userId,
+                            })
+                        }
+
+                        ctx.queue.add('lp_create', {
+                            userId,
+                            poolId,
+                            positionId,
+                        })
+                    }
+                })
+                .add('lp_updateValue', {
+                    positionId,
+                    amount,
+                    amount0,
+                    amount1,
+                })
 
             if (HypervisorManager.get(ctx).isTracked(userId)) {
-                actions.push(
-                    new SetPositionHypervisorAction(item.block, item.transaction!, {
-                        hypervisor: ctx.store.defer(Hypervisor, userId, {basePosition: true, limitPosition: true}),
-                        position: ctx.store.defer(LiquidityPosition, positionId),
-                    })
-                )
+                ctx.store.defer(Hypervisor, userId)
+
+                ctx.queue.add('hypervisor_setPosition', {
+                    hypervisorId: userId,
+                    positionId,
+                })
             }
 
             break
@@ -123,52 +123,41 @@ export function getAlgebraPoolActions(ctx: DataHandlerContext<StoreWithCache>, i
             const event = algebraPool.events.Burn.decode(item)
 
             const userId = event.owner.toLowerCase()
+            const userDeffered = ctx.store.defer(User, userId)
+
             const poolId = item.address
+            ctx.store.defer(Pool, poolId)
 
             const amount = -event.liquidityAmount
-            if (amount === 0n) break
+            const amount0 = -event.amount0
+            const amount1 = -event.amount1
+            if (amount === 0n && amount0 === 0n && amount1 === 0n) break
 
             const positionId = createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick)
-            actions.push(
-                new ChangeLiquidityPoolAction(item.block, item.transaction!, {
-                    pool: ctx.store.defer(Pool, item.address),
+            const positionDeferred = ctx.store.defer(LiquidityPosition, positionId, {pool: true})
+
+            ctx.queue
+                .add('pool_updateLiquidity', {
+                    poolId,
                     amount,
-                }),
-                new EnsureUserAction(item.block, item.transaction!, {
-                    user: ctx.store.defer(User, userId),
-                    address: userId,
-                    isContract: ContractChecker.get(ctx).defer(userId),
-                }),
-                new EnsureLiquidityPositionAction(item.block, item.transaction!, {
-                    position: ctx.store.defer(LiquidityPosition, positionId),
-                    id: positionId,
-                    user: ctx.store.defer(User, userId),
-                    pool: ctx.store.defer(Pool, item.address),
-                }),
-                new ChangeLiquidityPoolAction(item.block, item.transaction!, {
-                    pool: ctx.store.defer(Pool, item.address),
-                    amount,
-                }),
-                new ValueUpdateLiquidityPositionAction(item.block, item.transaction!, {
-                    position: ctx.store.defer(LiquidityPosition, positionId, {pool: true}),
-                    amount,
-                    amount0: -event.amount0,
-                    amount1: -event.amount1,
                 })
-            )
+                .add('lp_updateValue', {
+                    positionId,
+                    amount,
+                    amount0,
+                    amount1,
+                })
 
             if (HypervisorManager.get(ctx).isTracked(userId)) {
-                actions.push(
-                    new RemovePositionHypervisorAction(item.block, item.transaction!, {
-                        hypervisor: ctx.store.defer(Hypervisor, userId, {basePosition: true, limitPosition: true}),
-                        position: ctx.store.defer(LiquidityPosition, positionId),
-                    })
-                )
+                ctx.store.defer(Hypervisor, userId)
+
+                ctx.queue.add('hypervisor_removePosition', {
+                    hypervisorId: userId,
+                    positionId,
+                })
             }
 
             break
         }
     }
-
-    return actions
 }

@@ -3,30 +3,27 @@ import {DataHandlerContext} from '@subsquid/evm-processor'
 import {BNB_DECIMALS, WBNB_ADDRESS, WHITELIST_TOKENS} from '../config'
 import {Pool, Token, TokenPriceMetadata} from '../model'
 import {DeferredValue} from '../utils/deferred'
-import {StoreWithCache} from '@belopash/squid-tools'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import {Action} from './base'
 
 export interface BaseTokenActionData {
-    token: DeferredValue<Token, true>
+    tokenId: string
 }
 
 export abstract class BaseTokenAction<T extends BaseTokenActionData = BaseTokenActionData> extends Action<T> {}
 
 export interface EnsureTokenActionData extends BaseTokenActionData {
     address: string
-    decimals: Promise<number>
-    symbol: Promise<string>
+    decimals: number
+    symbol: string
 }
 
 export class EnsureTokenAction extends BaseTokenAction<EnsureTokenActionData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache>) {
-        let token = await this.data.token.get()
-        if (token != null) return
-
-        const decimals = await this.data.decimals
-        const symbol = await this.data.symbol
-        token = new Token({
-            id: this.data.address,
+    async perform() {
+        const decimals = this.data.decimals
+        const symbol = this.data.symbol
+        const token = new Token({
+            id: this.data.tokenId,
             decimals,
             symbol,
             bnbPrice: 0n,
@@ -36,22 +33,19 @@ export class EnsureTokenAction extends BaseTokenAction<EnsureTokenActionData> {
             }),
         })
 
-        await ctx.store.upsert(token)
-        ctx.log.debug(`Token ${token.id} created`)
+        await this.store.upsert(token)
+        this.log.debug(`Token ${token.id} created`)
     }
 }
 
 export interface PriceUpdateTokenActionData extends BaseTokenActionData {
-    pool: DeferredValue<Pool, true>
+    poolId: string
 }
 
 export class PriceUpdateTokenAction extends BaseTokenAction<PriceUpdateTokenActionData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache>) {
-        const token = await this.data.token.get()
-        assert(token != null, `Missing token`)
-
-        const pool = await this.data.pool.get()
-        assert(pool != null, `Missing pool`)
+    async perform() {
+        const token = await this.store.getOrFail(Token, this.data.tokenId)
+        const pool = await this.store.getOrFail(Pool, this.data.poolId, {token0: true, token1: true})
 
         const [pairedTokenId, tokenPrice, pairedTokenReserve] =
             pool.token0.id === token.id
@@ -78,7 +72,7 @@ export class PriceUpdateTokenAction extends BaseTokenAction<PriceUpdateTokenActi
                 tokenPrice != null ? (pairedToken.bnbPrice * tokenPrice) / 10n ** BigInt(pairedToken.decimals) : 0n
         }
 
-        await ctx.store.upsert(token)
+        await this.store.upsert(token)
     }
 }
 

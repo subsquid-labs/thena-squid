@@ -1,54 +1,51 @@
-import assert from 'assert'
-import {DataHandlerContext} from '@subsquid/evm-processor'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import * as voterAbi from '../abi/voterV3'
-import {Action, LazyAction} from '../action'
-import {CreateBribeAction, UpdateStakeBribeAction} from '../action/bribe'
-import {CreateGaugeAction} from '../action/gauge'
-import {EnsureVoteAction, UpdateVoteAction} from '../action/vote'
+import {Action} from '../action'
+import {UpdateStakeBribeAction} from '../action/bribe'
 import {VOTER} from '../config'
-import {Bribe, Pool, VeToken, Vote} from '../model'
+import {MappingContext} from '../interfaces'
+import {Pool, VeToken, Vote} from '../model'
 import {Log} from '../processor'
 import {createVeTokenId, createVoteId} from '../utils/ids'
-import {GaugeManager} from '../utils/manager/gaugeManager'
-import {StoreWithCache} from '@belopash/squid-tools'
 import {BribeManager} from '../utils/manager/bribeManager'
+import {GaugeManager} from '../utils/manager/gaugeManager'
 
-export function isVoterItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+export function isVoterItem(ctx: MappingContext<StoreWithCache>, item: Log) {
     return item.address === VOTER
 }
 
-export function getVoterActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
-    const actions: Action[] = []
-
+export function getVoterActions(ctx: MappingContext<StoreWithCache>, item: Log) {
     switch (item.topics[0]) {
         case voterAbi.events.GaugeCreated.topic: {
             const event = voterAbi.events.GaugeCreated.decode(item)
 
-            const gauge = event.gauge.toLowerCase()
-            const externalBribe = event.external_bribe.toLowerCase()
-            const internalBribe = event.internal_bribe.toLowerCase()
-            const pool = event.pool.toLowerCase()
+            const gaugeId = event.gauge.toLowerCase()
+            const externalBribeId = event.external_bribe.toLowerCase()
+            const internalBribeId = event.internal_bribe.toLowerCase()
+            const poolId = event.pool.toLowerCase()
 
-            actions.push(
-                new CreateBribeAction(item.block, item.transaction!, {
-                    address: externalBribe,
-                    pool: ctx.store.defer(Pool, pool),
-                }),
-                new CreateBribeAction(item.block, item.transaction!, {
-                    address: internalBribe,
-                    pool: ctx.store.defer(Pool, pool),
-                }),
-                new CreateGaugeAction(item.block, item.transaction!, {
-                    address: gauge,
-                    externalBribe: ctx.store.defer(Bribe, externalBribe),
-                    internalBribe: ctx.store.defer(Bribe, internalBribe),
-                    pool: ctx.store.defer(Pool, pool),
+            ctx.queue
+                .add('bribe_create', {
+                    bribeId: internalBribeId,
+                    address: internalBribeId,
+                    poolId,
                 })
-            )
+                .add('bribe_create', {
+                    bribeId: externalBribeId,
+                    address: externalBribeId,
+                    poolId,
+                })
+                .add('gauge_create', {
+                    gaugeId,
+                    address: gaugeId,
+                    poolId,
+                    internalBribeId,
+                    externalBribeId,
+                })
 
-            GaugeManager.get(ctx).addGauge(gauge)
-            BribeManager.get(ctx).addBribe(externalBribe)
-            BribeManager.get(ctx).addBribe(internalBribe)
+            GaugeManager.get(ctx).addGauge(gaugeId)
+            BribeManager.get(ctx).addBribe(externalBribeId)
+            BribeManager.get(ctx).addBribe(internalBribeId)
 
             break
         }
@@ -56,42 +53,46 @@ export function getVoterActions(ctx: DataHandlerContext<StoreWithCache>, item: L
             const event = voterAbi.events.Voted.decode(item)
 
             const tokenId = createVeTokenId(event.tokenId)
+            ctx.store.defer(VeToken, tokenId)
+
             const value = event.weight
 
-            const token = ctx.store.defer(VeToken, tokenId)
-            actions.push(
-                new LazyAction(item.block, item.transaction!, async (ctx) => {
-                    const bribeUpdate = UpdateStakeBribeAction.getLast(ctx)
-                    if (
-                        bribeUpdate == null ||
-                        bribeUpdate.transaction.hash != item.transaction?.hash ||
-                        bribeUpdate.info.amount !== value ||
-                        bribeUpdate.info.token !== tokenId
-                    )
-                        return []
+            ctx.queue.lazy(async () => {
+                const bribeUpdate = UpdateStakeBribeAction.getLast(ctx)
+                if (
+                    bribeUpdate == null ||
+                    bribeUpdate.transaction?.hash != item.transaction?.hash ||
+                    bribeUpdate.data.amount !== value ||
+                    bribeUpdate.data.tokenId !== tokenId ||
+                    bribeUpdate.data.poolId == null
+                )
+                    return
 
-                    // assert(bribeUpdate.info.amount === value)
-                    // assert(bribeUpdate.info.token === tokenId)
+                // assert(bribeUpdate.info.amount === value)
+                // assert(bribeUpdate.info.token === tokenId)
 
-                    const poolId = bribeUpdate.info.pool
-                    if (poolId == null) return []
-                    
-                    const voteId = createVoteId(tokenId, poolId)
+                const poolId = bribeUpdate.data.poolId
+                ctx.store.defer(Pool, poolId)
 
-                    return [
-                        new EnsureVoteAction(item.block, item.transaction!, {
-                            vote: ctx.store.defer(Vote, voteId),
-                            id: voteId,
-                            token,
-                            pool: ctx.store.defer(Pool, poolId),
-                        }),
-                        new UpdateVoteAction(item.block, item.transaction!, {
-                            vote: ctx.store.defer(Vote, voteId),
-                            value: event.weight,
-                        }),
-                    ]
-                })
-            )
+                const voteId = createVoteId(tokenId, poolId)
+                const voteDeferred = ctx.store.defer(Vote, voteId)
+
+                ctx.queue
+                    .lazy(async () => {
+                        const vote = await voteDeferred.get()
+                        if (vote == null) {
+                            ctx.queue.add('vote_create', {
+                                poolId,
+                                tokenId,
+                                voteId,
+                            })
+                        }
+                    })
+                    .add('vote_updateWeigth', {
+                        voteId,
+                        value,
+                    })
+            })
 
             break
         }
@@ -99,46 +100,48 @@ export function getVoterActions(ctx: DataHandlerContext<StoreWithCache>, item: L
             const event = voterAbi.events.Abstained.decode(item)
 
             const tokenId = createVeTokenId(event.tokenId)
+            ctx.store.defer(VeToken, tokenId)
+
             const value = -event.weight
 
-            const token = ctx.store.defer(VeToken, tokenId)
-            actions.push(
-                new LazyAction(item.block, item.transaction!, async (ctx) => {
-                    const bribeUpdate = UpdateStakeBribeAction.getLast(ctx)
-                    if (
-                        bribeUpdate == null ||
-                        bribeUpdate.transaction.hash != item.transaction?.hash ||
-                        bribeUpdate.info.amount !== value ||
-                        bribeUpdate.info.token !== tokenId
-                    )
-                        return []
+            ctx.queue.lazy(async () => {
+                const bribeUpdate = UpdateStakeBribeAction.getLast(ctx)
+                if (
+                    bribeUpdate == null ||
+                    bribeUpdate.transaction?.hash != item.transaction?.hash ||
+                    bribeUpdate.data.amount !== value ||
+                    bribeUpdate.data.tokenId !== tokenId ||
+                    bribeUpdate.data.poolId == null
+                )
+                    return
 
-                    // assert(bribeUpdate.info.amount === value)
-                    // assert(bribeUpdate.info.token === tokenId)
+                // assert(bribeUpdate.info.amount === value)
+                // assert(bribeUpdate.info.token === tokenId)
 
-                    const poolId = bribeUpdate.info.pool
-                    if (poolId == null) return []
+                const poolId = bribeUpdate.data.poolId
+                ctx.store.defer(Pool, poolId)
 
-                    const voteId = createVoteId(tokenId, poolId)
+                const voteId = createVoteId(tokenId, poolId)
+                const voteDeferred = ctx.store.defer(Vote, voteId)
 
-                    return [
-                        new EnsureVoteAction(item.block, item.transaction!, {
-                            vote: ctx.store.defer(Vote, voteId),
-                            id: voteId,
-                            token,
-                            pool: ctx.store.defer(Pool, poolId),
-                        }),
-                        new UpdateVoteAction(item.block, item.transaction!, {
-                            vote: ctx.store.defer(Vote, voteId),
-                            value,
-                        }),
-                    ]
-                })
-            )
+                ctx.queue
+                    .lazy(async () => {
+                        const vote = await voteDeferred.get()
+                        if (vote == null) {
+                            ctx.queue.add('vote_create', {
+                                poolId,
+                                tokenId,
+                                voteId,
+                            })
+                        }
+                    })
+                    .add('vote_updateWeigth', {
+                        voteId,
+                        value,
+                    })
+            })
 
             break
         }
     }
-
-    return actions
 }

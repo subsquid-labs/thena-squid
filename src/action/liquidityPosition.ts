@@ -1,13 +1,10 @@
-import {DataHandlerContext} from '@subsquid/evm-processor'
-import {LiquidityPosition, LiquidityPositionUpdate, Pool, User} from '../model'
-import {DeferredValue} from '../utils/deferred'
-import {StoreWithCache} from '@belopash/squid-tools'
-import {Action} from './base'
 import assert from 'assert'
+import {LiquidityPosition, LiquidityPositionUpdate, Pool, User} from '../model'
 import {createLiquidityPositionUpdateId} from '../utils/ids'
+import {Action} from './base'
 
 export interface BaseLiquidityPositionActionData {
-    position: DeferredValue<LiquidityPosition, true>
+    positionId: string
 }
 
 export abstract class BaseLiquidityPositionAction<
@@ -15,30 +12,24 @@ export abstract class BaseLiquidityPositionAction<
 > extends Action<T> {}
 
 export interface EnsureLiquidityPositionActionData extends BaseLiquidityPositionActionData {
-    id: string
-    user: DeferredValue<User, true>
-    pool: DeferredValue<Pool, true>
+    userId: string
+    poolId: string
 }
 
 export class EnsureLiquidityPositionAction extends BaseLiquidityPositionAction<EnsureLiquidityPositionActionData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        let position = await this.data.position.get()
-        if (position != null) return
+    async perform(): Promise<void> {
+        const user = await this.store.getOrFail(User, this.data.userId)
+        const pool = await this.store.getOrFail(Pool, this.data.poolId)
 
-        const user = await this.data.user.get()
-        assert(user != null)
-        const pool = await this.data.pool.get()
-        assert(pool != null)
-
-        position = new LiquidityPosition({
-            id: this.data.id,
+        const position = new LiquidityPosition({
+            id: this.data.positionId,
             user,
             pool,
             value: 0n,
         })
 
-        await ctx.store.insert(position)
-        ctx.log.debug(`Created LiquidityPosition ${position.id}`)
+        await this.store.insert(position)
+        this.log.debug(`Created LiquidityPosition ${position.id}`)
     }
 }
 
@@ -58,18 +49,17 @@ export class ValueUpdateLiquidityPositionAction extends BaseLiquidityPositionAct
           }
         | undefined
 
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        const position = await this.data.position.get()
-        assert(position != null, `Missing position`)
+    async perform(): Promise<void> {
+        assert(this.transaction != null)
 
+        const position = await this.store.getOrFail(LiquidityPosition, this.data.positionId, {pool: true})
         const pool = position.pool
-        assert(pool != null, `Missing pool`)
 
         position.value += this.data.amount
         // assert(position.value >= 0)
 
-        await ctx.store.upsert(position)
-        ctx.log.debug(`Value of LiquidityPostition ${position.id} updated to ${position.value} (${this.data.amount})`)
+        await this.store.upsert(position)
+        this.log.debug(`Value of LiquidityPostition ${position.id} updated to ${position.value} (${this.data.amount})`)
 
         const amount0 =
             this.data.amount0 != null ? this.data.amount0 : (this.data.amount * pool.reserve0) / pool.liquidity
@@ -91,7 +81,7 @@ export class ValueUpdateLiquidityPositionAction extends BaseLiquidityPositionAct
             amount1,
         })
 
-        await ctx.store.insert(positionUpdate)
+        await this.store.insert(positionUpdate)
 
         ValueUpdateLiquidityPositionAction.lastUpdate = {...positionUpdate, index}
     }
@@ -103,7 +93,9 @@ export interface AdjustValueUpdateLiquidityPositionActionData extends BaseLiquid
 }
 
 export class AdjustValueUpdateLiquidityPositionAction extends BaseLiquidityPositionAction<AdjustValueUpdateLiquidityPositionActionData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
+    async perform(): Promise<void> {
+        assert(this.transaction != null)
+
         if (
             ValueUpdateLiquidityPositionAction.lastUpdate == null ||
             ValueUpdateLiquidityPositionAction.lastUpdate.blockNumber !== this.block.height ||
@@ -111,7 +103,7 @@ export class AdjustValueUpdateLiquidityPositionAction extends BaseLiquidityPosit
         )
             return
 
-        const positionUpdate = await ctx.store.getOrFail(
+        const positionUpdate = await this.store.getOrFail(
             LiquidityPositionUpdate,
             ValueUpdateLiquidityPositionAction.lastUpdate.id
         )
@@ -119,11 +111,6 @@ export class AdjustValueUpdateLiquidityPositionAction extends BaseLiquidityPosit
         positionUpdate.amount0 = this.data.amount0
         positionUpdate.amount1 = this.data.amount1
 
-        await ctx.store.upsert(positionUpdate)
+        await this.store.upsert(positionUpdate)
     }
 }
-
-export type LiquidityPositionAction =
-    | ValueUpdateLiquidityPositionAction
-    | AdjustValueUpdateLiquidityPositionAction
-    | EnsureLiquidityPositionAction

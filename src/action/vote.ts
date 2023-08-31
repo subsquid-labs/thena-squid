@@ -1,50 +1,39 @@
-import {DataHandlerContext} from '@subsquid/evm-processor'
-import {LiquidityPosition, Pool, Token, VeToken, Vote} from '../model'
-import {StoreWithCache} from '@belopash/squid-tools'
+import {Pool, VeToken, Vote} from '../model'
 import {Action} from './base'
-import {DeferredValue} from '../utils/deferred'
-import assert from 'assert'
 
 export interface EnsureVoteData {
-    vote: DeferredValue<Vote, true>
-    id: string
-    token: DeferredValue<VeToken, true>
-    pool: DeferredValue<Pool, true>
+    voteId: string
+    tokenId: string
+    poolId: string
 }
 
 export class EnsureVoteAction extends Action<EnsureVoteData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        let vote = await this.data.vote.get()
-        if (vote != null) return
+    async perform(): Promise<void> {
+        const token = await this.store.getOrFail(VeToken, this.data.tokenId)
+        const pool = await this.store.getOrFail(Pool, this.data.poolId)
 
-        const token = await this.data.token.get()
-        assert(token != null)
-        const pool = await this.data.pool.get()
-        assert(pool != null)
-
-        vote = new Vote({
-            id: this.data.id,
+        const vote = new Vote({
+            id: this.data.voteId,
             token,
             pool,
             weight: 0n,
         })
-        await ctx.store.insert(vote)
-        ctx.log.debug(`created Vote ${vote.id}`)
+        await this.store.insert(vote)
+        this.log.debug(`created Vote ${vote.id}`)
     }
 }
 
 export interface UpdateVoteData {
-    vote: DeferredValue<Vote, true>
+    voteId: string
     value: bigint
 }
 
 export class UpdateVoteAction extends Action<UpdateVoteData> {
-    async _perform(ctx: DataHandlerContext<StoreWithCache, {}>): Promise<void> {
-        let vote = await this.data.vote.get()
-        assert(vote != null)
+    async perform(): Promise<void> {
+        let vote = await this.store.getOrFail(Vote, this.data.voteId)
 
         vote.weight += this.data.value
 
-        await ctx.store.upsert(vote)
+        await this.store.upsert(vote)
     }
 }

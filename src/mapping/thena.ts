@@ -1,57 +1,61 @@
-import {DataHandlerContext} from '@subsquid/evm-processor'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import * as thena from '../abi/bep20'
+import {Action} from '../action'
 import {THENA_ADDRESS, ZERO_ADDRESS} from '../config'
-import {Log} from '../processor'
-import {Action, BalanceUserAction, EnsureUserAction} from '../action'
-import {StoreWithCache} from '@belopash/squid-tools'
+import {MappingContext} from '../interfaces'
 import {User} from '../model'
-import {ContractChecker} from '../utils/contractChecker'
+import {Log} from '../processor'
 
 export function isThenaItem(item: Log) {
     return item.address === THENA_ADDRESS
 }
 
-export function getThenaActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
-    const actions: Action[] = []
-
-    // switch (item.kind) {
-    //     case 'evmLog': {
-    ctx.log.debug(`processing evm log...`)
+export function getThenaActions(ctx: MappingContext<StoreWithCache>, item: Log) {
     switch (item.topics[0]) {
         case thena.events.Transfer.topic: {
             ctx.log.debug(`processing Transfer event...`)
             const event = thena.events.Transfer.decode(item)
 
             const amount = event.value
-            const from = event.from.toLowerCase()
-            const to = event.to.toLowerCase()
 
-            if (from !== ZERO_ADDRESS) {
-                actions.push(
-                    new EnsureUserAction(item.block, item.transaction!, {
-                        user: ctx.store.defer(User, from),
-                        address: from,
-                        isContract: ContractChecker.get(ctx).defer(from),
-                    }),
-                    new BalanceUserAction(item.block, item.transaction!, {
-                        user: ctx.store.defer(User, from),
+            const fromId = event.from.toLowerCase()
+            const fromDefer = ctx.store.defer(User, fromId)
+
+            if (fromId !== ZERO_ADDRESS) {
+                ctx.queue
+                    .lazy(async () => {
+                        const user = await fromDefer.get()
+                        if (user == null) {
+                            ctx.queue.add('user_create', {
+                                userId: fromId,
+                                address: fromId,
+                            })
+                        }
+                    })
+                    .add('user_updateBalance', {
+                        userId: fromId,
                         amount: -amount,
                     })
-                )
             }
 
-            if (to !== ZERO_ADDRESS) {
-                actions.push(
-                    new EnsureUserAction(item.block, item.transaction!, {
-                        user: ctx.store.defer(User, to),
-                        address: to,
-                        isContract: ContractChecker.get(ctx).defer(to),
-                    }),
-                    new BalanceUserAction(item.block, item.transaction!, {
-                        user: ctx.store.defer(User, to),
+            const toId = event.to.toLowerCase()
+            const toDefer = ctx.store.defer(User, toId)
+
+            if (toId !== ZERO_ADDRESS) {
+                ctx.queue
+                    .lazy(async () => {
+                        const user = await toDefer.get()
+                        if (user == null) {
+                            ctx.queue.add('user_create', {
+                                userId: toId,
+                                address: toId,
+                            })
+                        }
+                    })
+                    .add('user_updateBalance', {
+                        userId: toId,
                         amount,
                     })
-                )
             }
 
             break
@@ -59,34 +63,33 @@ export function getThenaActions(ctx: DataHandlerContext<StoreWithCache>, item: L
         case thena.events.Approval.topic: {
             const event = thena.events.Approval.decode(item)
 
-            let owner = event.owner.toLowerCase()
-            let spender = event.spender.toLowerCase()
+            const ownerId = event.owner.toLowerCase()
+            const ownerDefer = ctx.store.defer(User, ownerId)
 
-            actions.push(
-                new EnsureUserAction(item.block, item.transaction!, {
-                    user: ctx.store.defer(User, owner),
-                    address: owner,
-                    isContract: ContractChecker.get(ctx).defer(owner),
-                }),
-                new EnsureUserAction(item.block, item.transaction!, {
-                    user: ctx.store.defer(User, spender),
-                    address: spender,
-                    isContract: ContractChecker.get(ctx).defer(spender),
-                })
-            )
+            ctx.queue.lazy(async () => {
+                const owner = await ownerDefer.get()
+                if (owner == null) {
+                    ctx.queue.add('user_create', {
+                        userId: ownerId,
+                        address: ownerId,
+                    })
+                }
+            })
+
+            const spenderId = event.spender.toLowerCase()
+            const spenderDefer = ctx.store.defer(User, spenderId)
+
+            ctx.queue.lazy(async () => {
+                const spender = await spenderDefer.get()
+                if (spender == null) {
+                    ctx.queue.add('user_create', {
+                        userId: spenderId,
+                        address: spenderId,
+                    })
+                }
+            })
+
             break
         }
     }
-    // break
-    // }
-    //     case 'transaction': {
-    //         if (item.transaction.from != null) {
-    //             ctx.log.debug(`processing transaction...`)
-    //             actions.push(new UnknownUserAction(block, item.transaction, {id: item.transaction.from}))
-    //         }
-    //         break
-    //     }
-    // }
-
-    return actions
 }

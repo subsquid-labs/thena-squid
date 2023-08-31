@@ -1,37 +1,31 @@
-import {DataHandlerContext} from '@subsquid/evm-processor'
+import {StoreWithCache} from '@belopash/typeorm-store'
 import * as rebaseDistributor from '../abi/rebaseDistributor'
-import {Action} from '../action'
-import {RewardVeTokenAction} from '../action/veToken'
 import {REBASE_DISTRIBUTOR} from '../config'
+import {MappingContext} from '../interfaces'
 import {VeToken} from '../model'
 import {Log} from '../processor'
-import {StoreWithCache} from '@belopash/squid-tools'
 import {createVeTokenId} from '../utils/ids'
 
-export function isRebaseDistributorItem(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
+export function isRebaseDistributorItem(ctx: MappingContext<StoreWithCache>, item: Log) {
     return item.address === REBASE_DISTRIBUTOR
 }
 
-export function getRebaseDistributorActions(ctx: DataHandlerContext<StoreWithCache>, item: Log) {
-    const actions: Action[] = []
-
+export function getRebaseDistributorActions(ctx: MappingContext<StoreWithCache>, item: Log) {
     switch (item.topics[0]) {
         case rebaseDistributor.events.Claimed.topic: {
             const event = rebaseDistributor.events.Claimed.decode(item)
 
             const tokenId = createVeTokenId(event.tokenId)
+            ctx.store.defer(VeToken, tokenId)
+
             const amount = event.amount
 
-            actions.push(
-                new RewardVeTokenAction(item.block, item.transaction!, {
-                    token: ctx.store.defer(VeToken, tokenId),
-                    amount,
-                })
-            )
+            ctx.queue.add('veToken_reward', {
+                tokenId,
+                amount,
+            })
 
             break
         }
     }
-
-    return actions
 }
