@@ -10,6 +10,7 @@ export interface BaseTradingCompetitionActionData {
 export abstract class BaseTradingCompetitionAction<T extends BaseTradingCompetitionActionData = BaseTradingCompetitionActionData> extends Action<T> {}
 
 export interface CreateTradingCompetitionActionData extends BaseTradingCompetitionActionData {
+    id: string
     entryFee: bigint
     maxParticipants: bigint
     owner: string
@@ -28,7 +29,7 @@ export class CreateTradingCompetitionAction extends BaseTradingCompetitionAction
         assert(tc == null, 'Trading Competition already exists 0_o')
 
         tc = new TradingCompetition({
-            id: this.data.tradingCompetition,
+            id: this.data.id,
             entryFee: this.data.entryFee,
             maxParticipants: this.data.maxParticipants,
             owner: this.data.owner,

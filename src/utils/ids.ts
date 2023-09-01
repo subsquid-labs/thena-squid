@@ -39,3 +39,7 @@ export function createVeTokenId(tokenIndex: bigint) {
 export function createVoteId(tokenId: string, poolId: string) {
     return `${tokenId}-${poolId}`
 }
+
+export function createTradingCompetitionId(counterId: number, tcAddress: string) {
+    return `${tcAddress}-${counterId}`
+}

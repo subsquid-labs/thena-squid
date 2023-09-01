@@ -147,8 +147,18 @@ export const ABI_JSON = [
             },
             {
                 "type": "address",
+                "name": "competition",
+                "indexed": true
+            },
+            {
+                "type": "address",
                 "name": "caller",
                 "indexed": true
+            },
+            {
+                "type": "uint256",
+                "name": "idCounter",
+                "indexed": false
             },
             {
                 "type": "uint256",
@@ -499,25 +509,6 @@ export const ABI_JSON = [
     },
     {
         "type": "function",
-        "name": "allowedTokenForPrize",
-        "constant": true,
-        "stateMutability": "view",
-        "payable": false,
-        "inputs": [
-            {
-                "type": "uint256",
-                "name": ""
-            }
-        ],
-        "outputs": [
-            {
-                "type": "address",
-                "name": ""
-            }
-        ]
-    },
-    {
-        "type": "function",
         "name": "create",
         "constant": false,
         "payable": false,
@@ -623,7 +614,16 @@ export const ABI_JSON = [
                 ]
             }
         ],
-        "outputs": []
+        "outputs": [
+            {
+                "type": "address",
+                "name": ""
+            },
+            {
+                "type": "uint256",
+                "name": ""
+            }
+        ]
     },
     {
         "type": "function",

@@ -35,4 +35,4 @@ export const VOTER = '0x3a1d0952809f4948d15ebce8d345962a282c4fcb'
 export const VE_TOKEN = '0xfbbf371c9b0b994eebfcc977cef603f7f31c070d'
 export const REBASE_DISTRIBUTOR = '0xe9fe83aa430ace4b703c299701142f9dfdde730e'
 
-export const TCMANAGER_ADDRESS = '0xdac818fdc182873fb47e60f6b15cb83e9fba0daf'
+export const TCMANAGER_ADDRESS = '0x46ba692f34ddcb3d3f976549b647481e162b8596'
