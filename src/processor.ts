@@ -27,7 +27,7 @@ import {
     THENA_ADDRESS,
     VE_TOKEN,
     VOTER,
-    TCMANAGER_ADDRESS
+    TCMANAGER_ADDRESS,
 } from './config'
 import {loadGaugesAndBribes, loadHypervisors, loadPools} from './utils/loaders'
 
@@ -36,7 +36,7 @@ const gaugesAndBribes = loadGaugesAndBribes()
 const hypervisors = loadHypervisors()
 
 export const processor = new EvmBatchProcessor()
-    .setBlockRange({from: 24_468_802}) //24_468_802
+    .setBlockRange({from: 23_881_121})
     .setDataSource({
         archive: lookupArchive('binance'),
         chain: {url: 'https://rpc.ankr.com/bsc', maxBatchCallSize: 10},

@@ -1,13 +1,13 @@
 import {Pool, VeToken, Vote} from '../model'
 import {Action} from './base'
 
-export interface EnsureVoteData {
+export interface CreateVoteData {
     voteId: string
     tokenId: string
     poolId: string
 }
 
-export class EnsureVoteAction extends Action<EnsureVoteData> {
+export class CreateVoteAction extends Action<CreateVoteData> {
     async perform(): Promise<void> {
         const token = await this.store.getOrFail(VeToken, this.data.tokenId)
         const pool = await this.store.getOrFail(Pool, this.data.poolId)

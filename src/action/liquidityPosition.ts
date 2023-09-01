@@ -11,12 +11,12 @@ export abstract class BaseLiquidityPositionAction<
     T extends BaseLiquidityPositionActionData = BaseLiquidityPositionActionData
 > extends Action<T> {}
 
-export interface EnsureLiquidityPositionActionData extends BaseLiquidityPositionActionData {
+export interface CreateLiquidityPositionActionData extends BaseLiquidityPositionActionData {
     userId: string
     poolId: string
 }
 
-export class EnsureLiquidityPositionAction extends BaseLiquidityPositionAction<EnsureLiquidityPositionActionData> {
+export class CreateLiquidityPositionAction extends BaseLiquidityPositionAction<CreateLiquidityPositionActionData> {
     async perform(): Promise<void> {
         const user = await this.store.getOrFail(User, this.data.userId)
         const pool = await this.store.getOrFail(Pool, this.data.poolId)
