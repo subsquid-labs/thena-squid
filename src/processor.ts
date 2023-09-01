@@ -15,6 +15,7 @@ import * as solidlyPair from './abi/solidlyPair'
 import * as voter from './abi/voterV3'
 import * as veToken from './abi/votingEscrow'
 import * as rebaseDistributor from './abi/rebaseDistributor'
+import * as tradingCompetitionManager from './abi/tradingCompetitionManager'
 import * as gauge from './abi/gaugeV2'
 import * as bribe from './abi/bribe'
 import {
@@ -26,6 +27,7 @@ import {
     THENA_ADDRESS,
     VE_TOKEN,
     VOTER,
+    TCMANAGER_ADDRESS
 } from './config'
 import {loadGaugesAndBribes, loadHypervisors, loadPools} from './utils/loaders'
 
@@ -150,6 +152,11 @@ export const processor = new EvmBatchProcessor()
     .addLog({
         address: [REBASE_DISTRIBUTOR],
         topic0: [rebaseDistributor.events.Claimed.topic],
+        transaction: true,
+    })
+    .addLog({
+        address: [TCMANAGER_ADDRESS],
+        topic0: [tradingCompetitionManager.events.Create.topic],
         transaction: true,
     })
     .addTransaction({
