@@ -1,15 +1,9 @@
 import assert from 'assert'
-import {TradingCompetition, MarketType, CompetitionRules, Prize, TimestampInfo} from '../model'
+import {CompetitionRules, MarketType, Prize, TimestampInfo, TradingCompetition} from '../model'
 import {DeferredValue} from '../utils/deferred'
 import {Action} from './base'
 
-export interface BaseTradingCompetitionActionData {
-    tc: DeferredValue<TradingCompetition, true>
-}
-
-export abstract class BaseTradingCompetitionAction<T extends BaseTradingCompetitionActionData = BaseTradingCompetitionActionData> extends Action<T> {}
-
-export interface CreateTradingCompetitionActionData extends BaseTradingCompetitionActionData {
+export interface CreateTradingCompetitionActionData {
     id: string
     entryFee: bigint
     maxParticipants: bigint
@@ -23,12 +17,9 @@ export interface CreateTradingCompetitionActionData extends BaseTradingCompetiti
     competitionRules: CompetitionRules
 }
 
-export class CreateTradingCompetitionAction extends BaseTradingCompetitionAction<CreateTradingCompetitionActionData> {
+export class CreateTradingCompetitionAction extends Action<CreateTradingCompetitionActionData> {
     async perform(): Promise<void> {
-        let tc = await this.data.tc.get()
-        assert(tc == null, 'Trading Competition already exists 0_o')
-
-        tc = new TradingCompetition({
+        const tc = new TradingCompetition({
             id: this.data.id,
             entryFee: this.data.entryFee,
             maxParticipants: this.data.maxParticipants,
@@ -39,7 +30,7 @@ export class CreateTradingCompetitionAction extends BaseTradingCompetitionAction
             timestamp: this.data.timestamp,
             market: this.data.market,
             prize: this.data.prize,
-            competitionRules: this.data.competitionRules
+            competitionRules: this.data.competitionRules,
         })
 
         await this.store.insert(tc)
@@ -47,5 +38,4 @@ export class CreateTradingCompetitionAction extends BaseTradingCompetitionAction
     }
 }
 
-export type TradingCompetitionAction =
-    | CreateTradingCompetitionAction
+export type TradingCompetitionAction = CreateTradingCompetitionAction
