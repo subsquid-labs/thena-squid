@@ -34,7 +34,7 @@ const Actions = {
     hypervisor_setPosition: Hypervisor.SetPositionHypervisorAction,
     hypervisor_removePosition: Hypervisor.RemovePositionHypervisorAction,
 
-    lp_create: LiquidityPosition.EnsureLiquidityPositionAction,
+    lp_create: LiquidityPosition.CreateLiquidityPositionAction,
     lp_updateValue: LiquidityPosition.ValueUpdateLiquidityPositionAction,
     lp_adjustLastUpdate: LiquidityPosition.AdjustValueUpdateLiquidityPositionAction,
 
@@ -46,7 +46,7 @@ const Actions = {
     pool_recalcPrices: Pool.RecalculatePricesPoolAction,
     pool_setSqrtPrice: Pool.SetSqrtPricePoolAction,
 
-    token_create: Token.EnsureTokenAction,
+    token_create: Token.CreateTokenAction,
     token_recalcPrice: Token.PriceUpdateTokenAction,
 
     veToken_create: VeToken.CreateVeTokenAction,
@@ -55,7 +55,7 @@ const Actions = {
     veToken_updateValue: VeToken.UpdateValueVeTokenAction,
     veToken_setLockTime: VeToken.UpdateLockTimeVeTokenAction,
 
-    vote_create: Vote.EnsureVoteAction,
+    vote_create: Vote.CreateVoteAction,
     vote_updateWeigth: Vote.UpdateVoteAction,
 
     tc_create: TC.CreateTradingCompetitionAction

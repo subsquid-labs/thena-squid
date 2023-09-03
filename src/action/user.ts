@@ -8,15 +8,15 @@ import {CheckerDeferredValue, ContractChecker} from '../utils/contractChecker'
 import {createTradeId} from '../utils/ids'
 import {Action, ActionConfig} from './base'
 
-export interface EnsureUserActionData {
+export interface CreateUserActionData {
     userId: string
     address: string
 }
 
-export class CreateUserAction extends Action<EnsureUserActionData> {
+export class CreateUserAction extends Action<CreateUserActionData> {
     private isContract!: CheckerDeferredValue
 
-    constructor(config: ActionConfig, data: EnsureUserActionData) {
+    constructor(config: ActionConfig, data: CreateUserActionData) {
         super(config, data)
 
         const checker = ContractChecker.get(config)
@@ -124,12 +124,12 @@ export class SwapAction extends Action<SwapUserActionData> {
             SwapAction.lastTrade.blockNumber === this.block.height &&
             SwapAction.lastTrade.txHash === this.transaction.hash
         ) {
-            trade = await this.store.getOrFail(Trade, SwapAction.lastTrade.id)
+            trade = await this.store.getOrFail(Trade, SwapAction.lastTrade.id, {tokenOut:true})
         } else {
             SwapAction.lastTrade = undefined
         }
 
-        if (trade == null || trade.tokenOut !== tokenIn || trade.amountOut !== amountIn) {
+        if (trade == null || trade.tokenOut.id !== tokenIn.id || trade.amountOut !== amountIn) {
             const index = SwapAction.lastTrade != null ? SwapAction.lastTrade.index + 1 : 0
             trade = new Trade({
                 id: createTradeId(this.transaction.id, index),

@@ -4,7 +4,7 @@ import {Hypervisor, LiquidityPosition, Pool, PoolType, Token} from '../model'
 import {CallCache} from '../utils/callCache'
 import {Action} from './base'
 import {CreatePoolAction} from './pool'
-import {EnsureTokenAction} from './token'
+import {CreateTokenAction} from './token'
 
 export interface BaseHypervisorActionData {
     hypervisorId: string
@@ -32,7 +32,7 @@ export class CreateHypervisorAction extends BaseHypervisorAction<CreateHyperviso
             const token0Address = this.data.token0Id
             const token0Decimals = callCache.defer(this.block, [hypervisorAbi.functions.decimals, token0Address, []])
             const token0Symbol = callCache.defer(this.block, [hypervisorAbi.functions.symbol, token0Address, []])
-            const ensureToken0 = new EnsureTokenAction(
+            const ensureToken0 = new CreateTokenAction(
                 {
                     ...this.config,
                     block: this.block,
@@ -54,7 +54,7 @@ export class CreateHypervisorAction extends BaseHypervisorAction<CreateHyperviso
             const token1Address = this.data.token1Id
             const token1Decimals = callCache.defer(this.block, [hypervisorAbi.functions.decimals, token1Address, []])
             const token1Symbol = callCache.defer(this.block, [hypervisorAbi.functions.symbol, token1Address, []])
-            const ensureToken1 = new EnsureTokenAction(
+            const ensureToken1 = new CreateTokenAction(
                 {
                     ...this.config,
                     block: this.block,

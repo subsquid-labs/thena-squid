@@ -6,19 +6,14 @@ import {DeferredValue} from '../utils/deferred'
 import {StoreWithCache} from '@belopash/typeorm-store'
 import {Action} from './base'
 
-export interface BaseTokenActionData {
+export interface CreateTokenActionData {
     tokenId: string
-}
-
-export abstract class BaseTokenAction<T extends BaseTokenActionData = BaseTokenActionData> extends Action<T> {}
-
-export interface EnsureTokenActionData extends BaseTokenActionData {
     address: string
     decimals: number
     symbol: string
 }
 
-export class EnsureTokenAction extends BaseTokenAction<EnsureTokenActionData> {
+export class CreateTokenAction extends Action<CreateTokenActionData> {
     async perform() {
         const decimals = this.data.decimals
         const symbol = this.data.symbol
@@ -38,11 +33,12 @@ export class EnsureTokenAction extends BaseTokenAction<EnsureTokenActionData> {
     }
 }
 
-export interface PriceUpdateTokenActionData extends BaseTokenActionData {
+export interface PriceUpdateTokenActionData  {
+    tokenId: string
     poolId: string
 }
 
-export class PriceUpdateTokenAction extends BaseTokenAction<PriceUpdateTokenActionData> {
+export class PriceUpdateTokenAction extends Action<PriceUpdateTokenActionData> {
     async perform() {
         const token = await this.store.getOrFail(Token, this.data.tokenId)
         const pool = await this.store.getOrFail(Pool, this.data.poolId, {token0: true, token1: true})
@@ -76,4 +72,4 @@ export class PriceUpdateTokenAction extends BaseTokenAction<PriceUpdateTokenActi
     }
 }
 
-export type TokenAction = PriceUpdateTokenAction | EnsureTokenAction
+export type TokenAction = PriceUpdateTokenAction | CreateTokenAction

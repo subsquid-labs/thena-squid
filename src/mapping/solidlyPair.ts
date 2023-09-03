@@ -20,7 +20,7 @@ export function getSolidlyPairActions(ctx: MappingContext<StoreWithCache>, item:
             const userDeferred = ctx.store.defer(User, userId)
 
             const poolId = item.address
-            ctx.store.defer(Pool, poolId)
+            ctx.store.defer(Pool, poolId, {token0: true, token1: true})
 
             const [amount0, amount1] =
                 event.amount0In === 0n ? [-event.amount0Out, event.amount1In] : [event.amount0In, -event.amount1Out]
@@ -45,6 +45,19 @@ export function getSolidlyPairActions(ctx: MappingContext<StoreWithCache>, item:
                     amount0,
                     amount1,
                 })
+                .lazy(async () => {
+                    const pool = await ctx.store.getOrFail(Pool, poolId, {token0: true, token1: true})
+
+                    ctx.queue
+                        .add('token_recalcPrice', {
+                            tokenId: pool.token0.id,
+                            poolId,
+                        })
+                        .add('token_recalcPrice', {
+                            tokenId: pool.token1.id,
+                            poolId,
+                        })
+                })
 
             break
         }
@@ -62,19 +75,6 @@ export function getSolidlyPairActions(ctx: MappingContext<StoreWithCache>, item:
                 })
                 .add('pool_recalcPrices', {
                     poolId,
-                })
-                .lazy(async () => {
-                    const pool = await poolDefered.getOrFail()
-
-                    ctx.queue
-                        .add('token_recalcPrice', {
-                            tokenId: pool.token0.id,
-                            poolId,
-                        })
-                        .add('token_recalcPrice', {
-                            tokenId: pool.token1.id,
-                            poolId,
-                        })
                 })
 
             break
