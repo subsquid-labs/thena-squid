@@ -14,6 +14,7 @@ import * as User from './user'
 import * as VeToken from './veToken'
 import * as Vote from './vote'
 import * as TC from './tradingCompetition'
+import * as ThenianNft from './thenianNft'
 
 const Actions = {
     user_create: User.CreateUserAction,
@@ -58,7 +59,10 @@ const Actions = {
     vote_create: Vote.CreateVoteAction,
     vote_updateWeigth: Vote.UpdateVoteAction,
 
-    tc_create: TC.CreateTradingCompetitionAction
+    tc_create: TC.CreateTradingCompetitionAction,
+
+    thenianNft_create: ThenianNft.CreateThenianNftAction,
+    thenianNft_updateOwner: ThenianNft.UpdateOwnerThenianNftAction,
 } satisfies BaseActionRegistry
 
 type ActionRegistry = typeof Actions

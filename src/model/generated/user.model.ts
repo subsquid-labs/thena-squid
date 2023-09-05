@@ -4,6 +4,7 @@ import {Trade} from "./trade.model"
 import {LiquidityPosition} from "./liquidityPosition.model"
 import {VeToken} from "./veToken.model"
 import {GaugeStake} from "./gaugeStake.model"
+import {ThenianNft} from "./thenianNft.model"
 
 @Entity_()
 export class User {
@@ -35,4 +36,7 @@ export class User {
 
     @OneToMany_(() => GaugeStake, e => e.user)
     stakes!: GaugeStake[]
+
+    @OneToMany_(() => ThenianNft, e => e.owner)
+    thenianNfts!: ThenianNft[]
 }

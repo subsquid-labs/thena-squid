@@ -9,6 +9,7 @@ type User @entity {
     liquidityPositions: [LiquidityPosition!] @derivedFrom(field: "user")
     veTokens: [VeToken!] @derivedFrom(field: "owner")
     stakes: [GaugeStake!]! @derivedFrom(field: "user")
+    thenianNfts: [ThenianNft!] @derivedFrom(field: "owner")
 }
 
 type Trade @entity {
@@ -165,6 +166,21 @@ type VeToken @entity {
     totalReward: BigInt!
 
     votes: [Vote!]! @derivedFrom(field: "token")
+}
+
+type Attribute {
+    traitType: String!
+    value: String!
+}
+
+type ThenianNft @entity {
+    id: ID!
+
+    owner: User!
+
+    image: String!
+    attributes: [Attribute!]
+    timestamp: BigInt!
 }
 
 type TimestampInfo {

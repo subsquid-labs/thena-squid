@@ -16,6 +16,7 @@ import * as voter from './abi/voterV3'
 import * as veToken from './abi/votingEscrow'
 import * as rebaseDistributor from './abi/rebaseDistributor'
 import * as tradingCompetitionManager from './abi/tradingCompetitionManager'
+import * as thenianNft from './abi/thenianNft'
 import * as gauge from './abi/gaugeV2'
 import * as bribe from './abi/bribe'
 import {
@@ -28,6 +29,7 @@ import {
     VE_TOKEN,
     VOTER,
     TCMANAGER_ADDRESS,
+    THENIAN_NFT_ADDRESS
 } from './config'
 import {loadGaugesAndBribes, loadHypervisors, loadPools} from './utils/loaders'
 
@@ -36,7 +38,7 @@ const gaugesAndBribes = loadGaugesAndBribes()
 const hypervisors = loadHypervisors()
 
 export const processor = new EvmBatchProcessor()
-    .setBlockRange({from: 23_881_121})
+    .setBlockRange({from: 23_530_609})
     .setDataSource({
         archive: lookupArchive('binance'),
         chain: {url: 'https://rpc.ankr.com/bsc', maxBatchCallSize: 10},
@@ -157,6 +159,11 @@ export const processor = new EvmBatchProcessor()
     .addLog({
         address: [TCMANAGER_ADDRESS],
         topic0: [tradingCompetitionManager.events.Create.topic],
+        transaction: true,
+    })
+    .addLog({
+        address: [THENIAN_NFT_ADDRESS],
+        topic0: [thenianNft.events.Transfer.topic],
         transaction: true,
     })
     .addTransaction({

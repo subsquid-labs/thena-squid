@@ -18,6 +18,7 @@ import {getTradingCompetitionManagerActions, isTradingCompetitionManagerItem} fr
 import {Log, processor} from './processor'
 import {GaugeManager, HypervisorManager, PoolManager} from './utils/manager'
 import {BribeManager} from './utils/manager/bribeManager'
+import { getThenianNftActions, isThenianNftItem } from './mapping/thenianNft'
 
 processor.run(new TypeormDatabaseWithCache({supportHotBlocks: true}), async (ctx) => {
     const queue = new ActionQueue({
@@ -98,5 +99,9 @@ export function getItemActions(ctx: MappingContext<StoreWithCache>, item: Log) {
 
     if (isTradingCompetitionManagerItem(item)) {
         return getTradingCompetitionManagerActions(ctx, item)
+    }
+
+    if (isThenianNftItem(ctx, item)) {
+        return getThenianNftActions(ctx, item)
     }
 }
