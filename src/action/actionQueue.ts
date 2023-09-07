@@ -97,13 +97,18 @@ export class ActionQueue {
     ): this {
         assert(this.block != null)
 
-        const a = new Actions[action](
+        const ActionConstructor = Actions[action] as ActionConstructor<typeof data>
+        if (ActionConstructor == null) {
+            throw new Error(`Action '${action}' is not registered.`)
+        }
+
+        const a = new ActionConstructor(
             {
                 ...this.config,
                 block: this.block,
                 transaction: this.transaction,
             },
-            data as any // FIXME: find if there is a proper way to pass typed parameter
+            data
         )
         this.actions.push(a)
 

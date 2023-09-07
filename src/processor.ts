@@ -1,6 +1,7 @@
 import {lookupArchive} from '@subsquid/archive-registry'
 import {
-    BlockHeader,
+    BlockHeader as _BlockHeader,
+    BlockData as _BlockData,
     EvmBatchProcessor,
     EvmBatchProcessorFields,
     Log as _Log,
@@ -29,7 +30,7 @@ import {
     VE_TOKEN,
     VOTER,
     TCMANAGER_ADDRESS,
-    THENIAN_NFT_ADDRESS
+    THENIAN_NFT_ADDRESS,
 } from './config'
 import {loadGaugesAndBribes, loadHypervisors, loadPools} from './utils/loaders'
 
@@ -171,6 +172,7 @@ export const processor = new EvmBatchProcessor()
     })
 
 export type Fields = EvmBatchProcessorFields<typeof processor>
-export type Block = BlockHeader<Fields>
+export type BlockData = _BlockData<Fields>
+export type Block = _BlockHeader<Fields>
 export type Log = _Log<Fields>
 export type Transaction = _Transaction<Fields>

@@ -1,13 +1,12 @@
-import { Action } from './base'
-import { User, ThenianNft, Attribute } from '../model'
 import assert from 'assert'
-import { timeStamp } from 'console'
+import {Attribute, ThenianNft, User} from '../model'
+import {Action} from './base'
 
 export interface CreateThenianNftData {
     tokenId: string
     ownerId: string
     image: string
-    attributes: Attribute[]
+    attributes: {traitType: string; value: string}[]
     timestamp: bigint
 }
 
@@ -20,8 +19,8 @@ export class CreateThenianNftAction extends Action<CreateThenianNftData> {
             id: this.data.tokenId,
             owner,
             image: this.data.image,
-            attributes: this.data.attributes,
-            timestamp: this.data.timestamp
+            attributes: this.data.attributes.map((a) => new Attribute(a)),
+            timestamp: this.data.timestamp,
         })
 
         await this.store.insert(thenianNft)

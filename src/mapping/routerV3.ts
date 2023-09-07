@@ -1,14 +1,12 @@
-import {MappingContext} from '../interfaces'
 import * as algebraPool from '../abi/algebraPool'
-import {Log} from '../processor'
 import {Action} from '../action'
 import {ROUTER_V3_ADDRESS} from '../config'
+import {MappingContext} from '../interfaces'
+import {Log} from '../processor'
+import {Item} from './common'
 
-export function isRouterV3Item(item: Log) {
-    return item.address === ROUTER_V3_ADDRESS
-}
-
-export function getRouterV3Actions(ctx: MappingContext<unknown>, item: Log) {
+export function getRouterV3Actions(ctx: MappingContext<unknown>, item: Item) {
+    if (item.address !== ROUTER_V3_ADDRESS) return
     // switch (item.kind) {
     //     case 'transaction': {
     //         if (item.transaction.from != null) {
