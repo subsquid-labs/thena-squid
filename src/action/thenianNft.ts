@@ -1,12 +1,10 @@
 import assert from 'assert'
-import {Attribute, ThenianNft, User} from '../model'
+import {Attribute, ThenianNft, ThenianNftMetadata, User} from '../model'
 import {Action} from './base'
 
 export interface CreateThenianNftData {
     tokenId: string
     ownerId: string
-    image: string
-    attributes: {traitType: string; value: string}[]
     timestamp: bigint
 }
 
@@ -18,12 +16,25 @@ export class CreateThenianNftAction extends Action<CreateThenianNftData> {
         const thenianNft = new ThenianNft({
             id: this.data.tokenId,
             owner,
-            image: this.data.image,
-            attributes: this.data.attributes.map((a) => new Attribute(a)),
             timestamp: this.data.timestamp,
         })
 
         await this.store.insert(thenianNft)
+    }
+}
+
+export interface SetMetadataData {
+    tokenId: string
+    metadata: ThenianNftMetadata
+}
+
+export class SetMetadataAction extends Action<SetMetadataData> {
+    async perform(): Promise<void> {
+        const thenianNft = await this.store.getOrFail(ThenianNft, this.data.tokenId)
+
+        thenianNft.meatadata = this.data.metadata
+
+        await this.store.upsert(thenianNft)
     }
 }
 

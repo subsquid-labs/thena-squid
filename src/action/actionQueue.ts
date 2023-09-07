@@ -63,6 +63,7 @@ const Actions = {
 
     thenianNft_create: ThenianNft.CreateThenianNftAction,
     thenianNft_updateOwner: ThenianNft.UpdateOwnerThenianNftAction,
+    thenianNft_setMetadata: ThenianNft.SetMetadataAction,
 } satisfies BaseActionRegistry
 
 type ActionRegistry = typeof Actions

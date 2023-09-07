@@ -53,6 +53,9 @@ export const processor = new EvmBatchProcessor()
         transaction: {
             from: true,
             hash: true,
+            sighash: true,
+            status: true,
+            input: true,
         },
     })
     .addLog({
@@ -169,6 +172,10 @@ export const processor = new EvmBatchProcessor()
     })
     .addTransaction({
         to: [THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS],
+    })
+    .addTransaction({
+        to: [THENIAN_NFT_ADDRESS],
+        sighash: [thenianNft.functions.setBaseURI.sighash],
     })
 
 export type Fields = EvmBatchProcessorFields<typeof processor>

@@ -176,11 +176,16 @@ type Attribute {
 type ThenianNft @entity {
     id: ID!
 
-    owner: User!
-
-    image: String!
-    attributes: [Attribute!]
+    index: BigInt!
     timestamp: BigInt!
+    meatadata: ThenianNftMetadata
+
+    owner: User!
+}
+
+type ThenianNftMetadata {
+    image: String!
+    attributes: [Attribute!]!
 }
 
 type TimestampInfo {
