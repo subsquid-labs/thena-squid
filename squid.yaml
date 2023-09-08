@@ -3,6 +3,8 @@ name: thena-squid
 version: 3
 build:
 deploy:
+  secrets:
+    - IPFS_GATEWAY
   addons:
     postgres:
   processor:
