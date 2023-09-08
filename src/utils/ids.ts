@@ -44,6 +44,10 @@ export function createTradingCompetitionId(counterId: number, tcAddress: string)
     return `${tcAddress}-${counterId}`
 }
 
+export function createTCParticipantId(tcId: string, userId: string) {
+    return `${tcId}-${userId}`
+}
+
 export function createThenianNftId(tokenIndex: bigint) {
     return tokenIndex.toString().padStart(10, '0')
 }

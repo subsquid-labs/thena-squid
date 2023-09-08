@@ -10,6 +10,8 @@ type User @entity {
     veTokens: [VeToken!] @derivedFrom(field: "owner")
     stakes: [GaugeStake!]! @derivedFrom(field: "user")
     thenianNfts: [ThenianNft!] @derivedFrom(field: "owner")
+    tradingCompetitions: [TradingCompetition!] @derivedFrom(field: "owner")
+    joinedTCs: [TCParticipant!] @derivedFrom(field: "participant")
 }
 
 type Trade @entity {
@@ -209,9 +211,9 @@ enum MarketType {
 type Prize {
     winType: Boolean!
     weights: [BigInt!]!
-    totalPrize: [BigInt!]!
+    totalPrize: BigInt!
     ownerFee: BigInt!
-    token: [String!]!
+    token: String!
 }
 
 type TradingCompetition @entity {
@@ -220,8 +222,8 @@ type TradingCompetition @entity {
     entryFee: BigInt!
     maxParticipants: BigInt!
 
-    owner: String!
-    tradingCompetition: String!
+    owner: User!
+    tradingCompetitionSpot: String!
 
     name: String!
     description: String!
@@ -230,4 +232,15 @@ type TradingCompetition @entity {
     market: MarketType!
     prize: Prize!
     competitionRules: CompetitionRules!
+
+    participants: [TCParticipant!] @derivedFrom(field: "tradingCompetition")
 }
+
+type TCParticipant @entity {
+    id: ID!
+    tradingCompetition: TradingCompetition!
+    participant: User!
+    winAmount: BigInt!
+    isFetched: Boolean!
+}
+

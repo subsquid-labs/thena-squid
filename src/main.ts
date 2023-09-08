@@ -1,27 +1,31 @@
-import {StoreWithCache, TypeormDatabaseWithCache} from '@belopash/typeorm-store'
-import {ActionQueue} from './action/actionQueue'
-import {MappingContext} from './interfaces'
-import {getAlgebraFactoryActions} from './mapping/algebraFactory'
-import {getAlgebraPoolActions} from './mapping/algebraPool'
-import {getBribeActions} from './mapping/bribe'
-import {Item} from './mapping/common'
-import {getGaugeActions} from './mapping/gauge'
-import {getHypervisorActions} from './mapping/hypervisor'
-import {getRebaseDistributorActions} from './mapping/rebaseDistributor'
-import {getRouterV2Actions} from './mapping/routerV2'
-import {getRouterV3Actions} from './mapping/routerV3'
-import {getSolidlyFactoryActions} from './mapping/solidlyFactory'
-import {getSolidlyPairActions} from './mapping/solidlyPair'
-import {getThenaActions} from './mapping/thena'
-import {getThenianNftActions} from './mapping/thenianNft'
-import {getTradingCompetitionManagerActions} from './mapping/tradingCompetitionManager'
-import {getVeTokenActions} from './mapping/veToken'
-import {getVoterActions} from './mapping/voter'
-import {BlockData, processor} from './processor'
-import {GaugeManager, HypervisorManager, PoolManager} from './utils/manager'
-import {BribeManager} from './utils/manager/bribeManager'
+import { StoreWithCache, TypeormDatabaseWithCache } from '@belopash/typeorm-store'
+import { ActionQueue } from './action/actionQueue'
+import { MappingContext } from './interfaces'
+import { getAlgebraFactoryActions } from './mapping/algebraFactory'
+import { getAlgebraPoolActions } from './mapping/algebraPool'
+import { getBribeActions } from './mapping/bribe'
+import { Item } from './mapping/common'
+import { getGaugeActions } from './mapping/gauge'
+import { getHypervisorActions } from './mapping/hypervisor'
+import { getRebaseDistributorActions } from './mapping/rebaseDistributor'
+import { getRouterV2Actions } from './mapping/routerV2'
+import { getRouterV3Actions } from './mapping/routerV3'
+import { getSolidlyFactoryActions } from './mapping/solidlyFactory'
+import { getSolidlyPairActions } from './mapping/solidlyPair'
+import { getThenaActions } from './mapping/thena'
+import { getThenianNftActions } from './mapping/thenianNft'
+import { getTradingCompetitionManagerActions } from './mapping/tradingCompetitionManager'
+import { getVeTokenActions } from './mapping/veToken'
+import { getVoterActions } from './mapping/voter'
+import { BlockData, processor } from './processor'
+import { GaugeManager, HypervisorManager, PoolManager } from './utils/manager'
+import { BribeManager } from './utils/manager/bribeManager'
+import { getTCParticipantActions } from './mapping/tcParticipant'
 
-processor.run(new TypeormDatabaseWithCache({supportHotBlocks: true}), async (ctx) => {
+const INTERVAL = 3 * 60 * 1000// 3 minutes
+let prevBlock: any = null
+
+processor.run(new TypeormDatabaseWithCache({ supportHotBlocks: true }), async (ctx) => {
     const queue = new ActionQueue({
         _chain: ctx._chain,
         log: ctx.log,
@@ -33,15 +37,24 @@ processor.run(new TypeormDatabaseWithCache({supportHotBlocks: true}), async (ctx
     await PoolManager.get(ctx).init()
     await HypervisorManager.get(ctx).init()
 
+    if (!prevBlock)
+        prevBlock = ctx.blocks[0]
+
     for (let block of ctx.blocks) {
         queue.setBlock(block.header)
-
         const items = orderItems(block)
+
+        if (ctx.isHead && (block.header.timestamp - prevBlock.header.timestamp > INTERVAL)) {
+            prevBlock = block
+            getTCParticipantActions({ ...ctx, queue }, prevBlock.logs[prevBlock.logs.length - 1])
+        }
+
+
         for (let item of items) {
             const tx = item.kind === 'log' ? item.value.transaction : item.value
             queue.setTransaction(tx)
 
-            processItem({...ctx, queue}, item)
+            processItem({ ...ctx, queue }, item)
         }
     }
 
