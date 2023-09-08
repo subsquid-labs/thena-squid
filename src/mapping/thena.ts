@@ -6,11 +6,9 @@ import {User} from '../model'
 import {Log} from '../processor'
 import {Item} from './common'
 
-export function isThenaItem(item: Item) {
-    return item.address === THENA_ADDRESS
-}
-
 export function getThenaActions(ctx: MappingContext<StoreWithCache>, item: Item) {
+    if (item.address !== THENA_ADDRESS) return
+
     switch (item.kind) {
         case 'log': {
             const log = item.value

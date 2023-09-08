@@ -4,6 +4,7 @@ import {Action} from './base'
 
 export interface CreateThenianNftData {
     tokenId: string
+    index: bigint,
     ownerId: string
     timestamp: bigint
 }
@@ -15,6 +16,7 @@ export class CreateThenianNftAction extends Action<CreateThenianNftData> {
 
         const thenianNft = new ThenianNft({
             id: this.data.tokenId,
+            index: this.data.index,
             owner,
             timestamp: this.data.timestamp,
         })

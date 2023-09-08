@@ -38,3 +38,5 @@ export const REBASE_DISTRIBUTOR = '0xe9fe83aa430ace4b703c299701142f9dfdde730e'
 export const TCMANAGER_ADDRESS = '0x46ba692f34ddcb3d3f976549b647481e162b8596'
 
 export const THENIAN_NFT_ADDRESS = '0x2af749593978cb79ed11b9959cd82fd128ba4f8d'
+
+export const IPFS_GATEWAY = process.env.IPFS_GATEWAY || 'https://ipfs.io/ipfs'

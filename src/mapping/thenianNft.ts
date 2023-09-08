@@ -1,8 +1,7 @@
 import {StoreWithCache} from '@belopash/typeorm-store'
-import {HttpClient} from '@subsquid/http-client'
-import path from 'path'
+import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import * as thenianNftAbi from '../abi/thenianNft'
-import {THENIAN_NFT_ADDRESS, ZERO_ADDRESS} from '../config'
+import {IPFS_GATEWAY, THENIAN_NFT_ADDRESS, ZERO_ADDRESS} from '../config'
 import {MappingContext} from '../interfaces'
 import {Attribute, ThenianNft, ThenianNftMetadata, User} from '../model'
 import {Log, Transaction} from '../processor'
@@ -10,20 +9,12 @@ import {CallCache} from '../utils/callCache'
 import {createThenianNftId} from '../utils/ids'
 import {Item} from './common'
 
-const NFT_BASE_URI = 'ipfs://QmYG7JJcLxxewgCD9Az2zcnS7CCCZKa6s2738ZC2547eTn'
-const IPFS_GATEWAY = 'https://ipfs.io/ipfs/'
-const ipfsRegExp = /^ipfs:\/\/(.+)$/
-
 const client = new HttpClient({
     headers: {'Content-Type': 'application/json'},
     retryAttempts: 5,
-    // transformResponse(res: string): TokenMetadata {
-    //     let data: {image: string; attributes: {trait_type: string; value: string}[]} = JSON.parse(res)
-    //     return {
-    //         image: data.image,
-    //         attributes: data.attributes.map((a) => new Attribute({traitType: a.trait_type, value: a.value})),
-    //     }
-    // },
+    agent: new HttpAgent({
+        keepAlive: true,
+    }),
 })
 
 interface TokenMetadata {
@@ -35,22 +26,18 @@ async function fetchTokenMetadata(
     ctx: MappingContext<StoreWithCache>,
     uri: string
 ): Promise<TokenMetadata | undefined> {
-    try {
-        if (uri.startsWith('ipfs://')) {
-            const gatewayURL = path.posix.join(IPFS_GATEWAY, ipfsRegExp.exec(uri)![1])
-            let res = await client.get(gatewayURL)
-            ctx.log.info(`Successfully fetched metadata from ${gatewayURL}`)
-            return res.data
-        } else if (uri.startsWith('http://') || uri.startsWith('https://')) {
-            let res = await client.get(uri)
-            ctx.log.info(`Successfully fetched metadata from ${uri}`)
-            return res.data
-        } else {
-            ctx.log.warn(`Unexpected metadata URL protocol: ${uri}`)
-            return undefined
-        }
-    } catch (e) {
-        throw new Error(`Failed to fetch metadata at ${uri}. Error: ${e}`)
+    if (uri.startsWith('ipfs://')) {
+        const gatewayURL = new URL(uri.slice(7), IPFS_GATEWAY).toString()
+        let res = await client.get(gatewayURL)
+        ctx.log.info(`Successfully fetched metadata from ${gatewayURL}`)
+        return res
+    } else if (uri.startsWith('http:') || uri.startsWith('https:')) {
+        let res = await client.get(uri)
+        ctx.log.info(`Successfully fetched metadata from ${uri}`)
+        return res
+    } else {
+        ctx.log.warn(`Unexpected metadata URL protocol: ${uri}`)
+        return undefined
     }
 }
 
@@ -93,11 +80,7 @@ function transferHandler(ctx: MappingContext<StoreWithCache>, log: Log) {
 
     if (fromId === ZERO_ADDRESS) {
         const callCache = CallCache.get(ctx)
-        const baseUriDeferred = callCache.defer(log.block, [
-            thenianNftAbi.functions.baseURI,
-            THENIAN_NFT_ADDRESS,
-            [index],
-        ])
+        const baseUriDeferred = callCache.defer(log.block, [thenianNftAbi.functions.baseURI, THENIAN_NFT_ADDRESS, []])
 
         ctx.queue
             .lazy(async () => {
@@ -120,6 +103,7 @@ function transferHandler(ctx: MappingContext<StoreWithCache>, log: Log) {
             })
             .add('thenianNft_create', {
                 tokenId,
+                index,
                 ownerId: toId,
                 timestamp: BigInt(log.block.timestamp),
             })
@@ -127,7 +111,7 @@ function transferHandler(ctx: MappingContext<StoreWithCache>, log: Log) {
                 const baseUri = await baseUriDeferred.get()
                 if (baseUri.length == 0) return
 
-                let metadata: TokenMetadata | undefined = await fetchTokenMetadata(ctx, `${baseUri}/${index}`)
+                let metadata: TokenMetadata | undefined = await fetchTokenMetadata(ctx, `${baseUri}${index}`)
                 if (metadata != null) {
                     ctx.queue.add('thenianNft_setMetadata', {
                         tokenId,
@@ -167,7 +151,7 @@ function setBaseURIHandler(ctx: MappingContext<StoreWithCache>, tx: Transaction)
         const nfts = await ctx.store.find(ThenianNft, {})
 
         for (const nft of nfts) {
-            let metadata: TokenMetadata | undefined = await fetchTokenMetadata(ctx, `${baseUri}/${nft.index}`)
+            let metadata: TokenMetadata | undefined = await fetchTokenMetadata(ctx, `${baseUri}${nft.index}`)
             if (metadata != null) {
                 ctx.queue.add('thenianNft_setMetadata', {
                     tokenId: nft.id,

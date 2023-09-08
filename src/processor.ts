@@ -165,13 +165,13 @@ export const processor = new EvmBatchProcessor()
         topic0: [tradingCompetitionManager.events.Create.topic],
         transaction: true,
     })
+    .addTransaction({
+        to: [THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS],
+    })
     .addLog({
         address: [THENIAN_NFT_ADDRESS],
         topic0: [thenianNft.events.Transfer.topic],
         transaction: true,
-    })
-    .addTransaction({
-        to: [THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS],
     })
     .addTransaction({
         to: [THENIAN_NFT_ADDRESS],
