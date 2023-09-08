@@ -19,7 +19,7 @@ const client = new HttpClient({
 
 interface TokenMetadata {
     image: string
-    attributes: {traitType: string; value: string}[]
+    attributes: {trait_type: string; value: string}[]
 }
 
 async function fetchTokenMetadata(
@@ -41,11 +41,9 @@ async function fetchTokenMetadata(
     }
 }
 
-export function isThenianNftItem(ctx: MappingContext<StoreWithCache>, item: Item) {
-    return item.address === THENIAN_NFT_ADDRESS
-}
-
 export function getThenianNftActions(ctx: MappingContext<StoreWithCache>, item: Item) {
+    if (item.address !== THENIAN_NFT_ADDRESS) return
+
     switch (item.kind) {
         case 'log': {
             const log = item.value
@@ -117,7 +115,7 @@ function transferHandler(ctx: MappingContext<StoreWithCache>, log: Log) {
                         tokenId,
                         metadata: new ThenianNftMetadata({
                             image: metadata.image,
-                            attributes: metadata.attributes.map((a) => new Attribute(a)),
+                            attributes: metadata.attributes.map((a) => new Attribute({traitType: a.trait_type, value: a.value})),
                         }),
                     })
                 }
@@ -157,7 +155,7 @@ function setBaseURIHandler(ctx: MappingContext<StoreWithCache>, tx: Transaction)
                     tokenId: nft.id,
                     metadata: new ThenianNftMetadata({
                         image: metadata.image,
-                        attributes: metadata.attributes.map((a) => new Attribute(a)),
+                        attributes: metadata.attributes.map((a) => new Attribute({traitType: a.trait_type, value: a.value})),
                     }),
                 })
             }
