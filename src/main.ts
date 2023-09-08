@@ -1,21 +1,23 @@
 import {StoreWithCache, TypeormDatabaseWithCache} from '@belopash/typeorm-store'
 import {ActionQueue} from './action/actionQueue'
 import {MappingContext} from './interfaces'
-import {getAlgebraFactoryActions, isAlgebraFactoryItem} from './mapping/algebraFactory'
-import {getAlgebraPoolActions, isAlgebraPoolItem} from './mapping/algebraPool'
-import {getBribeActions, isBribeItem} from './mapping/bribe'
-import {getGaugeActions, isGaugeItem} from './mapping/gauge'
-import {getHypervisorActions, isHypervisorItem} from './mapping/hypervisor'
-import {getRebaseDistributorActions, isRebaseDistributorItem} from './mapping/rebaseDistributor'
-import {getRouterV2Actions, isRouterV2Item} from './mapping/routerV2'
-import {getRouterV3Actions, isRouterV3Item} from './mapping/routerV3'
-import {getSolidlyFactoryActions, isSolidlyFactoryItem} from './mapping/solidlyFactory'
-import {getSolidlyPairActions, isSolidlyPairItem} from './mapping/solidlyPair'
-import {getThenaActions, isThenaItem} from './mapping/thena'
-import {getVeTokenActions, isVeTokenItem} from './mapping/veToken'
-import {getVoterActions, isVoterItem} from './mapping/voter'
-import {getTradingCompetitionManagerActions, isTradingCompetitionManagerItem} from './mapping/tradingCompetitionManager'
-import {Log, processor} from './processor'
+import {getAlgebraFactoryActions} from './mapping/algebraFactory'
+import {getAlgebraPoolActions} from './mapping/algebraPool'
+import {getBribeActions} from './mapping/bribe'
+import {Item} from './mapping/common'
+import {getGaugeActions} from './mapping/gauge'
+import {getHypervisorActions} from './mapping/hypervisor'
+import {getRebaseDistributorActions} from './mapping/rebaseDistributor'
+import {getRouterV2Actions} from './mapping/routerV2'
+import {getRouterV3Actions} from './mapping/routerV3'
+import {getSolidlyFactoryActions} from './mapping/solidlyFactory'
+import {getSolidlyPairActions} from './mapping/solidlyPair'
+import {getThenaActions} from './mapping/thena'
+import {getThenianNftActions} from './mapping/thenianNft'
+import {getTradingCompetitionManagerActions} from './mapping/tradingCompetitionManager'
+import {getVeTokenActions} from './mapping/veToken'
+import {getVoterActions} from './mapping/voter'
+import {BlockData, processor} from './processor'
 import {GaugeManager, HypervisorManager, PoolManager} from './utils/manager'
 import {BribeManager} from './utils/manager/bribeManager'
 
@@ -33,9 +35,13 @@ processor.run(new TypeormDatabaseWithCache({supportHotBlocks: true}), async (ctx
 
     for (let block of ctx.blocks) {
         queue.setBlock(block.header)
-        for (let log of block.logs) {
-            queue.setTransaction(log.transaction)
-            getItemActions({...ctx, queue}, log)
+
+        const items = orderItems(block)
+        for (let item of items) {
+            const tx = item.kind === 'log' ? item.value.transaction : item.value
+            queue.setTransaction(tx)
+
+            processItem({...ctx, queue}, item)
         }
     }
 
@@ -43,60 +49,70 @@ processor.run(new TypeormDatabaseWithCache({supportHotBlocks: true}), async (ctx
     await ctx.store.flush()
 })
 
-export function getItemActions(ctx: MappingContext<StoreWithCache>, item: Log) {
-    if (isThenaItem(item)) {
-        getThenaActions(ctx, item)
+export function orderItems(block: BlockData) {
+    const items: Item[] = []
+
+    for (const transaction of block.transactions) {
+        items.push({
+            kind: 'transaction',
+            address: transaction.to,
+            value: transaction,
+        })
     }
 
-    if (isRouterV2Item(item)) {
-        getRouterV2Actions(ctx, item)
+    for (const log of block.logs) {
+        items.push({
+            kind: 'log',
+            address: log.address,
+            value: log,
+        })
     }
 
-    if (isRouterV3Item(item)) {
-        getRouterV3Actions(ctx, item)
-    }
+    items.sort((a, b) => {
+        if (a.kind === 'log' && b.kind === 'log') {
+            return a.value.logIndex - b.value.logIndex
+        } else if (a.kind === 'transaction' && b.kind === 'transaction') {
+            return a.value.transactionIndex - b.value.transactionIndex
+        } else if (a.kind === 'log' && b.kind === 'transaction') {
+            return a.value.transactionIndex - b.value.transactionIndex || 1 // transaction before logs
+        } else if (a.kind === 'transaction' && b.kind === 'log') {
+            return a.value.transactionIndex - b.value.transactionIndex || -1
+        } else {
+            throw new Error('Unexpected case')
+        }
+    })
 
-    if (isSolidlyFactoryItem(item)) {
-        getSolidlyFactoryActions(ctx, item)
-    }
+    return items
+}
 
-    if (isSolidlyPairItem(ctx, item)) {
-        getSolidlyPairActions(ctx, item)
-    }
+export function processItem(ctx: MappingContext<StoreWithCache>, item: Item) {
+    getThenaActions(ctx, item)
 
-    if (isAlgebraFactoryItem(item)) {
-        getAlgebraFactoryActions(ctx, item)
-    }
+    getRouterV2Actions(ctx, item)
 
-    if (isAlgebraPoolItem(ctx, item)) {
-        getAlgebraPoolActions(ctx, item)
-    }
+    getRouterV3Actions(ctx, item)
 
-    if (isHypervisorItem(ctx, item)) {
-        getHypervisorActions(ctx, item)
-    }
+    getSolidlyFactoryActions(ctx, item)
 
-    if (isVoterItem(ctx, item)) {
-        getVoterActions(ctx, item)
-    }
+    getSolidlyPairActions(ctx, item)
 
-    if (isGaugeItem(ctx, item)) {
-        getGaugeActions(ctx, item)
-    }
+    getAlgebraFactoryActions(ctx, item)
 
-    if (isBribeItem(ctx, item)) {
-        getBribeActions(ctx, item)
-    }
+    getAlgebraPoolActions(ctx, item)
 
-    if (isVeTokenItem(ctx, item)) {
-        getVeTokenActions(ctx, item)
-    }
+    getHypervisorActions(ctx, item)
 
-    if (isRebaseDistributorItem(ctx, item)) {
-        getRebaseDistributorActions(ctx, item)
-    }
+    getVoterActions(ctx, item)
 
-    if (isTradingCompetitionManagerItem(item)) {
-        return getTradingCompetitionManagerActions(ctx, item)
-    }
+    getGaugeActions(ctx, item)
+
+    getBribeActions(ctx, item)
+
+    getVeTokenActions(ctx, item)
+
+    getRebaseDistributorActions(ctx, item)
+
+    getTradingCompetitionManagerActions(ctx, item)
+
+    getThenianNftActions(ctx, item)
 }

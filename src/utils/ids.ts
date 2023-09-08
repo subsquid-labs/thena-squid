@@ -43,3 +43,7 @@ export function createVoteId(tokenId: string, poolId: string) {
 export function createTradingCompetitionId(counterId: number, tcAddress: string) {
     return `${tcAddress}-${counterId}`
 }
+
+export function createThenianNftId(tokenIndex: bigint) {
+    return tokenIndex.toString().padStart(10, '0')
+}

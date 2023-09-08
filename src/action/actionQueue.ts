@@ -14,6 +14,7 @@ import * as User from './user'
 import * as VeToken from './veToken'
 import * as Vote from './vote'
 import * as TC from './tradingCompetition'
+import * as ThenianNft from './thenianNft'
 
 const Actions = {
     user_create: User.CreateUserAction,
@@ -58,7 +59,11 @@ const Actions = {
     vote_create: Vote.CreateVoteAction,
     vote_updateWeigth: Vote.UpdateVoteAction,
 
-    tc_create: TC.CreateTradingCompetitionAction
+    tc_create: TC.CreateTradingCompetitionAction,
+
+    thenianNft_create: ThenianNft.CreateThenianNftAction,
+    thenianNft_updateOwner: ThenianNft.UpdateOwnerThenianNftAction,
+    thenianNft_setMetadata: ThenianNft.SetMetadataAction,
 } satisfies BaseActionRegistry
 
 type ActionRegistry = typeof Actions
@@ -93,13 +98,18 @@ export class ActionQueue {
     ): this {
         assert(this.block != null)
 
-        const a = new Actions[action](
+        const ActionConstructor = Actions[action] as ActionConstructor<typeof data>
+        if (ActionConstructor == null) {
+            throw new Error(`Action '${action}' is not registered.`)
+        }
+
+        const a = new ActionConstructor(
             {
                 ...this.config,
                 block: this.block,
                 transaction: this.transaction,
             },
-            data as any // FIXME: find if there is a proper way to pass typed parameter
+            data
         )
         this.actions.push(a)
 

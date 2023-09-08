@@ -40,9 +40,9 @@ export class HypervisorManager {
         return this.known.has(address)
     }
 
-    isTracked(address: string): boolean {
-        return this.isHypervisor(address) && this.tracked.has(address)
-    }
+    // isTracked(address: string): boolean {
+    //     return this.isHypervisor(address) && this.tracked.has(address)
+    // }
 
     addHypervisor(address: string) {
         this.tracked.add(address)

@@ -1,6 +1,7 @@
 import {lookupArchive} from '@subsquid/archive-registry'
 import {
-    BlockHeader,
+    BlockHeader as _BlockHeader,
+    BlockData as _BlockData,
     EvmBatchProcessor,
     EvmBatchProcessorFields,
     Log as _Log,
@@ -16,6 +17,7 @@ import * as voter from './abi/voterV3'
 import * as veToken from './abi/votingEscrow'
 import * as rebaseDistributor from './abi/rebaseDistributor'
 import * as tradingCompetitionManager from './abi/tradingCompetitionManager'
+import * as thenianNft from './abi/thenianNft'
 import * as gauge from './abi/gaugeV2'
 import * as bribe from './abi/bribe'
 import {
@@ -28,6 +30,7 @@ import {
     VE_TOKEN,
     VOTER,
     TCMANAGER_ADDRESS,
+    THENIAN_NFT_ADDRESS,
 } from './config'
 import {loadGaugesAndBribes, loadHypervisors, loadPools} from './utils/loaders'
 
@@ -36,7 +39,7 @@ const gaugesAndBribes = loadGaugesAndBribes()
 const hypervisors = loadHypervisors()
 
 export const processor = new EvmBatchProcessor()
-    .setBlockRange({from: 23_881_121})
+    .setBlockRange({from: 23_530_609})
     .setDataSource({
         archive: lookupArchive('binance'),
         chain: {url: 'https://rpc.ankr.com/bsc', maxBatchCallSize: 10},
@@ -50,6 +53,9 @@ export const processor = new EvmBatchProcessor()
         transaction: {
             from: true,
             hash: true,
+            sighash: true,
+            status: true,
+            input: true,
         },
     })
     .addLog({
@@ -162,8 +168,18 @@ export const processor = new EvmBatchProcessor()
     .addTransaction({
         to: [THENA_ADDRESS, ROUTER_V2_ADDRESS, ROUTER_V3_ADDRESS],
     })
+    .addLog({
+        address: [THENIAN_NFT_ADDRESS],
+        topic0: [thenianNft.events.Transfer.topic],
+        transaction: true,
+    })
+    .addTransaction({
+        to: [THENIAN_NFT_ADDRESS],
+        sighash: [thenianNft.functions.setBaseURI.sighash],
+    })
 
 export type Fields = EvmBatchProcessorFields<typeof processor>
-export type Block = BlockHeader<Fields>
+export type BlockData = _BlockData<Fields>
+export type Block = _BlockHeader<Fields>
 export type Log = _Log<Fields>
 export type Transaction = _Transaction<Fields>

@@ -5,27 +5,34 @@ import {MappingContext} from '../interfaces'
 import {VeToken} from '../model'
 import {Log} from '../processor'
 import {createVeTokenId} from '../utils/ids'
+import {Item} from './common'
 
-export function isRebaseDistributorItem(ctx: MappingContext<StoreWithCache>, item: Log) {
-    return item.address === REBASE_DISTRIBUTOR
-}
+export function getRebaseDistributorActions(ctx: MappingContext<StoreWithCache>, item: Item) {
+    if (item.address !== REBASE_DISTRIBUTOR) return
 
-export function getRebaseDistributorActions(ctx: MappingContext<StoreWithCache>, item: Log) {
-    switch (item.topics[0]) {
-        case rebaseDistributor.events.Claimed.topic: {
-            const event = rebaseDistributor.events.Claimed.decode(item)
-
-            const tokenId = createVeTokenId(event.tokenId)
-            ctx.store.defer(VeToken, tokenId)
-
-            const amount = event.amount
-
-            ctx.queue.add('veToken_reward', {
-                tokenId,
-                amount,
-            })
-
+    switch (item.kind) {
+        case 'log': {
+            const log = item.value
+            switch (log.topics[0]) {
+                case rebaseDistributor.events.Claimed.topic:
+                    handleClaimed(ctx, log)
+                    break
+            }
             break
         }
     }
+}
+
+function handleClaimed(ctx: MappingContext<StoreWithCache>, log: Log) {
+    const event = rebaseDistributor.events.Claimed.decode(log)
+
+    const tokenId = createVeTokenId(event.tokenId)
+    ctx.store.defer(VeToken, tokenId)
+
+    const amount = event.amount
+
+    ctx.queue.add('veToken_reward', {
+        tokenId,
+        amount,
+    })
 }
