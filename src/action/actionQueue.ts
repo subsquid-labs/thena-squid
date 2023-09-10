@@ -14,6 +14,7 @@ import * as User from './user'
 import * as VeToken from './veToken'
 import * as Vote from './vote'
 import * as TC from './tradingCompetition'
+import * as TCParticipant from './tcParticipant'
 import * as ThenianNft from './thenianNft'
 
 const Actions = {
@@ -60,6 +61,8 @@ const Actions = {
     vote_updateWeigth: Vote.UpdateVoteAction,
 
     tc_create: TC.CreateTradingCompetitionAction,
+    tcParticipant_create: TCParticipant.CreateTCParticipantAction,
+    tcParticipant_update: TCParticipant.UpdateTCParticipantAction,
 
     thenianNft_create: ThenianNft.CreateThenianNftAction,
     thenianNft_updateOwner: ThenianNft.UpdateOwnerThenianNftAction,

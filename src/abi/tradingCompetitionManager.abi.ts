@@ -112,7 +112,7 @@ export const ABI_JSON = [
                                 "name": "weights"
                             },
                             {
-                                "type": "uint256[]",
+                                "type": "uint256",
                                 "name": "totalPrize"
                             },
                             {
@@ -120,7 +120,7 @@ export const ABI_JSON = [
                                 "name": "owner_fee"
                             },
                             {
-                                "type": "address[]",
+                                "type": "address",
                                 "name": "token"
                             }
                         ]
@@ -580,7 +580,7 @@ export const ABI_JSON = [
                                 "name": "weights"
                             },
                             {
-                                "type": "uint256[]",
+                                "type": "uint256",
                                 "name": "totalPrize"
                             },
                             {
@@ -588,7 +588,7 @@ export const ABI_JSON = [
                                 "name": "owner_fee"
                             },
                             {
-                                "type": "address[]",
+                                "type": "address",
                                 "name": "token"
                             }
                         ]
@@ -719,7 +719,7 @@ export const ABI_JSON = [
                                 "name": "weights"
                             },
                             {
-                                "type": "uint256[]",
+                                "type": "uint256",
                                 "name": "totalPrize"
                             },
                             {
@@ -727,7 +727,7 @@ export const ABI_JSON = [
                                 "name": "owner_fee"
                             },
                             {
-                                "type": "address[]",
+                                "type": "address",
                                 "name": "token"
                             }
                         ]
@@ -816,6 +816,20 @@ export const ABI_JSON = [
         "outputs": [
             {
                 "type": "address",
+                "name": ""
+            }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "pause",
+        "constant": true,
+        "stateMutability": "view",
+        "payable": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "type": "bool",
                 "name": ""
             }
         ]
@@ -1051,6 +1065,20 @@ export const ABI_JSON = [
         "outputs": [
             {
                 "type": "address",
+                "name": ""
+            }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "tradingTokens",
+        "constant": true,
+        "stateMutability": "view",
+        "payable": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "type": "address[]",
                 "name": ""
             }
         ]

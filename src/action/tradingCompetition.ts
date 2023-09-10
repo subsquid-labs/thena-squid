@@ -1,13 +1,13 @@
 import assert from 'assert'
-import {CompetitionRules, MarketType, Prize, TimestampInfo, TradingCompetition} from '../model'
-import {DeferredValue} from '../utils/deferred'
-import {Action} from './base'
+import { CompetitionRules, MarketType, Prize, TimestampInfo, TradingCompetition, User } from '../model'
+import { DeferredValue } from '../utils/deferred'
+import { Action } from './base'
 
 export interface CreateTradingCompetitionActionData {
     id: string
     entryFee: bigint
     maxParticipants: bigint
-    owner: string
+    ownerId: string
     tradingCompetition: string
     name: string
     description: string
@@ -19,12 +19,15 @@ export interface CreateTradingCompetitionActionData {
 
 export class CreateTradingCompetitionAction extends Action<CreateTradingCompetitionActionData> {
     async perform(): Promise<void> {
+        const owner = await this.store.getOrFail(User, this.data.ownerId)
+        assert(owner != null)
+
         const tc = new TradingCompetition({
             id: this.data.id,
             entryFee: this.data.entryFee,
             maxParticipants: this.data.maxParticipants,
-            owner: this.data.owner,
-            tradingCompetition: this.data.tradingCompetition,
+            owner,
+            tradingCompetitionSpot: this.data.tradingCompetition,
             name: this.data.name,
             description: this.data.description,
             timestamp: this.data.timestamp,
@@ -37,5 +40,3 @@ export class CreateTradingCompetitionAction extends Action<CreateTradingCompetit
         this.log.debug(`Created Trading Competition ${tc.id}`)
     }
 }
-
-export type TradingCompetitionAction = CreateTradingCompetitionAction

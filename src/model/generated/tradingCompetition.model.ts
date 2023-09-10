@@ -1,9 +1,11 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
+import {User} from "./user.model"
 import {TimestampInfo} from "./_timestampInfo"
 import {MarketType} from "./_marketType"
 import {Prize} from "./_prize"
 import {CompetitionRules} from "./_competitionRules"
+import {TCParticipant} from "./tcParticipant.model"
 
 @Entity_()
 export class TradingCompetition {
@@ -20,11 +22,12 @@ export class TradingCompetition {
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     maxParticipants!: bigint
 
-    @Column_("text", {nullable: false})
-    owner!: string
+    @Index_()
+    @ManyToOne_(() => User, {nullable: true})
+    owner!: User
 
     @Column_("text", {nullable: false})
-    tradingCompetition!: string
+    tradingCompetitionSpot!: string
 
     @Column_("text", {nullable: false})
     name!: string
@@ -43,4 +46,7 @@ export class TradingCompetition {
 
     @Column_("jsonb", {transformer: {to: obj => obj.toJSON(), from: obj => obj == null ? undefined : new CompetitionRules(undefined, obj)}, nullable: false})
     competitionRules!: CompetitionRules
+
+    @OneToMany_(() => TCParticipant, e => e.tradingCompetition)
+    participants!: TCParticipant[]
 }

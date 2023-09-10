@@ -122,9 +122,9 @@
                                 "type": "uint256[]"
                             },
                             {
-                                "internalType": "uint256[]",
+                                "internalType": "uint256",
                                 "name": "totalPrize",
-                                "type": "uint256[]"
+                                "type": "uint256"
                             },
                             {
                                 "internalType": "uint256",
@@ -132,9 +132,9 @@
                                 "type": "uint256"
                             },
                             {
-                                "internalType": "address[]",
+                                "internalType": "address",
                                 "name": "token",
-                                "type": "address[]"
+                                "type": "address"
                             }
                         ],
                         "internalType": "struct ITradingCompetitionManager.Prize",
@@ -643,9 +643,9 @@
                                 "type": "uint256[]"
                             },
                             {
-                                "internalType": "uint256[]",
+                                "internalType": "uint256",
                                 "name": "totalPrize",
-                                "type": "uint256[]"
+                                "type": "uint256"
                             },
                             {
                                 "internalType": "uint256",
@@ -653,9 +653,9 @@
                                 "type": "uint256"
                             },
                             {
-                                "internalType": "address[]",
+                                "internalType": "address",
                                 "name": "token",
-                                "type": "address[]"
+                                "type": "address"
                             }
                         ],
                         "internalType": "struct ITradingCompetitionManager.Prize",
@@ -806,9 +806,9 @@
                                 "type": "uint256[]"
                             },
                             {
-                                "internalType": "uint256[]",
+                                "internalType": "uint256",
                                 "name": "totalPrize",
-                                "type": "uint256[]"
+                                "type": "uint256"
                             },
                             {
                                 "internalType": "uint256",
@@ -816,9 +816,9 @@
                                 "type": "uint256"
                             },
                             {
-                                "internalType": "address[]",
+                                "internalType": "address",
                                 "name": "token",
-                                "type": "address[]"
+                                "type": "address"
                             }
                         ],
                         "internalType": "struct ITradingCompetitionManager.Prize",
@@ -915,6 +915,19 @@
                 "internalType": "address",
                 "name": "",
                 "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "pause",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
             }
         ],
         "stateMutability": "view",
@@ -1143,6 +1156,19 @@
                 "internalType": "address",
                 "name": "",
                 "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "tradingTokens",
+        "outputs": [
+            {
+                "internalType": "address[]",
+                "name": "",
+                "type": "address[]"
             }
         ],
         "stateMutability": "view",

@@ -1,12 +1,12 @@
-import {StoreWithCache} from '@belopash/typeorm-store'
-import {MappingContext} from '../interfaces'
-import {TCMANAGER_ADDRESS} from '../config'
-import {Log} from '../processor'
+import { StoreWithCache } from '@belopash/typeorm-store'
+import { MappingContext } from '../interfaces'
+import { TCMANAGER_ADDRESS } from '../config'
+import { Log } from '../processor'
 import * as tradingCompetitionManager from '../abi/tradingCompetitionManager'
-import {CallCache} from '../utils/callCache'
-import {CompetitionRules, MarketType, TimestampInfo, Prize} from '../model'
-import {createTradingCompetitionId} from '../utils/ids'
-import {Item} from './common'
+import { CallCache } from '../utils/callCache'
+import { CompetitionRules, MarketType, TimestampInfo, Prize, User } from '../model'
+import { createTradingCompetitionId } from '../utils/ids'
+import { Item } from './common'
 
 export function getTradingCompetitionManagerActions(ctx: MappingContext<StoreWithCache>, item: Item) {
     if (item.address !== TCMANAGER_ADDRESS) return
@@ -42,11 +42,20 @@ function handleCreate(ctx: MappingContext<StoreWithCache>, log: Log) {
         const tc = await tcDeferred.get()
         const id = createTradingCompetitionId(Number(idCounter), tc.tradingCompetition.toLowerCase())
 
+        const userDeferred = ctx.store.defer(User, tc.owner.toLowerCase())
+        const user = await userDeferred.get();
+        if (user == null) {
+            ctx.queue.add('user_create', {
+                userId: tc.owner.toLowerCase(),
+                address: tc.owner.toLowerCase(),
+            })
+        }
+
         ctx.queue.add('tc_create', {
             id,
             entryFee: tc.entryFee,
             maxParticipants: tc.MAX_PARTICIPANTS,
-            owner: tc.owner.toLowerCase(),
+            ownerId: tc.owner.toLowerCase(),
             tradingCompetition: tc.tradingCompetition.toLowerCase(),
             name: tc.name,
             description: tc.description,
