@@ -8,6 +8,7 @@ import {Log, Transaction} from '../processor'
 import {CallCache} from '../utils/callCache'
 import {createThenianNftId} from '../utils/ids'
 import {Item} from './common'
+import {splitIntoBatches} from '../utils/misc'
 
 const client = new HttpClient({
     headers: {'Content-Type': 'application/json'},
@@ -115,7 +116,9 @@ function transferHandler(ctx: MappingContext<StoreWithCache>, log: Log) {
                         tokenId,
                         metadata: new ThenianNftMetadata({
                             image: metadata.image,
-                            attributes: metadata.attributes.map((a) => new Attribute({traitType: a.trait_type, value: a.value})),
+                            attributes: metadata.attributes.map(
+                                (a) => new Attribute({traitType: a.trait_type, value: a.value})
+                            ),
                         }),
                     })
                 }
@@ -148,17 +151,23 @@ function setBaseURIHandler(ctx: MappingContext<StoreWithCache>, tx: Transaction)
     ctx.queue.lazy(async () => {
         const nfts = await ctx.store.find(ThenianNft, {})
 
-        for (const nft of nfts) {
-            let metadata: TokenMetadata | undefined = await fetchTokenMetadata(ctx, `${baseUri}${nft.index}`)
-            if (metadata != null) {
-                ctx.queue.add('thenianNft_setMetadata', {
-                    tokenId: nft.id,
-                    metadata: new ThenianNftMetadata({
-                        image: metadata.image,
-                        attributes: metadata.attributes.map((a) => new Attribute({traitType: a.trait_type, value: a.value})),
-                    }),
+        for (const batch of splitIntoBatches(nfts, 50)) {
+            await Promise.all(
+                batch.map(async (nft) => {
+                    let metadata: TokenMetadata | undefined = await fetchTokenMetadata(ctx, `${baseUri}${nft.index}`)
+                    if (metadata != null) {
+                        ctx.queue.add('thenianNft_setMetadata', {
+                            tokenId: nft.id,
+                            metadata: new ThenianNftMetadata({
+                                image: metadata.image,
+                                attributes: metadata.attributes.map(
+                                    (a) => new Attribute({traitType: a.trait_type, value: a.value})
+                                ),
+                            }),
+                        })
+                    }
                 })
-            }
+            )
         }
     })
 }
