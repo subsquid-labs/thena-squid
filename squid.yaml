@@ -1,6 +1,6 @@
 manifestVersion: subsquid.io/v0.1
 name: thena-squid
-version: 3
+version: 4
 build:
 deploy:
   secrets:
