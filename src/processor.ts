@@ -38,11 +38,13 @@ const poolMetadata = loadPools()
 const gaugesAndBribes = loadGaugesAndBribes()
 const hypervisors = loadHypervisors()
 
+const rpc = process.env.RPC_BSC_HTTP ?? 'https://rpc.ankr.com/bsc'
+
 export const processor = new EvmBatchProcessor()
     .setBlockRange({from: 23_530_609})
     .setDataSource({
         archive: lookupArchive('binance'),
-        chain: {url: 'https://rpc.ankr.com/bsc', maxBatchCallSize: 10},
+        chain: {url: rpc, maxBatchCallSize: 10},
     })
     .setFinalityConfirmation(50)
     .setFields({

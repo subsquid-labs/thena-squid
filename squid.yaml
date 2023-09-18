@@ -6,6 +6,8 @@ deploy:
   secrets:
     - IPFS_GATEWAY
   addons:
+    rpc:
+      - bsc:http
     postgres:
   processor:
     cmd:
