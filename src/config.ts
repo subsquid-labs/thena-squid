@@ -40,3 +40,5 @@ export const TCMANAGER_ADDRESS = '0x4822820ac38424e6506834e5c05a4f50f9afd2b8'
 export const THENIAN_NFT_ADDRESS = '0x2af749593978cb79ed11b9959cd82fd128ba4f8d'
 
 export const IPFS_GATEWAY = process.env.IPFS_GATEWAY || 'https://ipfs.io/ipfs'
+
+export const USERNAME_NFT_ADDRESS = '0x98504322fac9f645cdea01a31188253a429666d5'

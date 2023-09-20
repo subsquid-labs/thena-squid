@@ -12,6 +12,7 @@ type User @entity {
     thenianNfts: [ThenianNft!] @derivedFrom(field: "owner")
     tradingCompetitions: [TradingCompetition!] @derivedFrom(field: "owner")
     joinedTCs: [TCParticipant!] @derivedFrom(field: "participant")
+    usernameNfts: [UsernameNft!] @derivedFrom(field: "owner")
 }
 
 type Trade @entity {
@@ -244,3 +245,12 @@ type TCParticipant @entity {
     isFetched: Boolean!
 }
 
+type UsernameNft @entity {
+    id: ID!
+
+    index: BigInt!
+    name: String!
+    timestamp: BigInt!
+
+    owner: User!
+}

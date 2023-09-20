@@ -21,6 +21,7 @@ import { BlockData, processor } from './processor'
 import { GaugeManager, HypervisorManager, PoolManager } from './utils/manager'
 import { BribeManager } from './utils/manager/bribeManager'
 import { getTCParticipantActions } from './mapping/tcParticipant'
+import { getUsernameNftActions } from './mapping/usernameNft'
 
 const INTERVAL = 3 * 60 * 1000// 3 minutes
 let prevBlock: any = null
@@ -128,4 +129,6 @@ export function processItem(ctx: MappingContext<StoreWithCache>, item: Item) {
     getTradingCompetitionManagerActions(ctx, item)
 
     getThenianNftActions(ctx, item)
+
+    getUsernameNftActions(ctx, item)
 }
