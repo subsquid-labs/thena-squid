@@ -24,19 +24,6 @@ export function getUsernameNftActions(ctx: MappingContext<StoreWithCache>, item:
     }
 }
 
-function createHandler(ctx: MappingContext<StoreWithCache>, log: Log) {
-    const event = usernameNftAbi.events.UsernameMinted.decode(log)
-
-    const index = event.tokenId
-    const tokenId = createUsernameNftId(index)
-
-
-    const toId = event.minter.toLowerCase()
-    const toUserDeferred = ctx.store.defer(User, toId)
-
-    
-}
-
 function transferHandler(ctx: MappingContext<StoreWithCache>, log: Log) {
     const event = usernameNftAbi.events.Transfer.decode(log)
 
