@@ -51,3 +51,7 @@ export function createTCParticipantId(tcId: string, userId: string) {
 export function createThenianNftId(tokenIndex: bigint) {
     return tokenIndex.toString().padStart(10, '0')
 }
+
+export function createUsernameNftId(tokenIndex: bigint) {
+    return tokenIndex.toString().padStart(10, '0')
+}

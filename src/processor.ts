@@ -18,6 +18,7 @@ import * as veToken from './abi/votingEscrow'
 import * as rebaseDistributor from './abi/rebaseDistributor'
 import * as tradingCompetitionManager from './abi/tradingCompetitionManager'
 import * as thenianNft from './abi/thenianNft'
+import * as usernameNft from './abi/usernameNft'
 import * as gauge from './abi/gaugeV2'
 import * as bribe from './abi/bribe'
 import {
@@ -31,6 +32,7 @@ import {
     VOTER,
     TCMANAGER_ADDRESS,
     THENIAN_NFT_ADDRESS,
+    USERNAME_NFT_ADDRESS
 } from './config'
 import {loadGaugesAndBribes, loadHypervisors, loadPools} from './utils/loaders'
 
@@ -178,6 +180,11 @@ export const processor = new EvmBatchProcessor()
     .addTransaction({
         to: [THENIAN_NFT_ADDRESS],
         sighash: [thenianNft.functions.setBaseURI.sighash],
+    })
+    .addLog({
+        address: [USERNAME_NFT_ADDRESS],
+        topic0: [usernameNft.events.Transfer.topic],
+        transaction: true,
     })
 
 export type Fields = EvmBatchProcessorFields<typeof processor>

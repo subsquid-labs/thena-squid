@@ -4,7 +4,7 @@ import {Action} from './base'
 
 export interface CreateThenianNftData {
     tokenId: string
-    index: bigint,
+    index: bigint
     ownerId: string
     timestamp: bigint
 }

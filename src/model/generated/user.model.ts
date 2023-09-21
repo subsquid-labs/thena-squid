@@ -7,6 +7,7 @@ import {GaugeStake} from "./gaugeStake.model"
 import {ThenianNft} from "./thenianNft.model"
 import {TradingCompetition} from "./tradingCompetition.model"
 import {TCParticipant} from "./tcParticipant.model"
+import {UsernameNft} from "./usernameNft.model"
 
 @Entity_()
 export class User {
@@ -47,4 +48,7 @@ export class User {
 
     @OneToMany_(() => TCParticipant, e => e.participant)
     joinedTCs!: TCParticipant[]
+
+    @OneToMany_(() => UsernameNft, e => e.owner)
+    usernameNfts!: UsernameNft[]
 }
