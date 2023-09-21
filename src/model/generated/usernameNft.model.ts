@@ -17,8 +17,8 @@ export class UsernameNft {
     @Column_("text", {nullable: false})
     name!: string
 
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    timestamp!: bigint
+    @Column_("timestamp with time zone", {nullable: false})
+    timestamp!: Date
 
     @Index_()
     @ManyToOne_(() => User, {nullable: true})

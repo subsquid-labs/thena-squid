@@ -7,7 +7,6 @@ export interface CreateUsernameNftData {
     ownerId: string
     index: bigint
     name: string
-    timestamp: bigint
 }
 
 export class CreateUsernameNftAction extends Action<CreateUsernameNftData> {
@@ -20,7 +19,7 @@ export class CreateUsernameNftAction extends Action<CreateUsernameNftData> {
             index: this.data.index,
             name: this.data.name,
             owner,
-            timestamp: this.data.timestamp,
+            timestamp: new Date(this.block.timestamp),
         })
 
         await this.store.insert(usernameNft)
@@ -31,7 +30,6 @@ export interface UpdateOwnerUsernameNftData {
     tokenId: string
     fromId: string
     toId: string
-    timestamp: bigint
 }
 
 export class UpdateOwnerUsernameNftAction extends Action<UpdateOwnerUsernameNftData> {
@@ -43,7 +41,7 @@ export class UpdateOwnerUsernameNftAction extends Action<UpdateOwnerUsernameNftD
         assert(to != null)
 
         usernameNft.owner = to
-        usernameNft.timestamp = this.data.timestamp
+        usernameNft.timestamp = new Date(this.block.timestamp)
 
         await this.store.upsert(usernameNft)
     }

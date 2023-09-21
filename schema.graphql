@@ -250,7 +250,7 @@ type UsernameNft @entity {
 
     index: BigInt!
     name: String!
-    timestamp: BigInt!
+    timestamp: DateTime!
 
     owner: User!
 }

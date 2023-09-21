@@ -79,7 +79,6 @@ function transferHandler(ctx: MappingContext<StoreWithCache>, log: Log) {
                 index,
                 name,
                 ownerId: toId,
-                timestamp: BigInt(log.block.timestamp),
             })
         })
         
@@ -98,7 +97,6 @@ function transferHandler(ctx: MappingContext<StoreWithCache>, log: Log) {
             tokenId,
             fromId,
             toId,
-            timestamp: BigInt(log.block.timestamp),
         })
     }
 }
