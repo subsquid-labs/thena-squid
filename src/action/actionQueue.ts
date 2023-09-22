@@ -62,6 +62,7 @@ const Actions = {
     vote_updateWeigth: Vote.UpdateVoteAction,
 
     tc_create: TC.CreateTradingCompetitionAction,
+    tc_update_participantCount: TC.UpdateTCParticipantCountAction,
     tcParticipant_create: TCParticipant.CreateTCParticipantAction,
     tcParticipant_update: TCParticipant.UpdateTCParticipantAction,
 
