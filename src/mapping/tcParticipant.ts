@@ -64,6 +64,11 @@ export function getTCParticipantActions(ctx: MappingContext<StoreWithCache>, log
                 }
             }
 
+            ctx.queue.add('tc_update_participantCount', {
+                id: tc.id,
+                count: participants.length
+            })
+
         }
     })
 }

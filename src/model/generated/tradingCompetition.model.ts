@@ -49,4 +49,7 @@ export class TradingCompetition {
 
     @OneToMany_(() => TCParticipant, e => e.tradingCompetition)
     participants!: TCParticipant[]
+
+    @Column_("int4", {nullable: false})
+    participantCount!: number
 }

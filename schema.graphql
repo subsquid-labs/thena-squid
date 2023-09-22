@@ -235,6 +235,7 @@ type TradingCompetition @entity {
     competitionRules: CompetitionRules!
 
     participants: [TCParticipant!] @derivedFrom(field: "tradingCompetition")
+    participantCount: Int!
 }
 
 type TCParticipant @entity {

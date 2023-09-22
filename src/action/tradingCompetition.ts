@@ -34,9 +34,25 @@ export class CreateTradingCompetitionAction extends Action<CreateTradingCompetit
             market: this.data.market,
             prize: this.data.prize,
             competitionRules: this.data.competitionRules,
+            participantCount: 0
         })
 
         await this.store.insert(tc)
         this.log.debug(`Created Trading Competition ${tc.id}`)
+    }
+}
+
+export interface UpdateTCParticipantCountActionData {
+    id: string
+    count: number
+}
+export class UpdateTCParticipantCountAction extends Action<UpdateTCParticipantCountActionData> {
+    async perform(): Promise<void> {
+        const tc = await this.store.getOrFail(TradingCompetition, this.data.id)
+        assert(tc != null)
+
+        tc.participantCount = this.data.count
+
+        await this.store.upsert(tc)
     }
 }
