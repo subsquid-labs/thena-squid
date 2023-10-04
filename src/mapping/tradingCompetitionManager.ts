@@ -4,7 +4,7 @@ import { TCMANAGER_ADDRESS } from '../config'
 import { Log } from '../processor'
 import * as tradingCompetitionManager from '../abi/tradingCompetitionManager'
 import { CallCache } from '../utils/callCache'
-import { CompetitionRules, MarketType, TimestampInfo, Prize, User } from '../model'
+import { CompetitionRules, MarketType, TimestampInfo, Prize, User, Token } from '../model'
 import { createTradingCompetitionId } from '../utils/ids'
 import { Item } from './common'
 
@@ -51,6 +51,10 @@ function handleCreate(ctx: MappingContext<StoreWithCache>, log: Log) {
             })
         }
 
+        const tokenDeferred = ctx.store.defer(Token, tc.competitionRules.winning_token.toLowerCase())
+        const token = await tokenDeferred.get();
+
+
         ctx.queue.add('tc_create', {
             id,
             entryFee: tc.entryFee,
@@ -72,11 +76,13 @@ function handleCreate(ctx: MappingContext<StoreWithCache>, log: Log) {
                 totalPrize: tc.prize.totalPrize,
                 ownerFee: tc.prize.owner_fee,
                 token: tc.prize.token,
+                hostContribution: tc.prize.host_contribution
             }),
             competitionRules: new CompetitionRules({
                 startingBalance: tc.competitionRules.starting_balance,
                 winningToken: tc.competitionRules.winning_token,
                 tradingTokens: tc.competitionRules.tradingTokens,
+                winningTokenDecimal: token ? token.decimals : 18
             }),
         })
     })

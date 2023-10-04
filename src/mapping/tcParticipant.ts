@@ -47,18 +47,45 @@ export function getTCParticipantActions(ctx: MappingContext<StoreWithCache>, log
                     })
                 }
 
-                if (log.block.timestamp > tc.timestamp.endTimestamp * 1000n) {
-                    if (tcParticipant && !tcParticipant.isFetched) {
+                if (log.block.timestamp >= tc.timestamp.registrationStart * 1000n && log.block.timestamp <= (tc.timestamp.startTimestamp + 360n) * 1000n) {
+                    if (tcParticipant) {
+                        const startBalanceDeferred = callCache.defer(log.block, [
+                            tradingCompetitionSpot.functions.user,
+                            tc.tradingCompetitionSpot,
+                            [userId],
+                        ])
+
+                        const startBalance = await startBalanceDeferred.get();
+                        ctx.queue.add('tcParticipant_update', {
+                            id,
+                            startBalance: startBalance[0],
+                            pnl: 0n,
+                            winAmount: 0n,
+                        })
+                    }
+                }
+
+                if (log.block.timestamp >= tc.timestamp.startTimestamp * 1000n && log.block.timestamp <= (tc.timestamp.endTimestamp + 360n) * 1000n) {
+                    if (tcParticipant) {
+                        const pnlDeferred = callCache.defer(log.block, [
+                            tradingCompetitionSpot.functions.getPNLOf,
+                            tc.tradingCompetitionSpot,
+                            [userId],
+                        ])
                         const claimableDeferred = callCache.defer(log.block, [
                             tradingCompetitionSpot.functions.claimable,
                             tc.tradingCompetitionSpot,
                             [userId],
                         ])
 
+                        const pnl = await pnlDeferred.get();
                         const claimable = await claimableDeferred.get();
+
                         ctx.queue.add('tcParticipant_update', {
                             id,
-                            winAmount: claimable.amount
+                            startBalance: 0n,
+                            pnl: pnl,
+                            winAmount: claimable.amount,
                         })
                     }
                 }

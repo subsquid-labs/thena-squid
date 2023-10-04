@@ -5,6 +5,7 @@ export class CompetitionRules {
     private _startingBalance!: bigint
     private _winningToken!: string
     private _tradingTokens!: (string)[]
+    private _winningTokenDecimal!: number
 
     constructor(props?: Partial<Omit<CompetitionRules, 'toJSON'>>, json?: any) {
         Object.assign(this, props)
@@ -12,6 +13,7 @@ export class CompetitionRules {
             this._startingBalance = marshal.bigint.fromJSON(json.startingBalance)
             this._winningToken = marshal.string.fromJSON(json.winningToken)
             this._tradingTokens = marshal.fromList(json.tradingTokens, val => marshal.string.fromJSON(val))
+            this._winningTokenDecimal = marshal.int.fromJSON(json.winningTokenDecimal)
         }
     }
 
@@ -42,11 +44,21 @@ export class CompetitionRules {
         this._tradingTokens = value
     }
 
+    get winningTokenDecimal(): number {
+        assert(this._winningTokenDecimal != null, 'uninitialized access')
+        return this._winningTokenDecimal
+    }
+
+    set winningTokenDecimal(value: number) {
+        this._winningTokenDecimal = value
+    }
+
     toJSON(): object {
         return {
             startingBalance: marshal.bigint.toJSON(this.startingBalance),
             winningToken: this.winningToken,
             tradingTokens: this.tradingTokens,
+            winningTokenDecimal: this.winningTokenDecimal,
         }
     }
 }

@@ -23,6 +23,9 @@ export class TCParticipant {
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     winAmount!: bigint
 
-    @Column_("bool", {nullable: false})
-    isFetched!: boolean
+    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    startBalance!: bigint
+
+    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    pnl!: bigint
 }

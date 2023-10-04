@@ -7,6 +7,7 @@ export class Prize {
     private _totalPrize!: bigint
     private _ownerFee!: bigint
     private _token!: string
+    private _hostContribution!: bigint
 
     constructor(props?: Partial<Omit<Prize, 'toJSON'>>, json?: any) {
         Object.assign(this, props)
@@ -16,6 +17,7 @@ export class Prize {
             this._totalPrize = marshal.bigint.fromJSON(json.totalPrize)
             this._ownerFee = marshal.bigint.fromJSON(json.ownerFee)
             this._token = marshal.string.fromJSON(json.token)
+            this._hostContribution = marshal.bigint.fromJSON(json.hostContribution)
         }
     }
 
@@ -64,6 +66,15 @@ export class Prize {
         this._token = value
     }
 
+    get hostContribution(): bigint {
+        assert(this._hostContribution != null, 'uninitialized access')
+        return this._hostContribution
+    }
+
+    set hostContribution(value: bigint) {
+        this._hostContribution = value
+    }
+
     toJSON(): object {
         return {
             winType: this.winType,
@@ -71,6 +82,7 @@ export class Prize {
             totalPrize: marshal.bigint.toJSON(this.totalPrize),
             ownerFee: marshal.bigint.toJSON(this.ownerFee),
             token: this.token,
+            hostContribution: marshal.bigint.toJSON(this.hostContribution),
         }
     }
 }

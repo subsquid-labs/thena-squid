@@ -92,12 +92,6 @@
                 "type": "address"
             },
             {
-                "indexed": false,
-                "internalType": "address",
-                "name": "depositor",
-                "type": "address"
-            },
-            {
                 "indexed": true,
                 "internalType": "address",
                 "name": "token",
@@ -326,6 +320,11 @@
                                 "internalType": "address",
                                 "name": "token",
                                 "type": "address"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "host_contribution",
+                                "type": "uint256"
                             }
                         ],
                         "internalType": "struct ITradingCompetitionManager.Prize",
@@ -438,9 +437,23 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "token",
+                "name": "who",
                 "type": "address"
-            },
+            }
+        ],
+        "name": "getPNLOf",
+        "outputs": [
+            {
+                "internalType": "int256",
+                "name": "",
+                "type": "int256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
             {
                 "internalType": "uint256",
                 "name": "amount",
@@ -779,6 +792,11 @@
                                 "internalType": "address",
                                 "name": "token",
                                 "type": "address"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "host_contribution",
+                                "type": "uint256"
                             }
                         ],
                         "internalType": "struct ITradingCompetitionManager.Prize",
@@ -898,30 +916,19 @@
         "type": "function"
     },
     {
-        "inputs": [],
-        "name": "winners",
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "name": "winnersList",
         "outputs": [
             {
-                "components": [
-                    {
-                        "internalType": "bool[]",
-                        "name": "hasClaimed",
-                        "type": "bool[]"
-                    },
-                    {
-                        "internalType": "int256[]",
-                        "name": "pnl",
-                        "type": "int256[]"
-                    },
-                    {
-                        "internalType": "address[]",
-                        "name": "users",
-                        "type": "address[]"
-                    }
-                ],
-                "internalType": "struct TradingCompetitionSpot.Winners",
-                "name": "__winners",
-                "type": "tuple"
+                "internalType": "address",
+                "name": "",
+                "type": "address"
             }
         ],
         "stateMutability": "view",

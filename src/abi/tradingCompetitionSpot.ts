@@ -11,8 +11,8 @@ export const events = {
     ClaimPrize: new LogEvent<([winner: string, to: string, token: string, amount: bigint] & {winner: string, to: string, token: string, amount: bigint})>(
         abi, '0xd8d9a68ff50a3262f010c0038f7caf50afda1cd2303d1590fc777e6787ef8ba2'
     ),
-    DepositFund: new LogEvent<([user: string, depositor: string, token: string, amountIn: bigint, timestamp: bigint] & {user: string, depositor: string, token: string, amountIn: bigint, timestamp: bigint})>(
-        abi, '0x289fd7cf67f7726449f262df3afea88480bad434d555b46af1ec9f179a0e187c'
+    DepositFund: new LogEvent<([user: string, token: string, amountIn: bigint, timestamp: bigint] & {user: string, token: string, amountIn: bigint, timestamp: bigint})>(
+        abi, '0xf09a5fa3195e3e263d45424b2cdacfd0eea5dd2fdf46f31140babc0fde60abb9'
     ),
     Trade: new LogEvent<([user: string, tokenIn: string, tokenOut: string, amountIn: bigint, amountOut: bigint, calls: Array<([target: bigint, gasLimit: bigint, value: bigint, data: string] & {target: bigint, gasLimit: bigint, value: bigint, data: string})>, timestamp: bigint] & {user: string, tokenIn: string, tokenOut: string, amountIn: bigint, amountOut: bigint, calls: Array<([target: bigint, gasLimit: bigint, value: bigint, data: string] & {target: bigint, gasLimit: bigint, value: bigint, data: string})>, timestamp: bigint})>(
         abi, '0x4bd70cac06af26311cc4baf9edb4aba66d91b20f7e34c09ff9247998281b622a'
@@ -26,8 +26,8 @@ export const functions = {
     ID: new Func<[], {}, bigint>(
         abi, '0xb3cea217'
     ),
-    _init: new Func<[_tc: ([entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})] & {entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})})], {_tc: ([entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})] & {entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})})}, boolean>(
-        abi, '0x790e2f9b'
+    _init: new Func<[_tc: ([entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})] & {entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})})], {_tc: ([entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})] & {entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})})}, boolean>(
+        abi, '0x1f2a4ba8'
     ),
     claimOwnerFee: new Func<[to: string], {to: string}, []>(
         abi, '0x3a3bdf56'
@@ -41,8 +41,11 @@ export const functions = {
     deposit: new Func<[amount: bigint], {amount: bigint}, []>(
         abi, '0xb6b55f25'
     ),
-    increasePrize: new Func<[token: string, amount: bigint], {token: string, amount: bigint}, []>(
-        abi, '0xc43f7e8d'
+    getPNLOf: new Func<[who: string], {who: string}, bigint>(
+        abi, '0x31fcc683'
+    ),
+    increasePrize: new Func<[amount: bigint], {amount: bigint}, []>(
+        abi, '0x8bd03dcf'
     ),
     init: new Func<[], {}, boolean>(
         abi, '0xe1c7392a'
@@ -71,7 +74,7 @@ export const functions = {
     timestamp: new Func<[], {}, ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint})>(
         abi, '0xb80777ea'
     ),
-    tradingCompetition: new Func<[], {}, ([entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})] & {entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})})>(
+    tradingCompetition: new Func<[], {}, ([entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})] & {entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})})>(
         abi, '0x0ddd6fc8'
     ),
     tradingTokens: new Func<[], {}, Array<string>>(
@@ -86,8 +89,8 @@ export const functions = {
     users: new Func<[], {}, Array<string>>(
         abi, '0xf2020275'
     ),
-    winners: new Func<[], {}, ([hasClaimed: Array<boolean>, pnl: Array<bigint>, users: Array<string>] & {hasClaimed: Array<boolean>, pnl: Array<bigint>, users: Array<string>})>(
-        abi, '0xa487bcd8'
+    winnersList: new Func<[_: bigint], {}, string>(
+        abi, '0x23c674d4'
     ),
     withdrawAllFunds: new Func<[], {}, []>(
         abi, '0x49649fbf'
@@ -105,6 +108,10 @@ export class Contract extends ContractBase {
 
     claimable(who: string): Promise<([amount: bigint, token: string] & {amount: bigint, token: string})> {
         return this.eth_call(functions.claimable, [who])
+    }
+
+    getPNLOf(who: string): Promise<bigint> {
+        return this.eth_call(functions.getPNLOf, [who])
     }
 
     init(): Promise<boolean> {
@@ -131,7 +138,7 @@ export class Contract extends ContractBase {
         return this.eth_call(functions.timestamp, [])
     }
 
-    tradingCompetition(): Promise<([entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})] & {entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})})> {
+    tradingCompetition(): Promise<([entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})] & {entryFee: bigint, MAX_PARTICIPANTS: bigint, owner: string, tradingCompetition: string, name: string, description: string, timestamp: ([startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint] & {startTimestamp: bigint, endTimestamp: bigint, registrationStart: bigint, registrationEnd: bigint}), market: number, prize: ([win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint] & {win_type: boolean, weights: Array<bigint>, totalPrize: bigint, owner_fee: bigint, token: string, host_contribution: bigint}), competitionRules: ([starting_balance: bigint, winning_token: string, tradingTokens: Array<string>] & {starting_balance: bigint, winning_token: string, tradingTokens: Array<string>})})> {
         return this.eth_call(functions.tradingCompetition, [])
     }
 
@@ -151,7 +158,7 @@ export class Contract extends ContractBase {
         return this.eth_call(functions.users, [])
     }
 
-    winners(): Promise<([hasClaimed: Array<boolean>, pnl: Array<bigint>, users: Array<string>] & {hasClaimed: Array<boolean>, pnl: Array<bigint>, users: Array<string>})> {
-        return this.eth_call(functions.winners, [])
+    winnersList(arg0: bigint): Promise<string> {
+        return this.eth_call(functions.winnersList, [arg0])
     }
 }
