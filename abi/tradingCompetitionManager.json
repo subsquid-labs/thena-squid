@@ -135,6 +135,11 @@
                                 "internalType": "address",
                                 "name": "token",
                                 "type": "address"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "host_contribution",
+                                "type": "uint256"
                             }
                         ],
                         "internalType": "struct ITradingCompetitionManager.Prize",
@@ -656,6 +661,11 @@
                                 "internalType": "address",
                                 "name": "token",
                                 "type": "address"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "host_contribution",
+                                "type": "uint256"
                             }
                         ],
                         "internalType": "struct ITradingCompetitionManager.Prize",
@@ -819,6 +829,11 @@
                                 "internalType": "address",
                                 "name": "token",
                                 "type": "address"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "host_contribution",
+                                "type": "uint256"
                             }
                         ],
                         "internalType": "struct ITradingCompetitionManager.Prize",

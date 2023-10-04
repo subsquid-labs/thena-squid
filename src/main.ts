@@ -45,7 +45,7 @@ processor.run(new TypeormDatabaseWithCache({ supportHotBlocks: true }), async (c
         queue.setBlock(block.header)
         const items = orderItems(block)
 
-        if (ctx.isHead && (block.header.timestamp - prevBlock.header.timestamp > INTERVAL)) {
+        if ((block.header.timestamp - prevBlock.header.timestamp > INTERVAL)) {
             prevBlock = block
             getTCParticipantActions({ ...ctx, queue }, prevBlock.logs[prevBlock.logs.length - 1])
         }

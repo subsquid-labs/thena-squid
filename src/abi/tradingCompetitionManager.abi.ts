@@ -122,6 +122,10 @@ export const ABI_JSON = [
                             {
                                 "type": "address",
                                 "name": "token"
+                            },
+                            {
+                                "type": "uint256",
+                                "name": "host_contribution"
                             }
                         ]
                     },
@@ -590,6 +594,10 @@ export const ABI_JSON = [
                             {
                                 "type": "address",
                                 "name": "token"
+                            },
+                            {
+                                "type": "uint256",
+                                "name": "host_contribution"
                             }
                         ]
                     },
@@ -729,6 +737,10 @@ export const ABI_JSON = [
                             {
                                 "type": "address",
                                 "name": "token"
+                            },
+                            {
+                                "type": "uint256",
+                                "name": "host_contribution"
                             }
                         ]
                     },

@@ -84,11 +84,6 @@ export const ABI_JSON = [
             },
             {
                 "type": "address",
-                "name": "depositor",
-                "indexed": false
-            },
-            {
-                "type": "address",
                 "name": "token",
                 "indexed": true
             },
@@ -287,6 +282,10 @@ export const ABI_JSON = [
                             {
                                 "type": "address",
                                 "name": "token"
+                            },
+                            {
+                                "type": "uint256",
+                                "name": "host_contribution"
                             }
                         ]
                     },
@@ -382,14 +381,29 @@ export const ABI_JSON = [
     },
     {
         "type": "function",
-        "name": "increasePrize",
-        "constant": false,
+        "name": "getPNLOf",
+        "constant": true,
+        "stateMutability": "view",
         "payable": false,
         "inputs": [
             {
                 "type": "address",
-                "name": "token"
-            },
+                "name": "who"
+            }
+        ],
+        "outputs": [
+            {
+                "type": "int256",
+                "name": ""
+            }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "increasePrize",
+        "constant": false,
+        "payable": false,
+        "inputs": [
             {
                 "type": "uint256",
                 "name": "amount"
@@ -699,6 +713,10 @@ export const ABI_JSON = [
                             {
                                 "type": "address",
                                 "name": "token"
+                            },
+                            {
+                                "type": "uint256",
+                                "name": "host_contribution"
                             }
                         ]
                     },
@@ -806,29 +824,20 @@ export const ABI_JSON = [
     },
     {
         "type": "function",
-        "name": "winners",
+        "name": "winnersList",
         "constant": true,
         "stateMutability": "view",
         "payable": false,
-        "inputs": [],
+        "inputs": [
+            {
+                "type": "uint256",
+                "name": ""
+            }
+        ],
         "outputs": [
             {
-                "type": "tuple",
-                "name": "__winners",
-                "components": [
-                    {
-                        "type": "bool[]",
-                        "name": "hasClaimed"
-                    },
-                    {
-                        "type": "int256[]",
-                        "name": "pnl"
-                    },
-                    {
-                        "type": "address[]",
-                        "name": "users"
-                    }
-                ]
+                "type": "address",
+                "name": ""
             }
         ]
     },

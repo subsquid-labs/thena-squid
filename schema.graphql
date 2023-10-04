@@ -200,8 +200,9 @@ type TimestampInfo {
 
 type CompetitionRules {
     startingBalance: BigInt!
-    winningToken: String!
+    winningToken: String!    
     tradingTokens: [String!]!
+    winningTokenDecimal: Int!
 }
 
 enum MarketType {
@@ -215,6 +216,7 @@ type Prize {
     totalPrize: BigInt!
     ownerFee: BigInt!
     token: String!
+    hostContribution: BigInt!
 }
 
 type TradingCompetition @entity {
@@ -243,7 +245,8 @@ type TCParticipant @entity {
     tradingCompetition: TradingCompetition!
     participant: User!
     winAmount: BigInt!
-    isFetched: Boolean!
+    startBalance: BigInt!
+    pnl: BigInt!
 }
 
 type UsernameNft @entity {
