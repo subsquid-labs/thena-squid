@@ -9,6 +9,7 @@ import {CallCache} from '../utils/callCache'
 import {createThenianNftId} from '../utils/ids'
 import {Item} from './common'
 import {splitIntoBatches} from '../utils/misc'
+import {addErrorContext} from '@subsquid/util-internal'
 
 const client = new HttpClient({
     headers: {'Content-Type': 'application/json'},
@@ -27,18 +28,22 @@ async function fetchTokenMetadata(
     ctx: MappingContext<StoreWithCache>,
     uri: string
 ): Promise<TokenMetadata | undefined> {
-    if (uri.startsWith('ipfs://')) {
-        const gatewayURL = new URL(uri.slice(7), IPFS_GATEWAY).toString()
-        let res = await client.get(gatewayURL)
-        ctx.log.info(`Successfully fetched metadata from ${gatewayURL}`)
-        return res
-    } else if (uri.startsWith('http:') || uri.startsWith('https:')) {
-        let res = await client.get(uri)
-        ctx.log.info(`Successfully fetched metadata from ${uri}`)
-        return res
-    } else {
-        ctx.log.warn(`Unexpected metadata URL protocol: ${uri}`)
-        return undefined
+    try {
+        if (uri.startsWith('ipfs://')) {
+            const gatewayURL = new URL(uri.slice(7), IPFS_GATEWAY).toString()
+            let res = await client.get(gatewayURL)
+            ctx.log.info(`Successfully fetched metadata from ${gatewayURL}`)
+            return res
+        } else if (uri.startsWith('http:') || uri.startsWith('https:')) {
+            let res = await client.get(uri)
+            ctx.log.info(`Successfully fetched metadata from ${uri}`)
+            return res
+        } else {
+            ctx.log.warn(`Unexpected metadata URL protocol: ${uri}`)
+            return undefined
+        }
+    } catch (e: any) {
+        throw addErrorContext(e, {uri})
     }
 }
 
