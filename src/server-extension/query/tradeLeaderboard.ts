@@ -1,4 +1,4 @@
-export const leaderboardQuery = (period: string): string => `
+export const tradeLeaderboardQuery = (period: string): string => `
     SELECT rank() OVER (ORDER BY volume DESC) "rank", * FROM
         (SELECT t.user_id AS address, sum(t.amount_usd) AS volume FROM trade AS t
             JOIN "user" AS u ON t.user_id = u.id
@@ -6,7 +6,7 @@ export const leaderboardQuery = (period: string): string => `
             GROUP BY t.user_id, u.id) traders
 `
 
-export const rankByAddressQuery = (period: string): string => `
+export const tradeRankByAddressQuery = (period: string): string => `
     SELECT * FROM 
         (SELECT rank() OVER (ORDER BY volume DESC) "rank", * FROM
             (SELECT t.user_id AS address, sum(t.amount_usd) AS volume FROM trade AS t

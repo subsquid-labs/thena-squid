@@ -23,7 +23,9 @@ export class CreateTCParticipantAction extends Action<CreateTCParticipantActionD
             participant: user,
             startBalance: 0n,
             pnl: 0n,
-            winAmount: 0n
+            winAmount: 0n,
+            winTokenPriceInUSD: 0,
+            winTokenDecimal: 0
         })
 
         await this.store.insert(tcParticipant)
@@ -36,6 +38,8 @@ export interface UpdateTCParticipantActionData {
     startBalance: bigint
     pnl: bigint
     winAmount: bigint
+    winTokenPriceInUSD: number
+    winTokenDecimal: number
 }
 
 export class UpdateTCParticipantAction extends Action<UpdateTCParticipantActionData> {
@@ -43,14 +47,20 @@ export class UpdateTCParticipantAction extends Action<UpdateTCParticipantActionD
         const tcParticipant = await this.store.getOrFail(TCParticipant, this.data.id)
         assert(tcParticipant != null)
 
-        if(this.data.startBalance > 0n)
+        if (this.data.startBalance > 0n)
             tcParticipant.startBalance = this.data.startBalance
 
-        if(this.data.pnl != 0n)
+        if (this.data.pnl != 0n)
             tcParticipant.pnl = this.data.pnl
 
-        if(this.data.winAmount > 0n)
+        if (this.data.winAmount > 0n)
             tcParticipant.winAmount = this.data.winAmount
+
+        if (this.data.winTokenPriceInUSD > 0)
+            tcParticipant.winTokenPriceInUSD = this.data.winTokenPriceInUSD
+
+        if (this.data.winTokenDecimal > 0)
+            tcParticipant.winTokenDecimal = this.data.winTokenDecimal
 
         await this.store.upsert(tcParticipant)
         this.log.debug(`Updated Trading Competition Participant ${tcParticipant.id}`)

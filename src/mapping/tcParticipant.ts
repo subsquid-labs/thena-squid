@@ -1,10 +1,20 @@
 import { StoreWithCache } from '@belopash/typeorm-store'
+import { HttpAgent, HttpClient } from '@subsquid/http-client'
 import { MappingContext } from '../interfaces'
 import { Log } from '../processor'
 import * as tradingCompetitionSpot from '../abi/tradingCompetitionSpot'
 import { CallCache } from '../utils/callCache'
 import { User, TradingCompetition, TCParticipant } from '../model'
 import { createTCParticipantId } from '../utils/ids'
+import { TOKEN_PRICE_API } from '../config'
+
+const client = new HttpClient({
+    headers: { 'Content-Type': 'application/json' },
+    retryAttempts: 5,
+    agent: new HttpAgent({
+        keepAlive: true,
+    }),
+})
 
 export function getTCParticipantActions(ctx: MappingContext<StoreWithCache>, log: Log) {
     ctx.log.debug(`getting trading competition participants...`)
@@ -20,6 +30,16 @@ export function getTCParticipantActions(ctx: MappingContext<StoreWithCache>, log
                 tc.tradingCompetitionSpot,
                 [],
             ])
+
+            let winTokenPriceInUSD = 0
+            let winTokenDecimal = 0
+            try {
+                const res = await client.get(`${TOKEN_PRICE_API}/${tc.competitionRules.winningToken}`)
+                winTokenPriceInUSD = res?.data?.price || 0
+                winTokenDecimal = res?.data?.decimals || 0
+            } catch (error) {
+
+            }
 
             const participants = await participantsDeferred.get()
 
@@ -61,6 +81,8 @@ export function getTCParticipantActions(ctx: MappingContext<StoreWithCache>, log
                             startBalance: startBalance[0],
                             pnl: 0n,
                             winAmount: 0n,
+                            winTokenPriceInUSD: 0,
+                            winTokenDecimal: 0
                         })
                     }
                 }
@@ -86,6 +108,8 @@ export function getTCParticipantActions(ctx: MappingContext<StoreWithCache>, log
                             startBalance: 0n,
                             pnl: pnl,
                             winAmount: claimable.amount,
+                            winTokenPriceInUSD,
+                            winTokenDecimal
                         })
                     }
                 }

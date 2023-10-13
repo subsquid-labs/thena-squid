@@ -21,10 +21,16 @@ export class TCParticipant {
     participant!: User
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    winAmount!: bigint
+    startBalance!: bigint
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    startBalance!: bigint
+    winAmount!: bigint
+
+    @Column_("numeric", {transformer: marshal.floatTransformer, nullable: false})
+    winTokenPriceInUSD!: number
+
+    @Column_("int4", {nullable: false})
+    winTokenDecimal!: number
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     pnl!: bigint
