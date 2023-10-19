@@ -29,3 +29,6 @@ scale:
   dedicated: true
   processor:
     profile: medium
+  addons:
+    rpc:
+      max-rate: 100rps

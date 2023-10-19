@@ -1,17 +1,17 @@
-import {StoreWithCache} from '@belopash/typeorm-store'
-import {HttpAgent, HttpClient} from '@subsquid/http-client'
+import { StoreWithCache } from '@belopash/typeorm-store'
+import { HttpAgent, HttpClient } from '@subsquid/http-client'
 import * as thenianNftAbi from '../abi/thenianNft'
-import {IPFS_GATEWAY, THENIAN_NFT_ADDRESS, ZERO_ADDRESS} from '../config'
-import {MappingContext} from '../interfaces'
-import {Attribute, ThenianNft, ThenianNftMetadata, User} from '../model'
-import {Log, Transaction} from '../processor'
-import {CallCache} from '../utils/callCache'
-import {createThenianNftId} from '../utils/ids'
-import {Item} from './common'
-import {splitIntoBatches} from '../utils/misc'
+import { IPFS_CID, IPFS_GATEWAY, THENIAN_NFT_ADDRESS, ZERO_ADDRESS } from '../config'
+import { MappingContext } from '../interfaces'
+import { Attribute, ThenianNft, ThenianNftMetadata, User } from '../model'
+import { Log, Transaction } from '../processor'
+import { CallCache } from '../utils/callCache'
+import { createThenianNftId } from '../utils/ids'
+import { Item } from './common'
+import { splitIntoBatches } from '../utils/misc'
 
 const client = new HttpClient({
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json' },
     retryAttempts: 5,
     agent: new HttpAgent({
         keepAlive: true,
@@ -20,25 +20,31 @@ const client = new HttpClient({
 
 interface TokenMetadata {
     image: string
-    attributes: {trait_type: string; value: string}[]
+    attributes: { trait_type: string; value: string }[]
+}
+
+class MetadataFetchError extends Error {
+    constructor(url: string, e: Error) {
+        super(`Failed to fetch metadata from ${url}. Error: ${e}`)
+    }
 }
 
 async function fetchTokenMetadata(
     ctx: MappingContext<StoreWithCache>,
     uri: string
 ): Promise<TokenMetadata | undefined> {
-    if (uri.startsWith('ipfs://')) {
-        const gatewayURL = new URL(uri.slice(7), IPFS_GATEWAY).toString()
-        let res = await client.get(gatewayURL)
-        ctx.log.info(`Successfully fetched metadata from ${gatewayURL}`)
-        return res
-    } else if (uri.startsWith('http:') || uri.startsWith('https:')) {
-        let res = await client.get(uri)
-        ctx.log.info(`Successfully fetched metadata from ${uri}`)
-        return res
-    } else {
-        ctx.log.warn(`Unexpected metadata URL protocol: ${uri}`)
-        return undefined
+    try {
+        if (uri) {
+            const gatewayURL = new URL(uri, IPFS_GATEWAY).toString()
+            let res = await client.get(gatewayURL)
+            ctx.log.info(`Successfully fetched metadata from ${gatewayURL}`)
+            return res
+        } else {
+            ctx.log.warn(`Unexpected metadata URL protocol: ${uri}`)
+            return undefined
+        }
+    } catch (e: any) {
+        throw new MetadataFetchError(uri, e)
     }
 }
 
@@ -55,13 +61,13 @@ export function getThenianNftActions(ctx: MappingContext<StoreWithCache>, item: 
             }
             break
         }
-        case 'transaction': {
-            const tx = item.value
-            switch (tx.sighash) {
-                case thenianNftAbi.functions.setBaseURI.sighash:
-                    setBaseURIHandler(ctx, tx)
-            }
-        }
+        // case 'transaction': {
+        //     const tx = item.value
+        //     switch (tx.sighash) {
+        //         case thenianNftAbi.functions.setBaseURI.sighash:
+        //             setBaseURIHandler(ctx, tx)
+        //     }
+        // }
     }
 }
 
@@ -78,8 +84,8 @@ function transferHandler(ctx: MappingContext<StoreWithCache>, log: Log) {
     const toUserDeferred = ctx.store.defer(User, toId)
 
     if (fromId === ZERO_ADDRESS) {
-        const callCache = CallCache.get(ctx)
-        const baseUriDeferred = callCache.defer(log.block, [thenianNftAbi.functions.baseURI, THENIAN_NFT_ADDRESS, []])
+        // const callCache = CallCache.get(ctx)
+        // const baseUriDeferred = callCache.defer(log.block, [thenianNftAbi.functions.baseURI, THENIAN_NFT_ADDRESS, []])
 
         ctx.queue
             .lazy(async () => {
@@ -107,17 +113,14 @@ function transferHandler(ctx: MappingContext<StoreWithCache>, log: Log) {
                 timestamp: BigInt(log.block.timestamp),
             })
             .lazy(async () => {
-                const baseUri = await baseUriDeferred.get()
-                if (baseUri.length == 0) return
-
-                let metadata: TokenMetadata | undefined = await fetchTokenMetadata(ctx, `${baseUri}${index}`)
+                let metadata: TokenMetadata | undefined = await fetchTokenMetadata(ctx, `ipfs/${IPFS_CID}/${index}`)
                 if (metadata != null) {
                     ctx.queue.add('thenianNft_setMetadata', {
                         tokenId,
                         metadata: new ThenianNftMetadata({
                             image: metadata.image,
                             attributes: metadata.attributes.map(
-                                (a) => new Attribute({traitType: a.trait_type, value: a.value})
+                                (a) => new Attribute({ traitType: a.trait_type, value: a.value })
                             ),
                         }),
                     })
@@ -154,14 +157,14 @@ function setBaseURIHandler(ctx: MappingContext<StoreWithCache>, tx: Transaction)
         for (const batch of splitIntoBatches(nfts, 50)) {
             await Promise.all(
                 batch.map(async (nft) => {
-                    let metadata: TokenMetadata | undefined = await fetchTokenMetadata(ctx, `${baseUri}${nft.index}`)
+                    let metadata: TokenMetadata | undefined = await fetchTokenMetadata(ctx, `ipfs/${IPFS_CID}/${nft.index}`)
                     if (metadata != null) {
                         ctx.queue.add('thenianNft_setMetadata', {
                             tokenId: nft.id,
                             metadata: new ThenianNftMetadata({
                                 image: metadata.image,
                                 attributes: metadata.attributes.map(
-                                    (a) => new Attribute({traitType: a.trait_type, value: a.value})
+                                    (a) => new Attribute({ traitType: a.trait_type, value: a.value })
                                 ),
                             }),
                         })

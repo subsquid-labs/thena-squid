@@ -23,7 +23,8 @@ import { BribeManager } from './utils/manager/bribeManager'
 import { getTCParticipantActions } from './mapping/tcParticipant'
 import { getUsernameNftActions } from './mapping/usernameNft'
 
-const INTERVAL = 3 * 60 * 1000// 3 minutes
+const SLOW_INTERVAL = 3 * 60 * 1000// 15 seconds
+const FAST_INTERVAL = 15 * 1000// 15 seconds
 let prevBlock: any = null
 
 processor.run(new TypeormDatabaseWithCache({ supportHotBlocks: true }), async (ctx) => {
@@ -45,7 +46,8 @@ processor.run(new TypeormDatabaseWithCache({ supportHotBlocks: true }), async (c
         queue.setBlock(block.header)
         const items = orderItems(block)
 
-        if ((block.header.timestamp - prevBlock.header.timestamp > INTERVAL)) {
+        const blockDiff = block.header.timestamp - prevBlock.header.timestamp
+        if ((ctx.isHead && blockDiff > FAST_INTERVAL) || (!ctx.isHead && blockDiff > SLOW_INTERVAL)) {
             prevBlock = block
             getTCParticipantActions({ ...ctx, queue }, prevBlock.logs[prevBlock.logs.length - 1])
         }
