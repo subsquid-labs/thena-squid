@@ -1,6 +1,5 @@
 import {StoreWithCache} from '@belopash/typeorm-store'
 import * as voterAbi from '../abi/voterV3'
-import {Action} from '../action'
 import {UpdateStakeBribeAction} from '../action/bribe'
 import {VOTER} from '../config'
 import {MappingContext} from '../interfaces'
