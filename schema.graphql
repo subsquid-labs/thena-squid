@@ -244,8 +244,10 @@ type TCParticipant @entity {
     id: ID!
     tradingCompetition: TradingCompetition!
     participant: User!
-    winAmount: BigInt!
     startBalance: BigInt!
+    winAmount: BigInt!
+    winTokenPriceInUSD: Float!
+    winTokenDecimal: Int!
     pnl: BigInt!
 }
 

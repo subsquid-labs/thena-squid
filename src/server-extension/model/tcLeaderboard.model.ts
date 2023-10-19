@@ -1,7 +1,7 @@
 import { Field, ObjectType } from 'type-graphql';
 
 @ObjectType()
-export class LeaderboardItemEntity {
+export class TCLeaderboardItemEntity {
     @Field(() => Number, { nullable: false })
     rank!: number
 
@@ -9,9 +9,9 @@ export class LeaderboardItemEntity {
     address!: string
 
     @Field(() => Number, { nullable: false})
-    volume!: number
+    prize!: number
     
-    constructor(props: Partial<LeaderboardItemEntity>) {
+    constructor(props: Partial<TCLeaderboardItemEntity>) {
         Object.assign(this, props);
     }
 }

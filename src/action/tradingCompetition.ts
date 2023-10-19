@@ -42,16 +42,18 @@ export class CreateTradingCompetitionAction extends Action<CreateTradingCompetit
     }
 }
 
-export interface UpdateTCParticipantCountActionData {
+export interface UpdateTCInfoActionData {
     id: string
     count: number
+    totalPrize: bigint
 }
-export class UpdateTCParticipantCountAction extends Action<UpdateTCParticipantCountActionData> {
+export class UpdateTCInfoAction extends Action<UpdateTCInfoActionData> {
     async perform(): Promise<void> {
         const tc = await this.store.getOrFail(TradingCompetition, this.data.id)
         assert(tc != null)
 
         tc.participantCount = this.data.count
+        tc.prize.totalPrize = this.data.totalPrize
 
         await this.store.upsert(tc)
     }

@@ -1,9 +1,9 @@
-import {StoreWithCache} from '@belopash/typeorm-store'
-import {Chain} from '@subsquid/evm-processor/lib/interfaces/chain'
-import {Logger} from '@subsquid/logger'
-import {withErrorContext} from '@subsquid/util-internal'
+import { StoreWithCache } from '@belopash/typeorm-store'
+import { Chain } from '@subsquid/evm-processor/lib/interfaces/chain'
+import { Logger } from '@subsquid/logger'
+import { withErrorContext } from '@subsquid/util-internal'
 import assert from 'assert'
-import {Action, ActionBlock, ActionConfig, ActionConstructor, ActionTransaction, BaseActionRegistry} from './base'
+import { Action, ActionBlock, ActionConfig, ActionConstructor, ActionTransaction, BaseActionRegistry } from './base'
 import * as Bribe from './bribe'
 import * as Gauge from './gauge'
 import * as Hypervisor from './hypervisor'
@@ -62,7 +62,7 @@ const Actions = {
     vote_updateWeigth: Vote.UpdateVoteAction,
 
     tc_create: TC.CreateTradingCompetitionAction,
-    tc_update_participantCount: TC.UpdateTCParticipantCountAction,
+    tc_update_Info: TC.UpdateTCInfoAction,
     tcParticipant_create: TCParticipant.CreateTCParticipantAction,
     tcParticipant_update: TCParticipant.UpdateTCParticipantAction,
 
@@ -82,7 +82,7 @@ export class ActionQueue {
     private block: ActionBlock | undefined
     private transaction: ActionTransaction | undefined
 
-    constructor(private config: {_chain: Chain; store: StoreWithCache; log: Logger}) {}
+    constructor(private config: { _chain: Chain; store: StoreWithCache; log: Logger }) { }
 
     get size() {
         return this.actions.length
@@ -165,7 +165,7 @@ export class ActionQueue {
     }
 
     private async processLazyAction(action: LazyAction) {
-        const saved = {block: this.block, transaction: this.transaction, actions: this.actions}
+        const saved = { block: this.block, transaction: this.transaction, actions: this.actions }
         try {
             this.block = action.block
             this.transaction = action.transaction

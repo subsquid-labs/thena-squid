@@ -41,4 +41,8 @@ export const THENIAN_NFT_ADDRESS = '0x2af749593978cb79ed11b9959cd82fd128ba4f8d'
 
 export const IPFS_GATEWAY = process.env.IPFS_GATEWAY || 'https://ipfs.io/ipfs'
 
+export const IPFS_CID = 'QmYG7JJcLxxewgCD9Az2zcnS7CCCZKa6s2738ZC2547eTn'
+
 export const USERNAME_NFT_ADDRESS = '0x98504322fac9f645cdea01a31188253a429666d5'
+
+export const TOKEN_PRICE_API = process.env.TOKEN_PRICE_API || 'https://api.thena.fi/api/v1/assets'
