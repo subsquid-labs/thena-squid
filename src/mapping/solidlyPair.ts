@@ -49,7 +49,7 @@ function handleSwap(ctx: MappingContext<StoreWithCache>, log: Log) {
     const userDeferred = ctx.store.defer(User, userId)
 
     const poolId = log.address
-    ctx.store.defer(Pool, poolId, {token0: true, token1: true})
+    ctx.store.defer(Pool, {id: poolId, relations: {token0: true, token1: true}})
 
     const [amount0, amount1] =
         event.amount0In === 0n ? [-event.amount0Out, event.amount1In] : [event.amount0In, -event.amount1Out]
@@ -75,7 +75,7 @@ function handleSwap(ctx: MappingContext<StoreWithCache>, log: Log) {
             amount1,
         })
         .lazy(async () => {
-            const pool = await ctx.store.getOrFail(Pool, poolId, {token0: true, token1: true})
+            const pool = await ctx.store.getOrFail(Pool, {id: poolId, relations: {token0: true, token1: true}})
 
             ctx.queue
                 .add('token_recalcPrice', {
@@ -93,7 +93,7 @@ function handleSync(ctx: MappingContext<StoreWithCache>, log: Log) {
     const event = solidlyPair.events.Sync.decode(log)
 
     const poolId = log.address
-    ctx.store.defer(Pool, poolId, {token0: true, token1: true})
+    ctx.store.defer(Pool, {id: poolId, relations: {token0: true, token1: true}})
 
     ctx.queue
         .add('pool_setReserves', {
@@ -127,7 +127,7 @@ function handleTransfer(ctx: MappingContext<StoreWithCache>, log: Log) {
         })
     } else {
         const positionId = createLiquidityPositionId(poolId, fromId)
-        ctx.store.defer(LiquidityPosition, positionId, {pool: true})
+        ctx.store.defer(LiquidityPosition, {id: positionId, relations: {pool: true}})
 
         ctx.queue.add('lp_updateValue', {
             positionId,
@@ -142,7 +142,7 @@ function handleTransfer(ctx: MappingContext<StoreWithCache>, log: Log) {
         })
     } else {
         const positionId = createLiquidityPositionId(poolId, toId)
-        ctx.store.defer(LiquidityPosition, positionId, {pool: true})
+        ctx.store.defer(LiquidityPosition, {id: positionId, relations: {pool: true}})
 
         ctx.queue
             .lazy(async () => {

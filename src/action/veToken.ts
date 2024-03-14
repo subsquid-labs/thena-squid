@@ -33,7 +33,7 @@ export interface TransferVeTokenData {
 
 export class TransferVeTokenAction extends Action<TransferVeTokenData> {
     async perform(): Promise<void> {
-        const veToken = await this.store.getOrFail(VeToken, this.data.tokenId, {owner: true})
+        const veToken = await this.store.getOrFail(VeToken, {id: this.data.tokenId, relations: {owner: true}})
         assert(veToken.owner.id === this.data.fromId)
 
         const to = await this.store.getOrFail(User, this.data.toId)

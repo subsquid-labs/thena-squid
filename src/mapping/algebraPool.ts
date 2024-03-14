@@ -40,7 +40,7 @@ function swapHandler(ctx: MappingContext<StoreWithCache>, log: Log) {
     ctx.store.defer(User, userId)
 
     const poolId = log.address
-    const poolDefered = ctx.store.defer(Pool, poolId, {token0: true, token1: true})
+    const poolDefered = ctx.store.defer(Pool, {id: poolId, relations: {token0: true, token1: true}})
 
     const amount0 = event.amount0
     const amount1 = event.amount1
@@ -93,7 +93,7 @@ function mintHandler(ctx: MappingContext<StoreWithCache>, log: Log) {
     if (amount === 0n && amount0 === 0n && amount1 === 0n) return
 
     const positionId = createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick)
-    const positionDeferred = ctx.store.defer(LiquidityPosition, positionId, {pool: true})
+    const positionDeferred = ctx.store.defer(LiquidityPosition, {id: positionId, relations: {pool: true}})
 
     ctx.queue
         .add('pool_updateLiquidity', {
@@ -149,7 +149,7 @@ function burnHandler(ctx: MappingContext<StoreWithCache>, log: Log) {
     if (amount === 0n && amount0 === 0n && amount1 === 0n) return
 
     const positionId = createLiquidityPositionId(poolId, userId, event.bottomTick, event.topTick)
-    ctx.store.defer(LiquidityPosition, positionId, {pool: true})
+    ctx.store.defer(LiquidityPosition, {id: positionId, relations: {pool: true}})
 
     ctx.queue
         .add('pool_updateLiquidity', {

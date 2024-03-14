@@ -125,7 +125,7 @@ export class SetSqrtPricePoolAction extends BasePoolAction<SetSqrtPricePoolActio
 
 export class RecalculatePricesPoolAction extends BasePoolAction {
     async perform(): Promise<void> {
-        const pool = await this.store.getOrFail(Pool, this.data.poolId, {token0: true, token1: true})
+        const pool = await this.store.getOrFail(Pool, {id: this.data.poolId, relations: {token0: true, token1: true}})
         const token0 = pool.token0
         const token1 = pool.token1
 

@@ -76,7 +76,7 @@ export class SwapAction extends Action<SwapUserActionData> {
     async perform(): Promise<void> {
         assert(this.transaction != null)
 
-        const pool = await this.store.getOrFail(Pool, this.data.poolId, {token0: true, token1: true})
+        const pool = await this.store.getOrFail(Pool, {id: this.data.poolId, relations: {token0: true, token1: true}})
         const user = await this.store.getOrFail(User, this.data.userId)
 
         const {tokenInId, tokenOutId, amountIn, amountOut} = convertTokenValues({
@@ -124,7 +124,7 @@ export class SwapAction extends Action<SwapUserActionData> {
             SwapAction.lastTrade.blockNumber === this.block.height &&
             SwapAction.lastTrade.txHash === this.transaction.hash
         ) {
-            trade = await this.store.getOrFail(Trade, SwapAction.lastTrade.id, {tokenOut:true})
+            trade = await this.store.getOrFail(Trade, {id: SwapAction.lastTrade.id, relations: {tokenOut: true}})
         } else {
             SwapAction.lastTrade = undefined
         }

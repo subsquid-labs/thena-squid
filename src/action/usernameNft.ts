@@ -34,7 +34,7 @@ export interface UpdateOwnerUsernameNftData {
 
 export class UpdateOwnerUsernameNftAction extends Action<UpdateOwnerUsernameNftData> {
     async perform(): Promise<void> {
-        const usernameNft = await this.store.getOrFail(UsernameNft, this.data.tokenId, {owner: true})
+        const usernameNft = await this.store.getOrFail(UsernameNft, {id: this.data.tokenId, relations: {owner: true}})
         assert(usernameNft.owner.id === this.data.fromId)
 
         const to = await this.store.getOrFail(User, this.data.toId)

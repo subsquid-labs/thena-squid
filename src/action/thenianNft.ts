@@ -48,7 +48,7 @@ export interface UpdateOwnerThenianNftData {
 
 export class UpdateOwnerThenianNftAction extends Action<UpdateOwnerThenianNftData> {
     async perform(): Promise<void> {
-        const thenianNft = await this.store.getOrFail(ThenianNft, this.data.tokenId, {owner: true})
+        const thenianNft = await this.store.getOrFail(ThenianNft, {id: this.data.tokenId, relations: {owner: true}})
         assert(thenianNft.owner.id === this.data.fromId)
 
         const to = await this.store.getOrFail(User, this.data.toId)

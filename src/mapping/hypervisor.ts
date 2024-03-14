@@ -85,7 +85,7 @@ function handleTransfer(ctx: MappingContext<StoreWithCache>, log: Log) {
         })
     } else {
         const positionId = createLiquidityPositionId(poolId, fromId)
-        ctx.store.defer(LiquidityPosition, positionId, {pool: true})
+        ctx.store.defer(LiquidityPosition, {id: positionId, relations: {pool: true}})
 
         ctx.queue.add('lp_updateValue', {
             positionId,
@@ -100,7 +100,7 @@ function handleTransfer(ctx: MappingContext<StoreWithCache>, log: Log) {
         })
     } else {
         const positionId = createLiquidityPositionId(poolId, toId)
-        ctx.store.defer(LiquidityPosition, positionId, {pool: true})
+        ctx.store.defer(LiquidityPosition, {id: positionId, relations: {pool: true}})
 
         ctx.queue
             .lazy(async () => {

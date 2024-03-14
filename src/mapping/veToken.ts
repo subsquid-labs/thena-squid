@@ -34,7 +34,7 @@ function handleTransfer(ctx: MappingContext<StoreWithCache>, log: Log) {
     const event = veTokenAbi.events.Transfer.decode(log)
 
     const tokenId = createVeTokenId(event.tokenId)
-    ctx.store.defer(VeToken, tokenId, {owner: true})
+    ctx.store.defer(VeToken, {id: tokenId, relations: {owner: true}})
 
     const fromId = event.from.toLowerCase()
     const fromDeferred = ctx.store.defer(User, fromId)

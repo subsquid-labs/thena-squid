@@ -52,7 +52,10 @@ export class ValueUpdateLiquidityPositionAction extends BaseLiquidityPositionAct
     async perform(): Promise<void> {
         assert(this.transaction != null)
 
-        const position = await this.store.getOrFail(LiquidityPosition, this.data.positionId, {pool: true})
+        const position = await this.store.getOrFail(LiquidityPosition, {
+            id: this.data.positionId,
+            relations: {pool: true},
+        })
         const pool = position.pool
 
         position.value += this.data.amount
